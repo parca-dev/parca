@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useState} from 'react';
+import {useCallback, useState} from 'react';
 
 import {QueryServiceClient} from '@parca/client';
 import type {NavigateFunction} from '@parca/utilities';
@@ -30,7 +30,14 @@ const ProfileExplorerSingle = ({
   navigateTo,
 }: ProfileExplorerSingleProps): JSX.Element => {
   const [showMetricsGraph, setShowMetricsGraph] = useState(true);
-  const {profileSource} = useQueryState({suffix: '_a'});
+  const {profileSource, setDraftTimeRange, commitDraft} = useQueryState({suffix: '_a'});
+
+  const handleSwitchToFifteenMinutes = useCallback(() => {
+    const now = Date.now();
+    const from = now - 900_000; // 15 minutes ago
+    setDraftTimeRange(from, now, 'relative:minute|15');
+    commitDraft({from, to: now, timeSelection: 'relative:minute|15'});
+  }, [setDraftTimeRange, commitDraft]);
 
   return (
     <>
@@ -48,7 +55,11 @@ const ProfileExplorerSingle = ({
       </div>
 
       {profileSource != null && (
-        <ProfileViewWithData queryClient={queryClient} profileSource={profileSource} />
+        <ProfileViewWithData
+          queryClient={queryClient}
+          profileSource={profileSource}
+          onSwitchToFifteenMinutes={handleSwitchToFifteenMinutes}
+        />
       )}
     </>
   );
