@@ -296,7 +296,7 @@ importers:
     dependencies:
       '@alwaysmeticulous/recorder-loader':
         specifier: ^2.19.0
-        version: 2.248.0
+        version: 2.257.1
       '@headlessui/react':
         specifier: ^1.7.19
         version: 1.7.19(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -906,15 +906,15 @@ packages:
   '@adobe/css-tools@4.4.4':
     resolution: {integrity: sha512-Elp+iwUx5rN5+Y8xLt5/GRoG20WGoDCQ/1Fb+1LiGtvwbDavuSk0jhD/eZdckHAuzcDzccnkv+rEjyWfRx18gg==}
 
-  '@alwaysmeticulous/api@2.248.0':
-    resolution: {integrity: sha512-OGXDaUUrmLNN98H1asb0Z9iHzkkuTucIKYLD1YT44vVd2M0h0tvojtiKH3XjJ979Z4w6TLVTJcJqUYY8XoG79Q==}
+  '@alwaysmeticulous/api@2.257.1':
+    resolution: {integrity: sha512-CDSu7AeKcgICwvclM62TT/Dl6zHPYfQF3bfa0WU59hb8MBykJ5SlgiieErwhJaVs1XIg/lucWMqcNoU1t/mPiA==}
     engines: {node: '>= 12'}
 
-  '@alwaysmeticulous/recorder-loader@2.248.0':
-    resolution: {integrity: sha512-xsQZ+8ANXPElyRaGujj/uzH0VpFjs6p45ZyD1GyGGtGeq2kXgHMtft9cuyaAgIBLUY3kWPM7ExWV0QwQTNwtCQ==}
+  '@alwaysmeticulous/recorder-loader@2.257.1':
+    resolution: {integrity: sha512-eseELA/yeBXkSlQBZZf2R8a8NfZoh6EtHrqR8191HircbbwAzpZk4n+WUNevsjT0AOlAiOwhN+Xm9Fa3VuLl2Q==}
 
-  '@alwaysmeticulous/sdk-bundles-api@2.248.0':
-    resolution: {integrity: sha512-Ucd2MsR5QgIEAnl4BLVIP02PiBnAVW6q/9rXO3VQHPULnf6MdNft38wdQsSNlMKzGJWjaVtDjOV5OFMmZhYdJA==}
+  '@alwaysmeticulous/sdk-bundles-api@2.257.1':
+    resolution: {integrity: sha512-fN9YOfTK6RNIG6ZVxaEtXDCBdobFYRswy2aYOjuOqEwGX0JV58Hu7A7JhbAfNw79coJTXvp0DeSDXDTA2YD0Tg==}
     engines: {node: '>= 12'}
 
   '@apideck/better-ajv-errors@0.3.6':
@@ -13905,15 +13905,15 @@ snapshots:
 
   '@adobe/css-tools@4.4.4': {}
 
-  '@alwaysmeticulous/api@2.248.0': {}
+  '@alwaysmeticulous/api@2.257.1': {}
 
-  '@alwaysmeticulous/recorder-loader@2.248.0':
+  '@alwaysmeticulous/recorder-loader@2.257.1':
     dependencies:
-      '@alwaysmeticulous/sdk-bundles-api': 2.248.0
+      '@alwaysmeticulous/sdk-bundles-api': 2.257.1
 
-  '@alwaysmeticulous/sdk-bundles-api@2.248.0':
+  '@alwaysmeticulous/sdk-bundles-api@2.257.1':
     dependencies:
-      '@alwaysmeticulous/api': 2.248.0
+      '@alwaysmeticulous/api': 2.257.1
 
   '@apideck/better-ajv-errors@0.3.6(ajv@8.17.1)':
     dependencies:
