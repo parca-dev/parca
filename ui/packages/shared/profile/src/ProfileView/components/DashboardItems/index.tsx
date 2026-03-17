@@ -50,6 +50,7 @@ interface GetDashboardItemProps {
     onRender?: ProfilerOnRenderCallback;
   };
   queryClient: QueryServiceClient;
+  onSwitchToFifteenMinutes?: () => void;
 }
 
 export const getDashboardItem = ({
@@ -68,6 +69,7 @@ export const getDashboardItem = ({
   setNewCurPathArrow,
   perf,
   queryClient,
+  onSwitchToFifteenMinutes,
 }: GetDashboardItemProps): JSX.Element => {
   switch (type) {
     case 'flamegraph':
@@ -122,6 +124,7 @@ export const getDashboardItem = ({
           isHalfScreen={isHalfScreen}
           metadataMappingFiles={flamegraphData.metadataMappingFiles}
           metadataLoading={flamegraphData.metadataLoading}
+          onSwitchToFifteenMinutes={onSwitchToFifteenMinutes}
         />
       );
     case 'table':
