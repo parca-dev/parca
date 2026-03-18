@@ -220,8 +220,8 @@ importers:
         specifier: 29.7.0
         version: 29.7.0
       lerna:
-        specifier: 9.0.5
-        version: 9.0.5(@swc/core@1.15.10(@swc/helpers@0.5.18))(@types/node@18.19.130)(babel-plugin-macros@3.1.0)
+        specifier: 9.0.6
+        version: 9.0.6(@swc/core@1.15.10(@swc/helpers@0.5.18))(@types/node@18.19.130)(babel-plugin-macros@3.1.0)
       local-web-server:
         specifier: 5.4.0
         version: 5.4.0
@@ -2735,11 +2735,6 @@ packages:
 
   '@leichtgewicht/ip-codec@2.0.5':
     resolution: {integrity: sha512-Vo+PSpZG2/fmgmiNzYK9qWRh8h/CHrwD0mo1h1DzL4yzHNSfWYujGTYsWGreD000gcgmZ7K4Ys6Tx9TxtsKdDw==}
-
-  '@lerna/create@9.0.5':
-    resolution: {integrity: sha512-Gwd6ooSqXMdkdhiCGvHAfLRstj7W3ttr72WQB3Jf9HPP1A6mWtw0O80D0X+T/2hakqfe7lNLuKrEid4f7C0qbg==}
-    engines: {node: ^20.19.0 || ^22.12.0 || >=24.0.0}
-    deprecated: This package is an implementation detail of Lerna and is no longer published separately.
 
   '@mdx-js/loader@2.3.0':
     resolution: {integrity: sha512-IqsscXh7Q3Rzb+f5DXYk0HU71PK+WuFsEhf+mSV3fOhpLcEpgsHvTQ2h0T6TlZ5gHOaBeFjkXwB52by7ypMyNg==}
@@ -9002,8 +8997,8 @@ packages:
     resolution: {integrity: sha512-Y+CjUfLmIpoUCCRl0ub4smrYtGGr5AOa2AKOaWelGHOGz33X/Y/KizefGqbkwfz44+cnq/+9habclf8vOmu2LA==}
     engines: {node: '>=0.2.0'}
 
-  lerna@9.0.5:
-    resolution: {integrity: sha512-LtwZu2wINHlKpjRCxrEdK3QopyeUpFuUS4v6uzLYdg/uxnAKqDHrGY/mDPxdxDR3YAXJzpWXBdz49AHNIKZaSg==}
+  lerna@9.0.6:
+    resolution: {integrity: sha512-ylCTTq8QOa2oRBDhQhy8UIFob6wJZTdREjXTtMJzoB9eWk8qbI0qyIAYmFClu0NVN3mTZ2UKN1HFgTpg4hCdmQ==}
     engines: {node: ^20.19.0 || ^22.12.0 || >=24.0.0}
     hasBin: true
 
@@ -12713,8 +12708,8 @@ packages:
   tar-stream@3.1.7:
     resolution: {integrity: sha512-qJj60CXt7IU1Ffyc3NJMjh6EkuCFej46zUqJ4J7pqYlThyd9bO0XBTmcOIhSzZJVWfsLks0+nle/j538YAW9RQ==}
 
-  tar@7.5.8:
-    resolution: {integrity: sha512-SYkBtK99u0yXa+IWL0JRzzcl7RxNpvX/U08Z+8DKnysfno7M+uExnTZH8K+VGgShf2qFPKtbNr9QBl8n7WBP6Q==}
+  tar@7.5.11:
+    resolution: {integrity: sha512-ChjMH33/KetonMTAtpYdgUFr0tbz69Fp2v7zWxQfYZX4g5ZN2nOBXm1R2xyA+lMIKrLKIoKAwFj93jE/avX9cQ==}
     engines: {node: '>=18'}
 
   temp-dir@1.0.0:
@@ -16045,84 +16040,6 @@ snapshots:
       vary: 1.1.2
 
   '@leichtgewicht/ip-codec@2.0.5': {}
-
-  '@lerna/create@9.0.5(@swc/core@1.15.10(@swc/helpers@0.5.18))(@types/node@18.19.130)(babel-plugin-macros@3.1.0)(typescript@5.9.3)':
-    dependencies:
-      '@npmcli/arborist': 9.1.6
-      '@npmcli/package-json': 7.0.2
-      '@npmcli/run-script': 10.0.3
-      '@nx/devkit': 22.3.3(nx@22.3.3(@swc/core@1.15.10(@swc/helpers@0.5.18)))
-      '@octokit/plugin-enterprise-rest': 6.0.1
-      '@octokit/rest': 20.1.2
-      aproba: 2.0.0
-      byte-size: 8.1.1
-      chalk: 4.1.0
-      cmd-shim: 6.0.3
-      color-support: 1.1.3
-      columnify: 1.6.0
-      console-control-strings: 1.1.0
-      conventional-changelog-core: 5.0.1
-      conventional-recommended-bump: 7.0.1
-      cosmiconfig: 9.0.0(typescript@5.9.3)
-      dedent: 1.5.3(babel-plugin-macros@3.1.0)
-      execa: 5.0.0
-      fs-extra: 11.3.3
-      get-stream: 6.0.0
-      git-url-parse: 14.0.0
-      glob-parent: 6.0.2
-      has-unicode: 2.0.1
-      ini: 1.3.8
-      init-package-json: 8.2.2
-      inquirer: 12.9.6(@types/node@18.19.130)
-      is-ci: 3.0.1
-      is-stream: 2.0.0
-      js-yaml: 4.1.1
-      libnpmpublish: 11.1.2
-      load-json-file: 6.2.0
-      make-dir: 4.0.0
-      make-fetch-happen: 15.0.2
-      minimatch: 3.1.4
-      multimatch: 5.0.0
-      npm-package-arg: 13.0.1
-      npm-packlist: 10.0.3
-      npm-registry-fetch: 19.1.0
-      nx: 22.3.3(@swc/core@1.15.10(@swc/helpers@0.5.18))
-      p-map: 4.0.0
-      p-map-series: 2.1.0
-      p-queue: 6.6.2
-      p-reduce: 2.1.0
-      pacote: 21.0.1
-      pify: 5.0.0
-      read-cmd-shim: 4.0.0
-      resolve-from: 5.0.0
-      rimraf: 6.1.3
-      semver: 7.7.2
-      set-blocking: 2.0.0
-      signal-exit: 3.0.7
-      slash: 3.0.0
-      ssri: 12.0.0
-      string-width: 4.2.3
-      tar: 7.5.8
-      temp-dir: 1.0.0
-      through: 2.3.8
-      tinyglobby: 0.2.12
-      upath: 2.0.1
-      uuid: 11.1.0
-      validate-npm-package-license: 3.0.4
-      validate-npm-package-name: 6.0.2
-      wide-align: 1.1.5
-      write-file-atomic: 5.0.1
-      write-pkg: 4.0.0
-      yargs: 17.7.2
-      yargs-parser: 21.1.1
-    transitivePeerDependencies:
-      - '@swc-node/register'
-      - '@swc/core'
-      - '@types/node'
-      - babel-plugin-macros
-      - debug
-      - supports-color
-      - typescript
 
   '@mdx-js/loader@2.3.0(webpack@5.104.1(@swc/core@1.15.10(@swc/helpers@0.5.18))(esbuild@0.25.12))':
     dependencies:
@@ -23940,9 +23857,8 @@ snapshots:
 
   lazy@1.0.11: {}
 
-  lerna@9.0.5(@swc/core@1.15.10(@swc/helpers@0.5.18))(@types/node@18.19.130)(babel-plugin-macros@3.1.0):
+  lerna@9.0.6(@swc/core@1.15.10(@swc/helpers@0.5.18))(@types/node@18.19.130)(babel-plugin-macros@3.1.0):
     dependencies:
-      '@lerna/create': 9.0.5(@swc/core@1.15.10(@swc/helpers@0.5.18))(@types/node@18.19.130)(babel-plugin-macros@3.1.0)(typescript@5.9.3)
       '@npmcli/arborist': 9.1.6
       '@npmcli/package-json': 7.0.2
       '@npmcli/run-script': 10.0.3
@@ -23952,6 +23868,7 @@ snapshots:
       aproba: 2.0.0
       byte-size: 8.1.1
       chalk: 4.1.0
+      ci-info: 4.3.1
       cmd-shim: 6.0.3
       color-support: 1.1.3
       columnify: 1.6.0
@@ -24005,7 +23922,7 @@ snapshots:
       slash: 3.0.0
       ssri: 12.0.0
       string-width: 4.2.3
-      tar: 7.5.8
+      tar: 7.5.11
       temp-dir: 1.0.0
       through: 2.3.8
       tinyglobby: 0.2.12
@@ -25314,7 +25231,7 @@ snapshots:
       nopt: 9.0.0
       proc-log: 6.1.0
       semver: 7.7.4
-      tar: 7.5.8
+      tar: 7.5.11
       tinyglobby: 0.2.15
       which: 6.0.0
     transitivePeerDependencies:
@@ -25809,7 +25726,7 @@ snapshots:
       promise-retry: 2.0.1
       sigstore: 4.1.0
       ssri: 12.0.0
-      tar: 7.5.8
+      tar: 7.5.11
     transitivePeerDependencies:
       - supports-color
 
@@ -25831,7 +25748,7 @@ snapshots:
       promise-retry: 2.0.1
       sigstore: 4.1.0
       ssri: 13.0.0
-      tar: 7.5.8
+      tar: 7.5.11
     transitivePeerDependencies:
       - supports-color
 
@@ -28652,7 +28569,7 @@ snapshots:
       - bare-abort-controller
       - react-native-b4a
 
-  tar@7.5.8:
+  tar@7.5.11:
     dependencies:
       '@isaacs/fs-minipass': 4.0.1
       chownr: 3.0.0
