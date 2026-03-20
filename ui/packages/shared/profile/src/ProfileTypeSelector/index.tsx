@@ -97,6 +97,10 @@ export const wellKnownProfiles: WellKnownProfiles = {
     name: 'On-CPU Samples',
     help: 'On CPU profile samples observed by the Otel Profiling Agent.',
   },
+  'go_opentelemetry_io_ebpf_profiler:samples:count:cpu:nanoseconds:delta': {
+    name: 'On-CPU',
+    help: 'On CPU profile samples as observed by the OpenTelemetry eBPF Profiler.',
+  },
   'parca_agent:samples:count:cpu:nanoseconds:delta': {
     name: 'On-CPU',
     help: 'On CPU profile samples as observed by the Parca Agent.',
