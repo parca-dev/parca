@@ -174,7 +174,7 @@ jobs:
 
       - name: Login to registry
         run: |
-          echo "${{ secrets.PERSONAL_ACCESS_TOKEN }}" | podman login -u parca-dev --password-stdin ghcr.io
+          echo "${{ secrets.GITHUB_TOKEN }}" | podman login -u parca-dev --password-stdin ghcr.io
 
       - name: Install cosign
         uses: sigstore/cosign-installer@d58896d6a1865668819e1d91763c7751a165e159 # v3.9.2
