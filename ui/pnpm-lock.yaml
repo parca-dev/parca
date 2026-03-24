@@ -49,8 +49,8 @@ importers:
         specifier: 7.21.11
         version: 7.21.11(@babel/core@7.29.0)
       '@babel/preset-env':
-        specifier: 7.29.0
-        version: 7.29.0(@babel/core@7.29.0)
+        specifier: 7.29.2
+        version: 7.29.2(@babel/core@7.29.0)
       '@chromatic-com/storybook':
         specifier: 1.9.0
         version: 1.9.0(react@18.3.1)
@@ -1604,8 +1604,8 @@ packages:
     peerDependencies:
       '@babel/core': ^7.0.0
 
-  '@babel/preset-env@7.29.0':
-    resolution: {integrity: sha512-fNEdfc0yi16lt6IZo2Qxk3knHVdfMYX33czNb4v8yWhemoBhibCpQK/uYHtSKIiO+p/zd3+8fYVXhQdOVV608w==}
+  '@babel/preset-env@7.29.2':
+    resolution: {integrity: sha512-DYD23veRYGvBFhcTY1iUvJnDNpuqNd/BzBwCvzOTKUnJjKg5kpUBh3/u9585Agdkgj+QuygG7jLfOPWMa2KVNw==}
     engines: {node: '>=6.9.0'}
     peerDependencies:
       '@babel/core': ^7.0.0-0
@@ -14638,7 +14638,7 @@ snapshots:
       '@babel/helper-create-regexp-features-plugin': 7.28.5(@babel/core@7.29.0)
       '@babel/helper-plugin-utils': 7.28.6
 
-  '@babel/preset-env@7.29.0(@babel/core@7.29.0)':
+  '@babel/preset-env@7.29.2(@babel/core@7.29.0)':
     dependencies:
       '@babel/compat-data': 7.29.0
       '@babel/core': 7.29.0
@@ -17377,7 +17377,7 @@ snapshots:
     dependencies:
       '@babel/core': 7.29.0
       '@babel/plugin-transform-react-constant-elements': 7.27.1(@babel/core@7.29.0)
-      '@babel/preset-env': 7.29.0(@babel/core@7.29.0)
+      '@babel/preset-env': 7.29.2(@babel/core@7.29.0)
       '@babel/preset-react': 7.28.5(@babel/core@7.29.0)
       '@svgr/core': 5.5.0
       '@svgr/plugin-jsx': 5.5.0
@@ -17390,7 +17390,7 @@ snapshots:
     dependencies:
       '@babel/core': 7.29.0
       '@babel/plugin-transform-react-constant-elements': 7.27.1(@babel/core@7.29.0)
-      '@babel/preset-env': 7.29.0(@babel/core@7.29.0)
+      '@babel/preset-env': 7.29.2(@babel/core@7.29.0)
       '@babel/preset-react': 7.28.5(@babel/core@7.29.0)
       '@babel/preset-typescript': 7.28.5(@babel/core@7.29.0)
       '@svgr/core': 6.5.1
@@ -19029,7 +19029,7 @@ snapshots:
       '@babel/plugin-transform-flow-strip-types': 7.27.1(@babel/core@7.29.0)
       '@babel/plugin-transform-react-display-name': 7.28.0(@babel/core@7.29.0)
       '@babel/plugin-transform-runtime': 7.28.5(@babel/core@7.29.0)
-      '@babel/preset-env': 7.29.0(@babel/core@7.29.0)
+      '@babel/preset-env': 7.29.2(@babel/core@7.29.0)
       '@babel/preset-react': 7.28.5(@babel/core@7.29.0)
       '@babel/preset-typescript': 7.28.5(@babel/core@7.29.0)
       '@babel/runtime': 7.28.6
@@ -29580,7 +29580,7 @@ snapshots:
     dependencies:
       '@apideck/better-ajv-errors': 0.3.6(ajv@8.17.1)
       '@babel/core': 7.29.0
-      '@babel/preset-env': 7.29.0(@babel/core@7.29.0)
+      '@babel/preset-env': 7.29.2(@babel/core@7.29.0)
       '@babel/runtime': 7.28.6
       '@rollup/plugin-babel': 5.3.1(@babel/core@7.29.0)(@types/babel__core@7.20.5)(rollup@2.79.2)
       '@rollup/plugin-node-resolve': 11.2.1(rollup@2.79.2)
