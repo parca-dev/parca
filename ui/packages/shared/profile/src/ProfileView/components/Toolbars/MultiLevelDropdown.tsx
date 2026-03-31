@@ -73,6 +73,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
   customSubmenu,
   renderAsDiv = false,
 }) => {
+  'use no memo';
   const menuRef = useRef<HTMLDivElement>(null);
   const [shouldOpenLeft, setShouldOpenLeft] = useState(false);
 

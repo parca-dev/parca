@@ -68,6 +68,7 @@ export const TooltipProvider: React.FC<TooltipProviderProps> = ({
   onTooltipUpdate,
   tooltipId = 'default',
 }) => {
+  'use no memo';
   const tooltipStateRef = useRef<TooltipState>({row: null, x: 0, y: 0});
 
   const updateTooltip = useCallback(

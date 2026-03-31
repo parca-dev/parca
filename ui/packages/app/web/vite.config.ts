@@ -11,14 +11,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import react from '@vitejs/plugin-react-swc';
+import react from '@vitejs/plugin-react';
 import {defineConfig} from 'vite';
 import svgr from 'vite-plugin-svgr';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  // @ts-expect-error
-  plugins: [react(), svgr()],
+  plugins: [
+    react({
+      babel: {
+        plugins: [
+          [
+            'babel-plugin-react-compiler',
+            {
+              target: '18',
+              compilationMode: 'infer',
+            },
+          ],
+        ],
+      },
+    }),
+    svgr(),
+  ],
   base: './',
   server: {
     port: 3000,

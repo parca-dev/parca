@@ -42,6 +42,7 @@ export const VisualizationContainer: FC<VisualizationContainerProps> = ({
   index,
   actionButtons,
 }) => {
+  'use no memo';
   const {handleClosePanel} = useDashboard();
 
   return (

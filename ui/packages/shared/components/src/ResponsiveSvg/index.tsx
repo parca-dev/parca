@@ -33,6 +33,7 @@ const addPropsToChildren = (children: JSX.Element, props: {[x: string]: any}): J
 };
 
 const ResponsiveSvg = (props: Props): JSX.Element => {
+  'use no memo';
   const {children} = props;
   const {ref, dimensions} = useContainerDimensions();
   const {width} = dimensions ?? {width: 0};

@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useMemo, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 
 import {usePopper} from 'react-popper';
 
@@ -28,21 +28,16 @@ interface Props {
   content: React.ReactNode;
 }
 
-const virtualElement: VirtualElement = {
-  getBoundingClientRect: () => {
-    const emptyRect: DOMRect = {
-      width: 0,
-      height: 0,
-      top: 0,
-      right: 0,
-      bottom: 0,
-      left: 0,
-      x: 0,
-      y: 0,
-      toJSON: () => ({}),
-    };
-    return emptyRect;
-  },
+const emptyRect: DOMRect = {
+  width: 0,
+  height: 0,
+  top: 0,
+  right: 0,
+  bottom: 0,
+  left: 0,
+  x: 0,
+  y: 0,
+  toJSON: () => ({}),
 };
 
 const createDomRect = (x: number, y: number): DOMRect => {
@@ -61,9 +56,13 @@ const createDomRect = (x: number, y: number): DOMRect => {
 };
 
 const MetricsTooltip = ({x, y, contextElement, content}: Props): JSX.Element => {
+  'use no memo';
   const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
+  const virtualElementRef = useRef<VirtualElement>({
+    getBoundingClientRect: () => emptyRect,
+  });
 
-  const {styles, attributes, update} = usePopper(virtualElement, popperElement, {
+  const {styles, attributes, update} = usePopper(virtualElementRef.current, popperElement, {
     placement: 'auto-start',
     strategy: 'absolute',
     modifiers: [
@@ -82,26 +81,13 @@ const MetricsTooltip = ({x, y, contextElement, content}: Props): JSX.Element => 
     ],
   });
 
-  useMemo(() => {
-    virtualElement.getBoundingClientRect = (): DOMRect => {
-      const domRect: DOMRect = (contextElement as Element)?.getBoundingClientRect() ?? {
-        width: 0,
-        height: 0,
-        top: 0,
-        right: 0,
-        bottom: 0,
-        left: 0,
-        x: 0,
-        y: 0,
-        toJSON: () => ({}),
-      };
+  useEffect(() => {
+    virtualElementRef.current.getBoundingClientRect = (): DOMRect => {
+      const domRect: DOMRect = (contextElement as Element)?.getBoundingClientRect() ?? emptyRect;
       return createDomRect(domRect.x + x, domRect.y + y);
     };
-  }, [x, y, contextElement]);
-
-  useEffect(() => {
     void update?.();
-  }, [x, y, update]);
+  }, [x, y, contextElement, update]);
 
   // Don't render anything if content is null or undefined
   if (content == null) {

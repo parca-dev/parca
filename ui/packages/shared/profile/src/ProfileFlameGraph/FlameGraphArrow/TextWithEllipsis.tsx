@@ -64,6 +64,7 @@ function calculateTruncatedText(
 }
 
 function TextWithEllipsis({text, x, y, width}: Props): JSX.Element {
+  'use no memo';
   const textRef = useRef<SVGTextElement>(null);
   const [displayText, setDisplayText] = useState(text);
   const [alignFunctionName] = useURLState('align_function_name');

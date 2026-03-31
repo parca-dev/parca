@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Fragment, useCallback, useEffect, useState} from 'react';
+import React, {Fragment, useCallback, useEffect, useState} from 'react';
 
 import {Transition} from '@headlessui/react';
 import {usePopper} from 'react-popper';
@@ -48,7 +48,7 @@ export class Suggestions {
 interface Props {
   suggestions: Suggestions;
   applySuggestion: (suggestion: Suggestion) => void;
-  inputRef: HTMLTextAreaElement | null;
+  inputRef: React.RefObject<HTMLTextAreaElement | null>;
   runQuery: () => void;
   focusedInput: boolean;
   isLabelNamesLoading: boolean;
@@ -82,7 +82,7 @@ const SuggestionsList = ({
   refetchLabelNames,
 }: Props): JSX.Element => {
   const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
-  const {styles, attributes} = usePopper(inputRef, popperElement, {
+  const {styles, attributes} = usePopper(inputRef.current, popperElement, {
     placement: 'bottom-start',
   });
   const [highlightedSuggestionIndex, setHighlightedSuggestionIndex] = useState<number>(-1);
@@ -227,18 +227,19 @@ const SuggestionsList = ({
   );
 
   useEffect(() => {
-    if (inputRef == null) {
+    const el = inputRef.current;
+    if (el == null) {
       return;
     }
 
-    inputRef.addEventListener('keydown', handleKeyDown);
-    inputRef.addEventListener('keypress', handleKeyPress as any);
+    el.addEventListener('keydown', handleKeyDown);
+    el.addEventListener('keypress', handleKeyPress as any);
 
     return () => {
-      inputRef.removeEventListener('keydown', handleKeyDown);
-      inputRef.removeEventListener('keypress', handleKeyPress as any);
+      el.removeEventListener('keydown', handleKeyDown);
+      el.removeEventListener('keypress', handleKeyPress as any);
     };
-  }, [inputRef, highlightedSuggestionIndex, suggestions, handleKeyPress, handleKeyDown]);
+  });
 
   useEffect(() => {
     if (suggestionsLength > 0 && focusedInput) {
@@ -263,7 +264,7 @@ const SuggestionsList = ({
             leaveTo="opacity-0"
           >
             <div
-              style={{width: inputRef?.offsetWidth}}
+              style={{width: inputRef.current?.offsetWidth}}
               className="absolute z-10 mt-1 max-h-[400px] rounded-md bg-gray-50 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-gray-900 sm:text-sm flex flex-col"
             >
               <div className="flex-1 overflow-auto min-h-0">

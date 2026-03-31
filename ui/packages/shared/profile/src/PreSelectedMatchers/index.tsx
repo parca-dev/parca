@@ -29,6 +29,7 @@ interface Props {
 }
 
 const PreSelectedMatchers: React.FC<Props> = ({labelNames}) => {
+  'use no memo';
   const [labelValuesMap, setLabelValuesMap] = useState<Record<string, string[]>>({});
   const [isLoading, setIsLoading] = useState<Record<string, boolean>>({});
   const metadata = useGrpcMetadata();

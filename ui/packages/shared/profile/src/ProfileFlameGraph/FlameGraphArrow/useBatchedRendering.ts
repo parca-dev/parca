@@ -29,6 +29,7 @@ export const useBatchedRendering = <T>(
   items: T[],
   options: UseBatchedRenderingOptions = {}
 ): UseBatchedRenderingResult<T> => {
+  'use no memo';
   const {batchSize = 500, batchDelay = 0} = options;
 
   const [renderedCount, setRenderedCount] = useState(0);

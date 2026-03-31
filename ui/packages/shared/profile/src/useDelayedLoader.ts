@@ -18,20 +18,20 @@ interface DelayedLoaderOptions {
 }
 
 const useDelayedLoader = (isLoading = false, options?: DelayedLoaderOptions): boolean => {
+  'use no memo';
   const {delay = 500} = options ?? {};
   const [isLoaderVisible, setIsLoaderVisible] = useState<boolean>(false);
   useEffect(() => {
-    let showLoaderTimeout: ReturnType<typeof setTimeout>;
-    if (isLoading && !isLoaderVisible) {
-      // if the request takes longer than half a second, show the loading icon
-      showLoaderTimeout = setTimeout(() => {
-        setIsLoaderVisible(true);
-      }, delay);
-    } else if (!isLoading && isLoaderVisible) {
+    if (!isLoading) {
       setIsLoaderVisible(false);
+      return;
     }
+    // if the request takes longer than half a second, show the loading icon
+    const showLoaderTimeout = setTimeout(() => {
+      setIsLoaderVisible(true);
+    }, delay);
     return () => clearTimeout(showLoaderTimeout);
-  }, [isLoading, isLoaderVisible, delay]);
+  }, [isLoading, delay]);
 
   return isLoaderVisible;
 };

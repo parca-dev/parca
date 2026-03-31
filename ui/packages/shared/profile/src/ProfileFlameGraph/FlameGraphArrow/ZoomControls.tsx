@@ -33,6 +33,7 @@ export const ZoomControls = ({
   resetZoom,
   portalRef,
 }: ZoomControlsProps): React.JSX.Element => {
+  'use no memo';
   const controls = (
     <div className="flex items-center gap-1 rounded-md border border-gray-200 bg-white/90 px-1 py-0.5 shadow-sm backdrop-blur-sm dark:border-gray-600 dark:bg-gray-800/90">
       <button

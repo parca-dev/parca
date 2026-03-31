@@ -39,6 +39,7 @@ function createPositionedVirtualElement(contextElement: Element, x = 0, y = 0): 
 }
 
 const GraphTooltip = ({children, contextElement}: GraphTooltipProps): React.JSX.Element => {
+  'use no memo';
   const [isPositioned, setIsPositioned] = useState(false);
 
   const {refs, floatingStyles, update} = useFloating({

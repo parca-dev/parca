@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useMemo, useState} from 'react';
+import {useState} from 'react';
 
 import {DateTimePicker} from '../../DateTimePicker';
 import {AbsoluteDate, DateTimeRange, RelativeDate, getHistoricalDate} from '../utils';
@@ -22,52 +22,31 @@ interface AbsoluteDatePickerProps {
 }
 
 const AbsoluteDatePicker = ({range, onChange}: AbsoluteDatePickerProps): JSX.Element => {
-  const dateFromInRelative = useMemo(() => range.from as RelativeDate, [range.from]);
-  const dateToInRelative = useMemo(() => range.to as RelativeDate, [range.to]);
-
-  const [from, setFrom] = useState<AbsoluteDate>(
-    range.from.isRelative()
+  const computeFrom = (d: RelativeDate | AbsoluteDate): AbsoluteDate =>
+    d.isRelative()
       ? new AbsoluteDate(
-          getHistoricalDate({
-            unit: dateFromInRelative.unit,
-            value: dateFromInRelative.value,
-          })
+          getHistoricalDate({unit: (d as RelativeDate).unit, value: (d as RelativeDate).value})
         )
-      : (range.from as AbsoluteDate)
-  );
-  const [to, setTo] = useState<AbsoluteDate>(
-    range.to.isRelative()
-      ? new AbsoluteDate(
-          getHistoricalDate({
-            unit: dateToInRelative.unit,
-            value: dateToInRelative.value,
-          })
-        )
-      : (range.to as AbsoluteDate)
-  );
+      : (d as AbsoluteDate);
 
-  useEffect(() => {
-    setFrom(
-      range.from.isRelative()
-        ? new AbsoluteDate(
-            getHistoricalDate({
-              unit: dateFromInRelative.unit,
-              value: dateFromInRelative.value,
-            })
-          )
-        : (range.from as AbsoluteDate)
-    );
-    setTo(
-      range.to.isRelative()
-        ? new AbsoluteDate(
-            getHistoricalDate({
-              unit: dateToInRelative.unit,
-              value: dateToInRelative.value,
-            })
-          )
-        : (range.to as AbsoluteDate)
-    );
-  }, [dateFromInRelative, dateToInRelative, range.from, range.to]);
+  const computeTo = (d: RelativeDate | AbsoluteDate): AbsoluteDate =>
+    d.isRelative()
+      ? new AbsoluteDate(
+          getHistoricalDate({unit: (d as RelativeDate).unit, value: (d as RelativeDate).value})
+        )
+      : (d as AbsoluteDate);
+
+  const [from, setFrom] = useState<AbsoluteDate>(() => computeFrom(range.from));
+  const [to, setTo] = useState<AbsoluteDate>(() => computeTo(range.to));
+  const [prevRangeFrom, setPrevRangeFrom] = useState(range.from);
+  const [prevRangeTo, setPrevRangeTo] = useState(range.to);
+
+  if (prevRangeFrom !== range.from || prevRangeTo !== range.to) {
+    setPrevRangeFrom(range.from);
+    setPrevRangeTo(range.to);
+    setFrom(computeFrom(range.from));
+    setTo(computeTo(range.to));
+  }
 
   return (
     <div className="flex flex-col w-[80%] mx-auto">
