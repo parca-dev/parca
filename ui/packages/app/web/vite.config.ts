@@ -17,6 +17,7 @@ import svgr from 'vite-plugin-svgr';
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  // cast needed: dual @types/node versions create incompatible vite Plugin types
   plugins: [
     react({
       babel: {
@@ -32,7 +33,7 @@ export default defineConfig({
       },
     }),
     svgr(),
-  ],
+  ] as any,
   base: './',
   server: {
     port: 3000,
