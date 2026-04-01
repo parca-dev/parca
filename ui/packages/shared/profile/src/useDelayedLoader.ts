@@ -22,15 +22,15 @@ const useDelayedLoader = (isLoading = false, options?: DelayedLoaderOptions): bo
   const {delay = 500} = options ?? {};
   const [isLoaderVisible, setIsLoaderVisible] = useState<boolean>(false);
   useEffect(() => {
-    if (!isLoading) {
-      setIsLoaderVisible(false);
-      return;
-    }
+    if (!isLoading) return;
     // if the request takes longer than half a second, show the loading icon
     const showLoaderTimeout = setTimeout(() => {
       setIsLoaderVisible(true);
     }, delay);
-    return () => clearTimeout(showLoaderTimeout);
+    return () => {
+      clearTimeout(showLoaderTimeout);
+      setIsLoaderVisible(false);
+    };
   }, [isLoading, delay]);
 
   return isLoaderVisible;

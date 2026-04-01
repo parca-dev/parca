@@ -11,9 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useRef} from 'react';
+import {useRef} from 'react';
 
-import {act, fireEvent, render, screen} from '@testing-library/react';
+import {act, fireEvent, render} from '@testing-library/react';
 import {beforeAll, describe, expect, it, vi} from 'vitest';
 
 import SuggestionsList, {Suggestion, Suggestions} from './SuggestionsList';
@@ -55,15 +55,16 @@ const TestHarness = ({inputKey = 'initial'}: {inputKey?: string}): JSX.Element =
 
 describe('SuggestionsList', () => {
   it('rebinds keyboard listeners when the textarea ref points to a remounted node', () => {
-    const {rerender} = render(<TestHarness inputKey="first" />);
+    const {rerender, getByRole, getByText} = render(<TestHarness inputKey="first" />);
 
     rerender(<TestHarness inputKey="second" />);
 
-    const textarea = screen.getByRole('textbox');
+    const textarea = getByRole('textbox');
     act(() => {
       fireEvent.keyDown(textarea, {key: 'ArrowDown'});
     });
 
-    expect(screen.getByText('namespace').className).toContain('bg-indigo-600');
+    // eslint-disable-next-line jest-dom/prefer-to-have-class
+    expect(getByText('namespace').className).toContain('bg-indigo-600');
   });
 });

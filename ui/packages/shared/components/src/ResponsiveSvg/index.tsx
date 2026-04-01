@@ -11,6 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/* eslint-disable react-hooks/set-state-in-effect */
+
 import {Children, useEffect, useState} from 'react';
 
 import {useContainerDimensions} from '@parca/hooks';

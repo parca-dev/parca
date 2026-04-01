@@ -11,6 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/* eslint-disable react-hooks/refs */
+
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 
 import {Icon} from '@iconify/react';

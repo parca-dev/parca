@@ -11,6 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/* eslint-disable react-hooks/refs */
+
 import React, {useEffect, useState} from 'react';
 
 import {flip, offset, shift, useFloating, type VirtualElement} from '@floating-ui/react';

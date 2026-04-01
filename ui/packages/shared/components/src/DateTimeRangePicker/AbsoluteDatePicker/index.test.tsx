@@ -11,7 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {render, screen} from '@testing-library/react';
+/* eslint-disable jest-dom/prefer-to-have-value */
+
+import {render} from '@testing-library/react';
 import {describe, expect, it, vi} from 'vitest';
 
 import {AbsoluteDate, DateTimeRange} from '../utils';
@@ -24,18 +26,20 @@ describe('AbsoluteDatePicker', () => {
       new AbsoluteDate(new Date('2023-12-01T15:30:00Z'))
     );
 
-    const {rerender} = render(<AbsoluteDatePicker range={range} onChange={vi.fn()} />);
+    const {rerender, getAllByRole} = render(
+      <AbsoluteDatePicker range={range} onChange={vi.fn()} />
+    );
 
-    const [startInput, endInput] = screen.getAllByRole('textbox') as HTMLInputElement[];
-    expect(startInput.value).toBe('2023-12-01 10:00:00');
-    expect(endInput.value).toBe('2023-12-01 15:30:00');
+    const [startInput, endInput] = getAllByRole('textbox');
+    expect((startInput as HTMLInputElement).value).toBe('2023-12-01 10:00:00');
+    expect((endInput as HTMLInputElement).value).toBe('2023-12-01 15:30:00');
 
     range.from = new AbsoluteDate(new Date('2023-12-02T08:15:00Z'));
     range.to = new AbsoluteDate(new Date('2023-12-02T09:45:00Z'));
 
     rerender(<AbsoluteDatePicker range={range} onChange={vi.fn()} />);
 
-    expect(startInput.value).toBe('2023-12-02 08:15:00');
-    expect(endInput.value).toBe('2023-12-02 09:45:00');
+    expect((startInput as HTMLInputElement).value).toBe('2023-12-02 08:15:00');
+    expect((endInput as HTMLInputElement).value).toBe('2023-12-02 09:45:00');
   });
 });
