@@ -14,7 +14,7 @@
 import {useCallback} from 'react';
 
 import {GrpcWebFetchTransport} from '@protobuf-ts/grpcweb-transport';
-import {useNavigate} from 'react-router-dom';
+import {useLocation, useNavigate} from 'react-router-dom';
 
 import {QueryServiceClient} from '@parca/client';
 import {ParcaContextProvider, Spinner, URLStateProvider} from '@parca/components';
@@ -31,7 +31,12 @@ const queryClient = new QueryServiceClient(
 );
 
 const Profiles = () => {
+  'use no memo';
   const navigate = useNavigate();
+  // useLocation() subscribes to react-router location changes so this component
+  // re-renders on navigate(). 'use no memo' ensures the re-render propagates to
+  // URLStateProvider, whose no-deps effect syncs state from window.location.search.
+  useLocation();
   const isDarkMode = useAppSelector(selectDarkMode);
 
   const navigateTo = useCallback(

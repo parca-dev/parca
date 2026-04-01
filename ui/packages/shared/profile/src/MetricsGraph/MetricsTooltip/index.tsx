@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useRef, useState} from 'react';
+import {useLayoutEffect, useRef, useState} from 'react';
 
 import {usePopper} from 'react-popper';
 
@@ -81,7 +81,7 @@ const MetricsTooltip = ({x, y, contextElement, content}: Props): JSX.Element => 
     ],
   });
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     virtualElementRef.current.getBoundingClientRect = (): DOMRect => {
       const domRect: DOMRect = (contextElement as Element)?.getBoundingClientRect() ?? emptyRect;
       return createDomRect(domRect.x + x, domRect.y + y);

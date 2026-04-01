@@ -22,30 +22,23 @@ interface AbsoluteDatePickerProps {
 }
 
 const AbsoluteDatePicker = ({range, onChange}: AbsoluteDatePickerProps): JSX.Element => {
-  const computeFrom = (d: RelativeDate | AbsoluteDate): AbsoluteDate =>
+  const toAbsolute = (d: RelativeDate | AbsoluteDate): AbsoluteDate =>
     d.isRelative()
       ? new AbsoluteDate(
           getHistoricalDate({unit: (d as RelativeDate).unit, value: (d as RelativeDate).value})
         )
       : (d as AbsoluteDate);
 
-  const computeTo = (d: RelativeDate | AbsoluteDate): AbsoluteDate =>
-    d.isRelative()
-      ? new AbsoluteDate(
-          getHistoricalDate({unit: (d as RelativeDate).unit, value: (d as RelativeDate).value})
-        )
-      : (d as AbsoluteDate);
-
-  const [from, setFrom] = useState<AbsoluteDate>(() => computeFrom(range.from));
-  const [to, setTo] = useState<AbsoluteDate>(() => computeTo(range.to));
+  const [from, setFrom] = useState<AbsoluteDate>(() => toAbsolute(range.from));
+  const [to, setTo] = useState<AbsoluteDate>(() => toAbsolute(range.to));
   const [prevRangeFrom, setPrevRangeFrom] = useState(range.from);
   const [prevRangeTo, setPrevRangeTo] = useState(range.to);
 
   if (prevRangeFrom !== range.from || prevRangeTo !== range.to) {
     setPrevRangeFrom(range.from);
     setPrevRangeTo(range.to);
-    setFrom(computeFrom(range.from));
-    setTo(computeTo(range.to));
+    setFrom(toAbsolute(range.from));
+    setTo(toAbsolute(range.to));
   }
 
   return (
