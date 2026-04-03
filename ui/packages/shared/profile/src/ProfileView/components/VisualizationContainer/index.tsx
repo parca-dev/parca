@@ -11,6 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/* eslint-disable react-hooks/refs */
+
 import {FC} from 'react';
 
 import cx from 'classnames';
@@ -42,6 +44,7 @@ export const VisualizationContainer: FC<VisualizationContainerProps> = ({
   index,
   actionButtons,
 }) => {
+  'use no memo';
   const {handleClosePanel} = useDashboard();
 
   return (

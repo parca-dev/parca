@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Dispatch, SetStateAction, useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {Dispatch, SetStateAction, useCallback, useMemo, useRef, useState} from 'react';
 
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 
@@ -154,7 +154,20 @@ const ProfileSelector = ({
   );
 
   // Sync local timeRangeSelection when URL state changes externally (e.g., "Switch to 1 minute" button)
-  useEffect(() => {
+  const [prevQueryTimeSelection, setPrevQueryTimeSelection] = useState(
+    querySelection.timeSelection
+  );
+  const [prevQueryFrom, setPrevQueryFrom] = useState(querySelection.from);
+  const [prevQueryTo, setPrevQueryTo] = useState(querySelection.to);
+
+  if (
+    prevQueryTimeSelection !== querySelection.timeSelection ||
+    prevQueryFrom !== querySelection.from ||
+    prevQueryTo !== querySelection.to
+  ) {
+    setPrevQueryTimeSelection(querySelection.timeSelection);
+    setPrevQueryFrom(querySelection.from);
+    setPrevQueryTo(querySelection.to);
     setTimeRangeSelection(
       DateTimeRange.fromRangeKey(
         querySelection.timeSelection,
@@ -162,7 +175,7 @@ const ProfileSelector = ({
         querySelection.to
       )
     );
-  }, [querySelection.timeSelection, querySelection.from, querySelection.to]);
+  }
 
   const [queryExpressionString, setQueryExpressionString] = useState(draftSelection.expression);
 
@@ -198,18 +211,28 @@ const ProfileSelector = ({
     return result.response?.labelNames === undefined ? [] : result.response.labelNames;
   }, [result]);
 
-  useEffect(() => {
+  const [prevEnforcedProfileName, setPrevEnforcedProfileName] = useState(enforcedProfileName);
+  const [prevQueryExpression, setPrevQueryExpression] = useState(querySelection.expression);
+
+  if (
+    prevEnforcedProfileName !== enforcedProfileName ||
+    prevQueryExpression !== querySelection.expression
+  ) {
+    setPrevEnforcedProfileName(enforcedProfileName);
+    setPrevQueryExpression(querySelection.expression);
     if (enforcedProfileName !== '') {
       const [q, changed] = Query.parse(querySelection.expression).setProfileName(
         enforcedProfileName
       );
       if (changed) {
         setQueryExpressionString(q.toString());
-        return;
+      } else {
+        setQueryExpressionString(querySelection.expression);
       }
+    } else {
+      setQueryExpressionString(querySelection.expression);
     }
-    setQueryExpressionString(querySelection.expression);
-  }, [enforcedProfileName, querySelection.expression]);
+  }
 
   const enforcedProfileNameQuery = (): Query => {
     const pq = Query.parse(queryExpressionString);

@@ -11,6 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/* eslint-disable react-hooks/set-state-in-effect */
+
 import {Children, useEffect, useState} from 'react';
 
 import {useContainerDimensions} from '@parca/hooks';
@@ -33,6 +35,7 @@ const addPropsToChildren = (children: JSX.Element, props: {[x: string]: any}): J
 };
 
 const ResponsiveSvg = (props: Props): JSX.Element => {
+  'use no memo';
   const {children} = props;
   const {ref, dimensions} = useContainerDimensions();
   const {width} = dimensions ?? {width: 0};

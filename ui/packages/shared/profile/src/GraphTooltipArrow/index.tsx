@@ -11,6 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/* eslint-disable react-hooks/refs */
+
 import React, {useEffect, useState} from 'react';
 
 import {flip, offset, shift, useFloating, type VirtualElement} from '@floating-ui/react';
@@ -39,6 +41,7 @@ function createPositionedVirtualElement(contextElement: Element, x = 0, y = 0): 
 }
 
 const GraphTooltip = ({children, contextElement}: GraphTooltipProps): React.JSX.Element => {
+  'use no memo';
   const [isPositioned, setIsPositioned] = useState(false);
 
   const {refs, floatingStyles, update} = useFloating({
