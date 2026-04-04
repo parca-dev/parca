@@ -18,7 +18,7 @@ overrides:
   basic-ftp@<5.2.0: 5.2.0
   serialize-javascript@<7.0.5: 7.0.5
   underscore@<=1.13.7: 1.13.8
-  svgo@>=2.1.0 <2.8.1: 2.8.1
+  svgo@>=2.1.0 <2.8.1: 2.8.2
   immutable@>=5.0.0 <5.1.5: 5.1.5
   flatted@<3.4.2: 3.4.2
   koa@<2.16.4: 2.16.4
@@ -12380,10 +12380,9 @@ packages:
     deprecated: This SVGO version is no longer supported. Upgrade to v2.x.x.
     hasBin: true
 
-  svgo@2.8.1:
-    resolution: {integrity: sha512-BYibJ2/mV0Xv9c49ludbc/oN1MJwJZxikJNi7iLrOMJZpsVhch56/V6oCW8wcRqeBaNLE60C6biLE1GMw43bag==}
+  svgo@2.8.2:
+    resolution: {integrity: sha512-TyzE4NVGLUFy+H/Uy4N6c3G0HEeprsVfge6Lmq+0FdQQ/zqoVYB62IsBZORsiL+o96s6ff/V6/3UQo/C0cgCAA==}
     engines: {node: '>=10.13.0'}
-    deprecated: included some *.test.js files by mistake, the test files were omitted in v2.8.2
     hasBin: true
 
   symbol-tree@3.2.4:
@@ -17054,7 +17053,7 @@ snapshots:
       '@svgr/core': 6.5.1
       cosmiconfig: 7.1.0
       deepmerge: 4.3.1
-      svgo: 2.8.1
+      svgo: 2.8.2
 
   '@svgr/webpack@5.5.0':
     dependencies:
@@ -26083,7 +26082,7 @@ snapshots:
     dependencies:
       postcss: 8.4.31
       postcss-value-parser: 4.2.0
-      svgo: 2.8.1
+      svgo: 2.8.2
 
   postcss-unique-selectors@5.1.1(postcss@8.4.31):
     dependencies:
@@ -27793,7 +27792,7 @@ snapshots:
       unquote: 1.1.1
       util.promisify: 1.0.1
 
-  svgo@2.8.1:
+  svgo@2.8.2:
     dependencies:
       commander: 7.2.0
       css-select: 4.3.0
