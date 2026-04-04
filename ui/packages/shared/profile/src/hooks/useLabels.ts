@@ -50,7 +50,7 @@ export const useLabelNames = (
   const enabled = profileType !== undefined && profileType !== '';
 
   const {data, isLoading, error, refetch} = useGrpcQuery<LabelsResponse>({
-    key: ['labelNames', profileType, match?.join(','), start, end],
+    key: ['labelNames', profileType, match, start, end],
     queryFn: async signal => {
       const request: LabelsRequest = {match: match !== undefined ? match : []};
       if (start !== undefined && end !== undefined) {
