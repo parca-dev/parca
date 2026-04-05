@@ -12,7 +12,7 @@ overrides:
   rollup@>=4.0.0 <4.59.0: 4.59.0
   rollup@<2.80.0: 2.80.0
   handlebars@>=4.0.0 <4.7.9: 4.7.9
-  nth-check@<2.0.1: 2.0.1
+  nth-check@<2.0.1: 2.1.1
   minimatch@>=5.0.0 <5.1.8: 5.1.9
   minimatch@>=9.0.0 <9.0.7: 9.0.9
   basic-ftp@<5.2.0: 5.2.0
@@ -9941,9 +9941,6 @@ packages:
       - worker-farm
       - write-file-atomic
 
-  nth-check@2.0.1:
-    resolution: {integrity: sha512-it1vE95zF6dTT9lBsYbxvqh0Soy4SPowchj0UBGj/V6cTPnXXtQOPUbhZ6CmGzAD/rW22LQK6E96pcdJXk4A4w==}
-
   nth-check@2.1.1:
     resolution: {integrity: sha512-lqjrjmaOoAnWfMmBPL+XNnynZh2+swxiX3WUE0s4yEHI6m+AwrK2UZOimIRl3X/4QctVqS8AiZjFqyOGrMXb/w==}
 
@@ -19577,7 +19574,7 @@ snapshots:
       boolbase: 1.0.0
       css-what: 3.4.2
       domutils: 1.7.0
-      nth-check: 2.0.1
+      nth-check: 2.1.1
 
   css-select@4.3.0:
     dependencies:
@@ -24858,10 +24855,6 @@ snapshots:
       path-key: 4.0.0
 
   npm@6.14.18: {}
-
-  nth-check@2.0.1:
-    dependencies:
-      boolbase: 1.0.0
 
   nth-check@2.1.1:
     dependencies:
