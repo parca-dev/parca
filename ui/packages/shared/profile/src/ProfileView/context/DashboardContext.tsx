@@ -11,10 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {FC, PropsWithChildren, createContext, useContext} from 'react';
+import {FC, PropsWithChildren, createContext, useCallback, useContext} from 'react';
 
-import {useURLState} from '@parca/components';
+import {useQueryState} from 'nuqs';
 
+import {dashboardItemsParser, stringParam} from '../../hooks/urlParsers';
 import {VisualizationType} from '../types/visualization';
 
 interface DashboardContextType {
@@ -27,10 +28,18 @@ interface DashboardContextType {
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
 
 export const DashboardProvider: FC<PropsWithChildren> = ({children}) => {
-  const [dashboardItems, setDashboardItems] = useURLState<string[]>('dashboard_items', {
-    alwaysReturnArray: true,
-  });
-  const [, setSandwichFunctionName] = useURLState<string | undefined>('sandwich_function_name');
+  const [dashboardItems, setRawDashboardItems] = useQueryState(
+    'dashboard_items',
+    dashboardItemsParser
+  );
+
+  const setDashboardItems = useCallback(
+    (items: string[]) => {
+      void setRawDashboardItems(items);
+    },
+    [setRawDashboardItems]
+  );
+  const [, setSandwichFunctionName] = useQueryState('sandwich_function_name', stringParam);
 
   const handleClosePanel = (visualizationType: VisualizationType): void => {
     const newDashboardItems = dashboardItems.filter(item => item !== visualizationType);
@@ -38,7 +47,7 @@ export const DashboardProvider: FC<PropsWithChildren> = ({children}) => {
 
     // Reset sandwich function name when closing sandwich panel
     if (visualizationType === 'sandwich') {
-      setSandwichFunctionName(undefined);
+      void setSandwichFunctionName(null);
     }
   };
 

@@ -14,16 +14,10 @@
 import {Dispatch, SetStateAction, useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import {RpcError} from '@protobuf-ts/runtime-rpc';
+import {useQueryState as useNuqsQueryState} from 'nuqs';
 
 import {ProfileTypesRequest, ProfileTypesResponse, QueryServiceClient} from '@parca/client';
-import {
-  DateTimeRange,
-  IconButton,
-  useGrpcMetadata,
-  useParcaContext,
-  useURLState,
-  useURLStateBatch,
-} from '@parca/components';
+import {DateTimeRange, IconButton, useGrpcMetadata, useParcaContext} from '@parca/components';
 import {CloseIcon} from '@parca/icons';
 import {Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
@@ -36,6 +30,7 @@ import {
 import {QueryControls} from '../QueryControls';
 import {LabelsQueryProvider, useLabelsQueryProvider} from '../contexts/LabelsQueryProvider';
 import {UnifiedLabelsProvider} from '../contexts/UnifiedLabelsContext';
+import {stringParam} from '../hooks/urlParsers';
 import {useLabelNames} from '../hooks/useLabels';
 import {useQueryState} from '../hooks/useQueryState';
 import useGrpcQuery from '../useGrpcQuery';
@@ -118,8 +113,10 @@ const ProfileSelector = ({
   onSearchHook,
 }: ProfileSelectorProps): JSX.Element => {
   const {externalProfilerComponent, additionalMetricsGraph} = useParcaContext();
-  const [queryBrowserMode, setQueryBrowserMode] = useURLState('query_browser_mode');
-  const batchUpdates = useURLStateBatch();
+  const [queryBrowserMode, setQueryBrowserMode] = useNuqsQueryState(
+    'query_browser_mode',
+    stringParam
+  );
 
   const profileFilterDefaults = externalProfilerComponent?.profileFilterDefaults as
     | ProfileFilter[]
@@ -222,27 +219,25 @@ const ProfileSelector = ({
   const selectedProfileName = query.profileName();
 
   const setQueryExpression = (updateTs = false): void => {
-    batchUpdates(() => {
-      if (onSearchHook != null) {
-        onSearchHook();
-      }
-      // When updateTs is true, re-evaluate the time range to current values
-      if (updateTs) {
-        // Force re-evaluation of time range (important for relative ranges like "last 15 minutes")
-        const currentFrom = timeRangeSelection.getFromMs(true);
-        const currentTo = timeRangeSelection.getToMs(true);
-        const currentRangeKey = timeRangeSelection.getRangeKey();
-        // Commit with refreshed time range
-        commitDraft({
-          from: currentFrom,
-          to: currentTo,
-          timeSelection: currentRangeKey,
-        });
-      } else {
-        // Commit the draft with existing values
-        commitDraft();
-      }
-    });
+    if (onSearchHook != null) {
+      onSearchHook();
+    }
+    // When updateTs is true, re-evaluate the time range to current values
+    if (updateTs) {
+      // Force re-evaluation of time range (important for relative ranges like "last 15 minutes")
+      const currentFrom = timeRangeSelection.getFromMs(true);
+      const currentTo = timeRangeSelection.getToMs(true);
+      const currentRangeKey = timeRangeSelection.getRangeKey();
+      // Commit with refreshed time range
+      commitDraft({
+        from: currentFrom,
+        to: currentTo,
+        timeSelection: currentRangeKey,
+      });
+    } else {
+      // Commit the draft with existing values
+      commitDraft();
+    }
   };
 
   const setMatchersString = (matchers: string): void => {

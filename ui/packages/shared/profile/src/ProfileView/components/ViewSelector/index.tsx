@@ -13,9 +13,12 @@
 
 import {ReactNode} from 'react';
 
-import {useParcaContext, useURLState, useURLStateBatch} from '@parca/components';
+import {useQueryState} from 'nuqs';
+
+import {useParcaContext} from '@parca/components';
 
 import {ProfileSource} from '../../../ProfileSource';
+import {dashboardItemsParser, stringParam} from '../../../hooks/urlParsers';
 import Dropdown, {DropdownElement, InnerAction} from './Dropdown';
 
 interface Props {
@@ -23,15 +26,12 @@ interface Props {
 }
 
 const ViewSelector = ({profileSource}: Props): JSX.Element => {
-  const [dashboardItems = ['flamegraph'], setDashboardItems] = useURLState<string[]>(
+  const [dashboardItems, setDashboardItems] = useQueryState(
     'dashboard_items',
-    {
-      alwaysReturnArray: true,
-    }
+    dashboardItemsParser
   );
-  const [, setSandwichFunctionName] = useURLState<string | undefined>('sandwich_function_name');
+  const [, setSandwichFunctionName] = useQueryState('sandwich_function_name', stringParam);
   const {enableSourcesView, enableSandwichView} = useParcaContext();
-  const batchUpdates = useURLStateBatch();
 
   const allItems: Array<{
     key: string;
@@ -125,18 +125,13 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
           : 'Add Panel',
       onClick: () => {
         if (item.canBeSelected) {
-          setDashboardItems([...dashboardItems, item.key]);
+          void setDashboardItems([...dashboardItems, item.key]);
         } else {
           const newDashboardItems = dashboardItems.filter(v => v !== item.key);
 
-          // Batch updates when removing sandwich panel to combine both URL changes
+          void setDashboardItems(newDashboardItems);
           if (item.key === 'sandwich') {
-            batchUpdates(() => {
-              setDashboardItems(newDashboardItems);
-              setSandwichFunctionName(undefined);
-            });
-          } else {
-            setDashboardItems(newDashboardItems);
+            void setSandwichFunctionName(null);
           }
         }
       },
@@ -156,18 +151,18 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
     const isOnlyChart = dashboardItems.length === 1;
 
     if (isOnlyChart && value === 'sandwich') {
-      setDashboardItems([...dashboardItems, value]);
+      void setDashboardItems([...dashboardItems, value]);
       return;
     }
 
     if (isOnlyChart) {
-      setDashboardItems([value]);
+      void setDashboardItems([value]);
       return;
     }
 
     const newDashboardItems = [dashboardItems[0], value];
 
-    setDashboardItems(newDashboardItems);
+    void setDashboardItems(newDashboardItems);
   };
 
   return (

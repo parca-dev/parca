@@ -16,14 +16,10 @@ import React, {useCallback, useEffect, useMemo, useRef} from 'react';
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 import {tableFromIPC} from '@uwdata/flechette';
 import {AnimatePresence, motion} from 'framer-motion';
+import {useQueryState} from 'nuqs';
 import {useContextMenu} from 'react-contexify';
 
-import {
-  Table as TableComponent,
-  TableSkeleton,
-  useParcaContext,
-  useURLState,
-} from '@parca/components';
+import {Table as TableComponent, TableSkeleton, useParcaContext} from '@parca/components';
 import {useCurrentColorProfile} from '@parca/hooks';
 import {ProfileType} from '@parca/parser';
 
@@ -31,6 +27,7 @@ import useMappingList, {
   useFilenamesList,
 } from '../ProfileFlameGraph/FlameGraphArrow/useMappingList';
 import {useProfileViewContext} from '../ProfileView/context/ProfileViewContext';
+import {colorByParser, dashboardItemsParser, stringParam} from '../hooks/urlParsers';
 import {alignedUint8Array} from '../utils';
 import TableContextMenuWrapper, {TableContextMenuWrapperRef} from './TableContextMenuWrapper';
 import {useColorManagement} from './hooks/useColorManagement';
@@ -76,11 +73,9 @@ export const Table = React.memo(function Table({
   error,
 }: TableProps): React.JSX.Element {
   const currentColorProfile = useCurrentColorProfile();
-  const [dashboardItems] = useURLState<string[]>('dashboard_items', {
-    alwaysReturnArray: true,
-  });
-  const [_, setSandwichFunctionName] = useURLState<string | undefined>('sandwich_function_name');
-  const [colorBy, setColorBy] = useURLState('color_by');
+  const [dashboardItems] = useQueryState('dashboard_items', dashboardItemsParser);
+  const [_, setSandwichFunctionName] = useQueryState('sandwich_function_name', stringParam);
+  const [colorBy, setColorBy] = useQueryState('color_by', colorByParser);
   const {isDarkMode} = useParcaContext();
   const {compareMode} = useProfileViewContext();
 
@@ -108,7 +103,7 @@ export const Table = React.memo(function Table({
   // If there is only one mapping file, we want to color by filename by default.
   useEffect(() => {
     if (mappingsListCount === 1 && colorBy !== 'filename') {
-      setColorBy('filename');
+      void setColorBy('filename');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mappingsListCount]);
@@ -118,7 +113,7 @@ export const Table = React.memo(function Table({
     currentColorProfile,
     mappingsList,
     filenamesList,
-    colorBy: colorBy as string,
+    colorBy,
   });
 
   unit = useMemo(() => unit ?? profileType?.sampleUnit ?? '', [unit, profileType?.sampleUnit]);
@@ -135,7 +130,7 @@ export const Table = React.memo(function Table({
   const selectSpan = useCallback(
     (span: string): void => {
       if (!dashboardItems.includes('flamegraph')) {
-        setSandwichFunctionName(span.trim());
+        void setSandwichFunctionName(span.trim());
       }
     },
     [setSandwichFunctionName, dashboardItems]
@@ -191,13 +186,7 @@ export const Table = React.memo(function Table({
       return {
         id: i,
         colorProperty: {
-          color: getRowColor(
-            colorByColors,
-            mappingFileColumn,
-            i,
-            functionFileNameColumn,
-            colorBy as string
-          ),
+          color: getRowColor(colorByColors, mappingFileColumn, i, functionFileNameColumn, colorBy),
           mappingFile,
         },
         name: RowName(mappingFileColumn, locationAddressColumn, functionNameColumn, i),

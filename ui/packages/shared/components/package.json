@@ -36,6 +36,7 @@
     "d3-selection": "3.0.0",
     "graphviz-wasm": "3.0.2",
     "lodash": "^4.17.21",
+    "nuqs": "^2.4.1",
     "moment-timezone": "^0.6.0",
     "react-datepicker": "6.9.0",
     "react-popper": "^2.3.0",

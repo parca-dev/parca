@@ -39,10 +39,10 @@ interface Props {
   loading?: boolean;
   cpus: LabelSet[];
   data: DataPoint[][];
-  selectedTimeframe?: {
+  selectedTimeframe: {
     labels: LabelSet;
     bounds: NumberDuo;
-  };
+  } | null;
   onSelectedTimeframe: (labels: LabelSet, bounds: NumberDuo | undefined) => void;
   width?: number;
   bounds: NumberDuo;

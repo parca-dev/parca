@@ -13,15 +13,10 @@
 
 import {useEffect, useMemo, useState} from 'react';
 
+import {useQueryState} from 'nuqs';
+
 import {QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
-import {
-  NumberParser,
-  NumberSerializer,
-  useGrpcMetadata,
-  useParcaContext,
-  useURLState,
-  useURLStateCustom,
-} from '@parca/components';
+import {useGrpcMetadata, useParcaContext} from '@parca/components';
 import {saveAsBlob} from '@parca/utilities';
 
 import {validateFlameChartQuery} from './ProfileFlameGraph';
@@ -35,6 +30,14 @@ import {MergedProfileSource, ProfileSource} from './ProfileSource';
 import {ProfileView} from './ProfileView';
 import {useProfileFilters} from './ProfileView/components/ProfileFilters/useProfileFilters';
 import type {SamplesSeries} from './ProfileView/types/visualization';
+import {
+  dashboardItemsParser,
+  flamechartDimensionParser,
+  groupByParser,
+  intParam,
+  invertCallStackParser,
+  stringParam,
+} from './hooks/urlParsers';
 import {useQuery} from './useQuery';
 import {downloadPprof} from './utils';
 
@@ -51,22 +54,17 @@ export const ProfileViewWithData = ({
   showVisualizationSelector,
 }: ProfileViewWithDataProps): JSX.Element => {
   const metadata = useGrpcMetadata();
-  const [dashboardItems, setDashboardItems] = useURLState<string[]>('dashboard_items', {
-    alwaysReturnArray: true,
-  });
-  const [sourceBuildID] = useURLState<string>('source_buildid');
-  const [sourceFilename] = useURLState<string>('source_filename');
-  const [groupBy] = useURLState<string[]>('group_by', {
-    defaultValue: [FIELD_FUNCTION_NAME],
-    alwaysReturnArray: true,
-  });
-  const [sandwichFunctionName] = useURLState<string | undefined>('sandwich_function_name');
-  const [flamechartDimension] = useURLState<string[]>('flamechart_dimension', {
-    alwaysReturnArray: true,
-  });
+  const [dashboardItems, setDashboardItems] = useQueryState(
+    'dashboard_items',
+    dashboardItemsParser
+  );
+  const [sourceBuildID] = useQueryState('source_buildid', stringParam);
+  const [sourceFilename] = useQueryState('source_filename', stringParam);
+  const [groupBy] = useQueryState('group_by', groupByParser.withDefault([FIELD_FUNCTION_NAME]));
+  const [sandwichFunctionName] = useQueryState('sandwich_function_name', stringParam);
+  const [flamechartDimension] = useQueryState('flamechart_dimension', flamechartDimensionParser);
 
-  const [invertStack] = useURLState('invert_call_stack');
-  const invertCallStack = invertStack === 'true';
+  const [invertCallStack] = useQueryState('invert_call_stack', invertCallStackParser);
 
   const [pprofDownloading, setPprofDownloading] = useState<boolean>(false);
 
@@ -88,7 +86,7 @@ export const ProfileViewWithData = ({
     if (newDashboardItems.length === 0) {
       newDashboardItems = ['flamegraph'];
     }
-    setDashboardItems(newDashboardItems);
+    void setDashboardItems(newDashboardItems);
   }, [profileSource, dashboardItems, setDashboardItems]);
 
   const nodeTrimThreshold = useMemo(() => {
@@ -108,7 +106,7 @@ export const ProfileViewWithData = ({
     skip: !dashboardItems.includes('flamegraph'),
     nodeTrimThreshold,
     groupBy,
-    invertCallStack,
+    invertCallStack: invertCallStack ?? false,
     protoFilters,
   });
 
@@ -132,11 +130,10 @@ export const ProfileViewWithData = ({
   );
 
   // Samples step count: 2px per data point for finer granularity in strips
-  const [samplesStepCount] = useURLStateCustom<number>('samples_step_count', {
-    defaultValue: String(getStepCountFromScreenWidth(2)),
-    parse: NumberParser,
-    stringify: NumberSerializer,
-  });
+  const [samplesStepCount] = useQueryState(
+    'samples_step_count',
+    intParam.withDefault(getStepCountFromScreenWidth(2))
+  );
 
   const {
     isLoading: samplesLoading,
@@ -201,8 +198,8 @@ export const ProfileViewWithData = ({
     error: sourceError,
   } = useQuery(queryClient, profileSource, QueryRequest_ReportType.SOURCE, {
     skip: !dashboardItems.includes('source'),
-    sourceBuildID,
-    sourceFilename,
+    sourceBuildID: sourceBuildID ?? undefined,
+    sourceFilename: sourceFilename ?? undefined,
     protoFilters,
   });
 
@@ -214,8 +211,8 @@ export const ProfileViewWithData = ({
     nodeTrimThreshold,
     groupBy: [FIELD_FUNCTION_NAME],
     invertCallStack: true,
-    sandwichByFunction: sandwichFunctionName,
-    skip: sandwichFunctionName === undefined && !dashboardItems.includes('sandwich'),
+    sandwichByFunction: sandwichFunctionName ?? undefined,
+    skip: sandwichFunctionName == null && !dashboardItems.includes('sandwich'),
     protoFilters,
   });
 
@@ -227,8 +224,8 @@ export const ProfileViewWithData = ({
     nodeTrimThreshold,
     groupBy: [FIELD_FUNCTION_NAME],
     invertCallStack: false,
-    sandwichByFunction: sandwichFunctionName,
-    skip: sandwichFunctionName === undefined && !dashboardItems.includes('sandwich'),
+    sandwichByFunction: sandwichFunctionName ?? undefined,
+    skip: sandwichFunctionName == null && !dashboardItems.includes('sandwich'),
     protoFilters,
   });
 

@@ -15,13 +15,14 @@ import React, {useMemo} from 'react';
 
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
+import {useQueryState} from 'nuqs';
 
-import {useURLState} from '@parca/components';
 import {USER_PREFERENCES, useCurrentColorProfile, useUserPreference} from '@parca/hooks';
 import {EVERYTHING_ELSE, selectDarkMode, useAppSelector} from '@parca/store';
 
 import {getMappingColors} from '../../ProfileFlameGraph/FlameGraphArrow';
 import useMappingList from '../../ProfileFlameGraph/FlameGraphArrow/useMappingList';
+import {colorByParser} from '../../hooks/urlParsers';
 import {useProfileFilters} from './ProfileFilters/useProfileFilters';
 
 interface Props {
@@ -37,9 +38,7 @@ const ColorStackLegend = ({mappings, compareMode = false, loading}: Props): Reac
     USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
   );
 
-  const [colorByValue, _] = useURLState('color_by');
-
-  const colorBy = colorByValue === 'binary' || colorByValue === undefined ? 'binary' : 'filename';
+  const [colorBy] = useQueryState('color_by', colorByParser);
 
   const {appliedFilters, removeExcludeBinary, excludeBinary} = useProfileFilters();
 

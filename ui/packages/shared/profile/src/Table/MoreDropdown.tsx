@@ -13,23 +13,23 @@
 
 import {Menu} from '@headlessui/react';
 import {Icon} from '@iconify/react';
+import {useQueryState} from 'nuqs';
 
-import {useParcaContext, useURLState, useURLStateBatch} from '@parca/components';
+import {useParcaContext} from '@parca/components';
+
+import {dashboardItemsParser, stringParam} from '../hooks/urlParsers';
 
 const MoreDropdown = ({functionName}: {functionName: string}): React.JSX.Element | null => {
-  const [_, setSandwichFunctionName] = useURLState<string | undefined>('sandwich_function_name');
-  const [dashboardItems, setDashboardItems] = useURLState<string[]>('dashboard_items', {
-    alwaysReturnArray: true,
-  });
+  const [_, setSandwichFunctionName] = useQueryState('sandwich_function_name', stringParam);
+  const [dashboardItems, setDashboardItems] = useQueryState(
+    'dashboard_items',
+    dashboardItemsParser
+  );
   const {enableSandwichView} = useParcaContext();
-  const batchUpdates = useURLStateBatch();
 
   const onSandwichViewSelect = (): void => {
-    // Batch updates to combine setSandwichFunctionName + setDashboardItems into single URL navigation
-    batchUpdates(() => {
-      setSandwichFunctionName(functionName.trim());
-      setDashboardItems([...dashboardItems, 'sandwich']);
-    });
+    void setSandwichFunctionName(functionName.trim());
+    void setDashboardItems([...dashboardItems, 'sandwich']);
   };
 
   const menuItems: Array<{label: string; action: () => void}> = [];

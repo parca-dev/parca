@@ -12,9 +12,10 @@
 // limitations under the License.
 
 import {Table} from '@uwdata/flechette';
+import {useQueryState} from 'nuqs';
 
 import {QueryRequest_ReportType} from '@parca/client';
-import {useParcaContext, useURLState} from '@parca/components';
+import {useParcaContext} from '@parca/components';
 
 import {
   FIELD_FUNCTION_FILE_NAME,
@@ -30,6 +31,7 @@ import {
 import {arrowToString} from '../../ProfileFlameGraph/FlameGraphArrow/utils';
 import {ProfileSource} from '../../ProfileSource';
 import {useProfileViewContext} from '../../ProfileView/context/ProfileViewContext';
+import {dashboardItemsParser, stringParam} from '../../hooks/urlParsers';
 import {useQuery} from '../../useQuery';
 
 interface Props {
@@ -107,28 +109,26 @@ export const useGraphTooltipMetaInfo = ({table, row}: Props): GraphTooltipMetaIn
     ])
     .filter(value => value[1] !== '') as Array<[string, string]>;
 
-  const [dashboardItems, setDashboardItems] = useURLState<string[]>('dashboard_items', {
-    alwaysReturnArray: true,
-  });
+  const [dashboardItems, setDashboardItems] = useQueryState(
+    'dashboard_items',
+    dashboardItemsParser
+  );
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [unusedBuildId, setSourceBuildId] = useURLState('source_buildid');
+  const [_unusedBuildId, setSourceBuildId] = useQueryState('source_buildid', stringParam);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [unusedFilename, setSourceFilename] = useURLState('source_filename');
+  const [_unusedFilename, setSourceFilename] = useQueryState('source_filename', stringParam);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [unusedLine, setSourceLine] = useURLState('source_line');
+  const [_unusedLine, setSourceLine] = useQueryState('source_line', stringParam);
 
   const openFile = (): void => {
-    setDashboardItems([dashboardItems[0], 'source']);
+    void setDashboardItems([dashboardItems[0], 'source']);
     if (mappingBuildID != null) {
-      setSourceBuildId(mappingBuildID);
+      void setSourceBuildId(mappingBuildID);
     }
 
-    setSourceFilename(functionFilename);
+    void setSourceFilename(functionFilename);
     if (lineNumber !== undefined) {
-      setSourceLine(lineNumber.toString());
+      void setSourceLine(lineNumber.toString());
     }
   };
 
