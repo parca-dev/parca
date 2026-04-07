@@ -71,7 +71,7 @@
   "scripts": {
     "test": "jest --coverage --config ../../../jest.config.js ./src/*",
     "prepublish": "pnpm run build",
-    "build": "tsc && pnpm run compile:styles",
+    "build": "babel src --out-dir dist --config-file ../../../babel.react-compiler.cjs --extensions .ts,.tsx && tsc --emitDeclarationOnly && pnpm run compile:styles",
     "build-swc": "swc ./src -d dist --copy-files && pnpm run compile:styles",
     "watch": "tsc-watch --onCompilationComplete 'pnpm run compile:styles'",
     "compile:styles": "tailwindcss -o dist/styles.css --minify"
