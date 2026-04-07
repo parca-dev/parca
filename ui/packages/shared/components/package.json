@@ -6,7 +6,7 @@
   "scripts": {
     "test": "jest --coverage --config ../../../jest.config.js ./src/*",
     "prepublish": "pnpm run build",
-    "build": "babel src --out-dir dist --config-file ../../../babel.react-compiler.cjs --extensions .ts,.tsx && tsc --emitDeclarationOnly && tailwindcss -o dist/styles.css --minify",
+    "build": "babel src --out-dir dist --config-file ../../../babel.react-compiler.cjs --extensions .ts,.tsx --copy-files --no-copy-ignored && tsc --emitDeclarationOnly && tailwindcss -o dist/styles.css --minify",
     "build-swc": "swc ./src -d dist --copy-files && tailwindcss -o dist/styles.css --minify",
     "watch": "tsc-watch --onCompilationComplete 'tailwindcss -o dist/styles.css'"
   },
