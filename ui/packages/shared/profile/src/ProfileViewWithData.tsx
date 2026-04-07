@@ -46,12 +46,14 @@ interface ProfileViewWithDataProps {
   profileSource: ProfileSource;
   compare?: boolean;
   showVisualizationSelector?: boolean;
+  onSwitchToFifteenMinutes?: () => void;
 }
 
 export const ProfileViewWithData = ({
   queryClient,
   profileSource,
   showVisualizationSelector,
+  onSwitchToFifteenMinutes,
 }: ProfileViewWithDataProps): JSX.Element => {
   const metadata = useGrpcMetadata();
   const [dashboardItems, setDashboardItems] = useQueryState(
@@ -375,6 +377,7 @@ export const ProfileViewWithData = ({
       onDownloadPProf={() => void downloadPProfClick()}
       pprofDownloading={pprofDownloading}
       showVisualizationSelector={showVisualizationSelector}
+      onSwitchToFifteenMinutes={onSwitchToFifteenMinutes}
     />
   );
 };

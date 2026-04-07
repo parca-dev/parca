@@ -16,12 +16,14 @@ import {useEffect, useMemo, useRef} from 'react';
 import {createParser, useQueryState} from 'nuqs';
 
 import {LabelSet, QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
+import {Button, useParcaContext} from '@parca/components';
 import {Matcher, MatcherTypes, ProfileType, Query} from '@parca/parser';
 import {TimeUnits, formatDate, formatDuration} from '@parca/utilities';
 
 import ProfileFlameGraph, {validateFlameChartQuery} from '../ProfileFlameGraph';
 import {boundsFromProfileSource} from '../ProfileFlameGraph/FlameGraphArrow/utils';
 import {MergedProfileSource, ProfileSource, timeFormat} from '../ProfileSource';
+import {useProfileFilters} from '../ProfileView/components/ProfileFilters/useProfileFilters';
 import type {SamplesData} from '../ProfileView/types/visualization';
 import {flamechartDimensionParser} from '../hooks/urlParsers';
 import {useQuery} from '../useQuery';
@@ -72,6 +74,7 @@ interface ProfileFlameChartProps {
   isHalfScreen: boolean;
   metadataMappingFiles?: string[];
   metadataLoading?: boolean;
+  onSwitchToFifteenMinutes?: () => void;
 }
 
 // Helper to create a filtered profile source with narrowed time bounds
@@ -114,7 +117,10 @@ export const ProfileFlameChart = ({
   isHalfScreen,
   metadataMappingFiles,
   metadataLoading,
+  onSwitchToFifteenMinutes,
 }: ProfileFlameChartProps): JSX.Element => {
+  const {enableFlamechartFiltering} = useParcaContext();
+  const {protoFilters} = useProfileFilters();
   const zoomControlsRef = useRef<HTMLDivElement>(null);
 
   const [selectedTimeframe, setSelectedTimeframe] = useQueryState(
@@ -174,6 +180,7 @@ export const ProfileFlameChart = ({
     QueryRequest_ReportType.FLAMECHART,
     {
       skip: selectedTimeframe == null || filteredProfileSource == null,
+      ...(enableFlamechartFiltering === true ? {protoFilters} : {}),
     }
   );
 
@@ -200,9 +207,27 @@ export const ProfileFlameChart = ({
     return {cpus, data, stepMs};
   }, [samplesData?.series, samplesData?.stepMs]);
 
-  const {isValid, isNonDelta} = validateFlameChartQuery(profileSource as MergedProfileSource);
+  const {isValid, isNonDelta, isDurationTooLong} = validateFlameChartQuery(
+    profileSource as MergedProfileSource
+  );
 
   if (!isValid) {
+    if (isDurationTooLong) {
+      return (
+        <div className="flex flex-col justify-center items-center p-10 text-center gap-4 text-sm">
+          <span>
+            Flame chart is unavailable for queries longer than 15 minutes. Try reducing the time
+            range to 15 minutes or selecting a point in the metrics graph.
+          </span>
+          {onSwitchToFifteenMinutes != null && (
+            <Button variant="primary" onClick={onSwitchToFifteenMinutes}>
+              Switch to last 15 minutes
+            </Button>
+          )}
+        </div>
+      );
+    }
+
     const message = isNonDelta
       ? 'To use the Flame chart, please switch to a Delta profile.'
       : 'Flame chart is unavailable for this query.';

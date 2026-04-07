@@ -100,6 +100,7 @@ interface Props {
   checkDebuginfoStatusHandler?: (buildId: string) => void;
   flamechartHelpText?: ReactNode;
   additionalMetricsGraph?: (props: AdditionalMetricsGraphProps) => ReactNode;
+  enableFlamechartFiltering?: boolean;
 }
 
 export const defaultValue: Props = {

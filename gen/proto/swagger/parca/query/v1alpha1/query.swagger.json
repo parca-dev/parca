@@ -172,7 +172,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/parcaqueryv1alpha1QueryResponse"
+              "$ref": "#/definitions/v1alpha1QueryResponse"
             }
           },
           "default": {
@@ -616,7 +616,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/parcaqueryv1alpha1ProfileTypesResponse"
+              "$ref": "#/definitions/v1alpha1ProfileTypesResponse"
             }
           },
           "default": {
@@ -669,69 +669,7 @@
       "description": "- REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED: REPORT_TYPE_FLAMEGRAPH_UNSPECIFIED unspecified\n - REPORT_TYPE_PPROF: REPORT_TYPE_PPROF unspecified\n - REPORT_TYPE_TOP: REPORT_TYPE_TOP unspecified\n - REPORT_TYPE_CALLGRAPH: REPORT_TYPE_CALLGRAPH unspecified\n - REPORT_TYPE_FLAMEGRAPH_TABLE: REPORT_TYPE_FLAMEGRAPH_TABLE unspecified\n - REPORT_TYPE_FLAMEGRAPH_ARROW: REPORT_TYPE_FLAMEGRAPH_ARROW unspecified\n - REPORT_TYPE_SOURCE: REPORT_TYPE_SOURCE contains source code annotated with profiling information\n - REPORT_TYPE_TABLE_ARROW: REPORT_TYPE_TABLE_ARROW unspecified\n - REPORT_TYPE_PROFILE_METADATA: REPORT_TYPE_PROFILE_METADATA contains metadata about the profile i.e. binaries, labels\n - REPORT_TYPE_FLAMECHART: REPORT_TYPE_FLAMECHART contains flamechart representation of the report",
       "title": "ReportType is the type of report to return"
     },
-    "metastorev1alpha1Function": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "id is the unique identifier for the function."
-        },
-        "startLine": {
-          "type": "string",
-          "format": "int64",
-          "description": "start_line is the line number in the source file of the first line of the function."
-        },
-        "name": {
-          "type": "string",
-          "description": "name is the name of the function."
-        },
-        "systemName": {
-          "type": "string",
-          "description": "system_name describes the name of the function, as identified by the\nsystem. For instance, it can be a C++ mangled name."
-        },
-        "filename": {
-          "type": "string",
-          "description": "filename is the name of the source file of the function."
-        },
-        "nameStringIndex": {
-          "type": "integer",
-          "format": "int64",
-          "description": "name_string_index is the index in the string table to the name associated with the function."
-        },
-        "systemNameStringIndex": {
-          "type": "integer",
-          "format": "int64",
-          "description": "system_name_string_index is the index in the string table to the system_name associated with the function."
-        },
-        "filenameStringIndex": {
-          "type": "integer",
-          "format": "int64",
-          "description": "filename_string_index is the index in the string table to the filename associated with the function."
-        }
-      },
-      "description": "Function describes metadata of a source code function."
-    },
-    "metastorev1alpha1Line": {
-      "type": "object",
-      "properties": {
-        "functionId": {
-          "type": "string",
-          "description": "function_id is the ID of the function."
-        },
-        "line": {
-          "type": "string",
-          "format": "int64",
-          "description": "line is the line number in the source file of the referenced function."
-        },
-        "functionIndex": {
-          "type": "integer",
-          "format": "int64",
-          "description": "function_index is the index in the functions table."
-        }
-      },
-      "description": "Line describes a source code function and its line number."
-    },
-    "metastorev1alpha1Location": {
+    "metastoreV1alpha1Location": {
       "type": "object",
       "properties": {
         "id": {
@@ -755,7 +693,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/metastorev1alpha1Line"
+            "$ref": "#/definitions/v1alpha1Line"
           },
           "description": "lines are the call frames represented by this location. Multiple lines\nindicate they have been inlined."
         },
@@ -767,192 +705,7 @@
       },
       "description": "Location describes a single location of a stack traces."
     },
-    "metastorev1alpha1Mapping": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "id is the unique identifier for the mapping."
-        },
-        "start": {
-          "type": "string",
-          "format": "uint64",
-          "description": "start is the start address of the mapping."
-        },
-        "limit": {
-          "type": "string",
-          "format": "uint64",
-          "description": "limit is the length of the address space of the mapping."
-        },
-        "offset": {
-          "type": "string",
-          "format": "uint64",
-          "description": "offset in the binary that corresponds to the first mapped address."
-        },
-        "file": {
-          "type": "string",
-          "description": "file is the name of the file associated with the mapping."
-        },
-        "buildId": {
-          "type": "string",
-          "description": "build_id is the build ID of the mapping."
-        },
-        "hasFunctions": {
-          "type": "boolean",
-          "description": "has_functions indicates whether the mapping has associated functions."
-        },
-        "hasFilenames": {
-          "type": "boolean",
-          "description": "has_filenames indicates whether the mapping has associated filenames."
-        },
-        "hasLineNumbers": {
-          "type": "boolean",
-          "description": "has_line_numbers indicates whether the mapping has associated line numbers."
-        },
-        "hasInlineFrames": {
-          "type": "boolean",
-          "description": "has_inline_frames indicates whether the mapping has associated inline frames."
-        },
-        "fileStringIndex": {
-          "type": "integer",
-          "format": "int64",
-          "description": "fileStringIndex is the index in the string table to the file name associated with the mapping."
-        },
-        "buildIdStringIndex": {
-          "type": "integer",
-          "format": "int64",
-          "description": "build_id_string_index is the index in the string table to the build ID of the mapping."
-        }
-      },
-      "description": "Mapping describes a memory mapping."
-    },
-    "parcaqueryv1alpha1ProfileTypesResponse": {
-      "type": "object",
-      "properties": {
-        "types": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/v1alpha1ProfileType"
-          },
-          "description": "types is the list of available profile types."
-        }
-      },
-      "description": "ProfileTypesResponse is the response to retrieve the list of available profile types."
-    },
-    "parcaqueryv1alpha1QueryRequest": {
-      "type": "object",
-      "properties": {
-        "mode": {
-          "$ref": "#/definitions/v1alpha1QueryRequestMode",
-          "title": "mode indicates the type of query performed"
-        },
-        "diff": {
-          "$ref": "#/definitions/v1alpha1DiffProfile",
-          "title": "diff contains the diff query options"
-        },
-        "merge": {
-          "$ref": "#/definitions/v1alpha1MergeProfile",
-          "title": "merge contains the merge query options"
-        },
-        "single": {
-          "$ref": "#/definitions/v1alpha1SingleProfile",
-          "title": "single contains the single query options"
-        },
-        "reportType": {
-          "$ref": "#/definitions/QueryRequestReportType",
-          "title": "report_type is the type of report to return"
-        },
-        "filterQuery": {
-          "type": "string",
-          "title": "filter_query is the query string to filter the profile samples"
-        },
-        "nodeTrimThreshold": {
-          "type": "number",
-          "format": "float",
-          "title": "node_trim_threshold is the threshold % where the nodes with Value less than this will be removed from the report"
-        },
-        "groupBy": {
-          "$ref": "#/definitions/v1alpha1GroupBy",
-          "title": "group_by indicates the fields to group by"
-        },
-        "sourceReference": {
-          "$ref": "#/definitions/v1alpha1SourceReference",
-          "title": "source information about the source requested, required if source report is requested"
-        },
-        "runtimeFilter": {
-          "$ref": "#/definitions/v1alpha1RuntimeFilter",
-          "title": "which runtime frames to filter out, often interpreter frames like python or ruby are not super useful by default"
-        },
-        "invertCallStack": {
-          "type": "boolean",
-          "title": "invert_call_stack inverts the call stacks in the flamegraph"
-        },
-        "filter": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/v1alpha1Filter"
-          },
-          "title": "a set of filter to apply to the query request"
-        },
-        "sandwichByFunction": {
-          "type": "string",
-          "title": "sandwich_by_function is a function name to use for sandwich view functionality"
-        }
-      },
-      "title": "QueryRequest is a request for a profile query"
-    },
-    "parcaqueryv1alpha1QueryResponse": {
-      "type": "object",
-      "properties": {
-        "flamegraph": {
-          "$ref": "#/definitions/v1alpha1Flamegraph",
-          "title": "flamegraph is a flamegraph representation of the report"
-        },
-        "pprof": {
-          "type": "string",
-          "format": "byte",
-          "title": "pprof is a pprof profile as compressed bytes"
-        },
-        "top": {
-          "$ref": "#/definitions/v1alpha1Top",
-          "title": "top is a top list representation of the report"
-        },
-        "callgraph": {
-          "$ref": "#/definitions/v1alpha1Callgraph",
-          "title": "callgraph is a callgraph nodes and edges representation of the report"
-        },
-        "flamegraphArrow": {
-          "$ref": "#/definitions/v1alpha1FlamegraphArrow",
-          "title": "flamegraph_arrow is a flamegraph encoded as a arrow record"
-        },
-        "source": {
-          "$ref": "#/definitions/queryv1alpha1Source",
-          "title": "source is the source report type result"
-        },
-        "tableArrow": {
-          "$ref": "#/definitions/v1alpha1TableArrow",
-          "title": "table_arrow is a table encoded as a arrow record"
-        },
-        "profileMetadata": {
-          "$ref": "#/definitions/v1alpha1ProfileMetadata",
-          "title": "profile_metadata contains metadata about the profile i.e. binaries, labels"
-        },
-        "total": {
-          "type": "string",
-          "format": "int64",
-          "description": "total is the total number of samples shown in the report."
-        },
-        "filtered": {
-          "type": "string",
-          "format": "int64",
-          "description": "filtered is the number of samples filtered out of the report."
-        }
-      },
-      "title": "QueryResponse is the returned report for the given query"
-    },
-    "profilestorev1alpha1Label": {
+    "profilestoreV1alpha1Label": {
       "type": "object",
       "properties": {
         "name": {
@@ -974,39 +727,6 @@
         }
       },
       "additionalProperties": {}
-    },
-    "queryv1alpha1Source": {
-      "type": "object",
-      "properties": {
-        "record": {
-          "type": "string",
-          "format": "byte",
-          "description": "An arrow record that contains a row per source code line with value and diff columns for flat and cumulative."
-        },
-        "source": {
-          "type": "string",
-          "description": "The actual source file content."
-        },
-        "unit": {
-          "type": "string",
-          "description": "The unit of the values in the record."
-        }
-      },
-      "description": "Source is the result of the source report type."
-    },
-    "queryv1alpha1ValueType": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "type": "string",
-          "title": "type is the type of the value"
-        },
-        "unit": {
-          "type": "string",
-          "title": "unit is the unit of the value"
-        }
-      },
-      "title": "ValueType represents a value, including its type and unit"
     },
     "rpcStatus": {
       "type": "object",
@@ -1122,19 +842,19 @@
       "type": "object",
       "properties": {
         "location": {
-          "$ref": "#/definitions/metastorev1alpha1Location",
+          "$ref": "#/definitions/metastoreV1alpha1Location",
           "title": "location is the location for the code"
         },
         "mapping": {
-          "$ref": "#/definitions/metastorev1alpha1Mapping",
+          "$ref": "#/definitions/v1alpha1Mapping",
           "title": "mapping is the mapping into code"
         },
         "function": {
-          "$ref": "#/definitions/metastorev1alpha1Function",
+          "$ref": "#/definitions/v1alpha1Function",
           "title": "function is the function information"
         },
         "line": {
-          "$ref": "#/definitions/metastorev1alpha1Line",
+          "$ref": "#/definitions/v1alpha1Line",
           "title": "line is the line location"
         }
       },
@@ -1234,7 +954,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/metastorev1alpha1Location"
+            "$ref": "#/definitions/metastoreV1alpha1Location"
           },
           "description": "locations deduplicated by their ID to be referenced by nodes."
         },
@@ -1242,7 +962,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/metastorev1alpha1Mapping"
+            "$ref": "#/definitions/v1alpha1Mapping"
           },
           "description": "mapping deduplicated by their ID to be referenced by nodes."
         },
@@ -1250,7 +970,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/metastorev1alpha1Function"
+            "$ref": "#/definitions/v1alpha1Function"
           },
           "description": "function deduplicated by their ID to be referenced by nodes."
         },
@@ -1324,19 +1044,19 @@
       "type": "object",
       "properties": {
         "location": {
-          "$ref": "#/definitions/metastorev1alpha1Location",
+          "$ref": "#/definitions/metastoreV1alpha1Location",
           "title": "location is the location for the code"
         },
         "mapping": {
-          "$ref": "#/definitions/metastorev1alpha1Mapping",
+          "$ref": "#/definitions/v1alpha1Mapping",
           "title": "mapping is the mapping into code"
         },
         "function": {
-          "$ref": "#/definitions/metastorev1alpha1Function",
+          "$ref": "#/definitions/v1alpha1Function",
           "title": "function is the function information"
         },
         "line": {
-          "$ref": "#/definitions/metastorev1alpha1Line",
+          "$ref": "#/definitions/v1alpha1Line",
           "title": "line is the line location"
         },
         "locationIndex": {
@@ -1390,6 +1110,48 @@
       },
       "title": "FrameFilter applies filtering criteria to individual stack frames"
     },
+    "v1alpha1Function": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "id is the unique identifier for the function."
+        },
+        "startLine": {
+          "type": "string",
+          "format": "int64",
+          "description": "start_line is the line number in the source file of the first line of the function."
+        },
+        "name": {
+          "type": "string",
+          "description": "name is the name of the function."
+        },
+        "systemName": {
+          "type": "string",
+          "description": "system_name describes the name of the function, as identified by the\nsystem. For instance, it can be a C++ mangled name."
+        },
+        "filename": {
+          "type": "string",
+          "description": "filename is the name of the source file of the function."
+        },
+        "nameStringIndex": {
+          "type": "integer",
+          "format": "int64",
+          "description": "name_string_index is the index in the string table to the name associated with the function."
+        },
+        "systemNameStringIndex": {
+          "type": "integer",
+          "format": "int64",
+          "description": "system_name_string_index is the index in the string table to the system_name associated with the function."
+        },
+        "filenameStringIndex": {
+          "type": "integer",
+          "format": "int64",
+          "description": "filename_string_index is the index in the string table to the filename associated with the function."
+        }
+      },
+      "description": "Function describes metadata of a source code function."
+    },
     "v1alpha1FunctionNameStackFilter": {
       "type": "object",
       "properties": {
@@ -1434,7 +1196,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/profilestorev1alpha1Label"
+            "$ref": "#/definitions/profilestoreV1alpha1Label"
           },
           "title": "labels are the grouping of labels"
         }
@@ -1460,6 +1222,85 @@
         }
       },
       "title": "LabelsResponse is the set of matching label names"
+    },
+    "v1alpha1Line": {
+      "type": "object",
+      "properties": {
+        "functionId": {
+          "type": "string",
+          "description": "function_id is the ID of the function."
+        },
+        "line": {
+          "type": "string",
+          "format": "int64",
+          "description": "line is the line number in the source file of the referenced function."
+        },
+        "functionIndex": {
+          "type": "integer",
+          "format": "int64",
+          "description": "function_index is the index in the functions table."
+        }
+      },
+      "description": "Line describes a source code function and its line number."
+    },
+    "v1alpha1Mapping": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "id is the unique identifier for the mapping."
+        },
+        "start": {
+          "type": "string",
+          "format": "uint64",
+          "description": "start is the start address of the mapping."
+        },
+        "limit": {
+          "type": "string",
+          "format": "uint64",
+          "description": "limit is the length of the address space of the mapping."
+        },
+        "offset": {
+          "type": "string",
+          "format": "uint64",
+          "description": "offset in the binary that corresponds to the first mapped address."
+        },
+        "file": {
+          "type": "string",
+          "description": "file is the name of the file associated with the mapping."
+        },
+        "buildId": {
+          "type": "string",
+          "description": "build_id is the build ID of the mapping."
+        },
+        "hasFunctions": {
+          "type": "boolean",
+          "description": "has_functions indicates whether the mapping has associated functions."
+        },
+        "hasFilenames": {
+          "type": "boolean",
+          "description": "has_filenames indicates whether the mapping has associated filenames."
+        },
+        "hasLineNumbers": {
+          "type": "boolean",
+          "description": "has_line_numbers indicates whether the mapping has associated line numbers."
+        },
+        "hasInlineFrames": {
+          "type": "boolean",
+          "description": "has_inline_frames indicates whether the mapping has associated inline frames."
+        },
+        "fileStringIndex": {
+          "type": "integer",
+          "format": "int64",
+          "description": "fileStringIndex is the index in the string table to the file name associated with the mapping."
+        },
+        "buildIdStringIndex": {
+          "type": "integer",
+          "format": "int64",
+          "description": "build_id_string_index is the index in the string table to the build ID of the mapping."
+        }
+      },
+      "description": "Mapping describes a memory mapping."
     },
     "v1alpha1MergeProfile": {
       "type": "object",
@@ -1528,11 +1369,11 @@
           "title": "samples is the set of top-level cumulative values of the corresponding profiles"
         },
         "periodType": {
-          "$ref": "#/definitions/queryv1alpha1ValueType",
+          "$ref": "#/definitions/v1alpha1ValueType",
           "title": "period_type is the value type of profile period"
         },
         "sampleType": {
-          "$ref": "#/definitions/queryv1alpha1ValueType",
+          "$ref": "#/definitions/v1alpha1ValueType",
           "title": "sample_type is the value type of profile sample"
         }
       },
@@ -1632,6 +1473,20 @@
       },
       "description": "ProfileType is the type of a profile as well as the units the profile type is available in."
     },
+    "v1alpha1ProfileTypesResponse": {
+      "type": "object",
+      "properties": {
+        "types": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1alpha1ProfileType"
+          },
+          "description": "types is the list of available profile types."
+        }
+      },
+      "description": "ProfileTypesResponse is the response to retrieve the list of available profile types."
+    },
     "v1alpha1QueryRangeResponse": {
       "type": "object",
       "properties": {
@@ -1646,6 +1501,69 @@
       },
       "title": "QueryRangeResponse is the set of matching profile values"
     },
+    "v1alpha1QueryRequest": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "$ref": "#/definitions/v1alpha1QueryRequestMode",
+          "title": "mode indicates the type of query performed"
+        },
+        "diff": {
+          "$ref": "#/definitions/v1alpha1DiffProfile",
+          "title": "diff contains the diff query options"
+        },
+        "merge": {
+          "$ref": "#/definitions/v1alpha1MergeProfile",
+          "title": "merge contains the merge query options"
+        },
+        "single": {
+          "$ref": "#/definitions/v1alpha1SingleProfile",
+          "title": "single contains the single query options"
+        },
+        "reportType": {
+          "$ref": "#/definitions/QueryRequestReportType",
+          "title": "report_type is the type of report to return"
+        },
+        "filterQuery": {
+          "type": "string",
+          "title": "filter_query is the query string to filter the profile samples"
+        },
+        "nodeTrimThreshold": {
+          "type": "number",
+          "format": "float",
+          "title": "node_trim_threshold is the threshold % where the nodes with Value less than this will be removed from the report"
+        },
+        "groupBy": {
+          "$ref": "#/definitions/v1alpha1GroupBy",
+          "title": "group_by indicates the fields to group by"
+        },
+        "sourceReference": {
+          "$ref": "#/definitions/v1alpha1SourceReference",
+          "title": "source information about the source requested, required if source report is requested"
+        },
+        "runtimeFilter": {
+          "$ref": "#/definitions/v1alpha1RuntimeFilter",
+          "title": "which runtime frames to filter out, often interpreter frames like python or ruby are not super useful by default"
+        },
+        "invertCallStack": {
+          "type": "boolean",
+          "title": "invert_call_stack inverts the call stacks in the flamegraph"
+        },
+        "filter": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1alpha1Filter"
+          },
+          "title": "a set of filter to apply to the query request"
+        },
+        "sandwichByFunction": {
+          "type": "string",
+          "title": "sandwich_by_function is a function name to use for sandwich view functionality"
+        }
+      },
+      "title": "QueryRequest is a request for a profile query"
+    },
     "v1alpha1QueryRequestMode": {
       "type": "string",
       "enum": [
@@ -1656,6 +1574,55 @@
       "default": "MODE_SINGLE_UNSPECIFIED",
       "description": "- MODE_SINGLE_UNSPECIFIED: MODE_SINGLE_UNSPECIFIED query unspecified\n - MODE_DIFF: MODE_DIFF is a diff query\n - MODE_MERGE: MODE_MERGE is a merge query",
       "title": "Mode is the type of query request"
+    },
+    "v1alpha1QueryResponse": {
+      "type": "object",
+      "properties": {
+        "flamegraph": {
+          "$ref": "#/definitions/v1alpha1Flamegraph",
+          "title": "flamegraph is a flamegraph representation of the report"
+        },
+        "pprof": {
+          "type": "string",
+          "format": "byte",
+          "title": "pprof is a pprof profile as compressed bytes"
+        },
+        "top": {
+          "$ref": "#/definitions/v1alpha1Top",
+          "title": "top is a top list representation of the report"
+        },
+        "callgraph": {
+          "$ref": "#/definitions/v1alpha1Callgraph",
+          "title": "callgraph is a callgraph nodes and edges representation of the report"
+        },
+        "flamegraphArrow": {
+          "$ref": "#/definitions/v1alpha1FlamegraphArrow",
+          "title": "flamegraph_arrow is a flamegraph encoded as a arrow record"
+        },
+        "source": {
+          "$ref": "#/definitions/v1alpha1Source",
+          "title": "source is the source report type result"
+        },
+        "tableArrow": {
+          "$ref": "#/definitions/v1alpha1TableArrow",
+          "title": "table_arrow is a table encoded as a arrow record"
+        },
+        "profileMetadata": {
+          "$ref": "#/definitions/v1alpha1ProfileMetadata",
+          "title": "profile_metadata contains metadata about the profile i.e. binaries, labels"
+        },
+        "total": {
+          "type": "string",
+          "format": "int64",
+          "description": "total is the total number of samples shown in the report."
+        },
+        "filtered": {
+          "type": "string",
+          "format": "int64",
+          "description": "filtered is the number of samples filtered out of the report."
+        }
+      },
+      "title": "QueryResponse is the returned report for the given query"
     },
     "v1alpha1RuntimeFilter": {
       "type": "object",
@@ -1683,7 +1650,7 @@
       "type": "object",
       "properties": {
         "queryRequest": {
-          "$ref": "#/definitions/parcaqueryv1alpha1QueryRequest",
+          "$ref": "#/definitions/v1alpha1QueryRequest",
           "title": "QueryRequest that refers to the profile to be shared"
         },
         "description": {
@@ -1717,6 +1684,25 @@
         }
       },
       "title": "SingleProfile contains parameters for a single profile query request"
+    },
+    "v1alpha1Source": {
+      "type": "object",
+      "properties": {
+        "record": {
+          "type": "string",
+          "format": "byte",
+          "description": "An arrow record that contains a row per source code line with value and diff columns for flat and cumulative."
+        },
+        "source": {
+          "type": "string",
+          "description": "The actual source file content."
+        },
+        "unit": {
+          "type": "string",
+          "description": "The unit of the values in the record."
+        }
+      },
+      "description": "Source is the result of the source report type."
     },
     "v1alpha1SourceReference": {
       "type": "object",
@@ -1852,23 +1838,37 @@
       "type": "object",
       "properties": {
         "location": {
-          "$ref": "#/definitions/metastorev1alpha1Location",
+          "$ref": "#/definitions/metastoreV1alpha1Location",
           "title": "location is the location for the code"
         },
         "mapping": {
-          "$ref": "#/definitions/metastorev1alpha1Mapping",
+          "$ref": "#/definitions/v1alpha1Mapping",
           "title": "mapping is the mapping into code"
         },
         "function": {
-          "$ref": "#/definitions/metastorev1alpha1Function",
+          "$ref": "#/definitions/v1alpha1Function",
           "title": "function is the function information"
         },
         "line": {
-          "$ref": "#/definitions/metastorev1alpha1Line",
+          "$ref": "#/definitions/v1alpha1Line",
           "title": "line is the line location"
         }
       },
       "title": "TopNodeMeta is the metadata for a given node"
+    },
+    "v1alpha1ValueType": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "title": "type is the type of the value"
+        },
+        "unit": {
+          "type": "string",
+          "title": "unit is the unit of the value"
+        }
+      },
+      "title": "ValueType represents a value, including its type and unit"
     },
     "v1alpha1ValuesResponse": {
       "type": "object",

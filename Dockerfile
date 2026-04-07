@@ -1,6 +1,6 @@
 # https://github.com/hadolint/hadolint/issues/861
 # hadolint ignore=DL3029
-FROM --platform="${BUILDPLATFORM:-linux/amd64}" docker.io/busybox:1.37.0@sha256:b3255e7dfbcd10cb367af0d409747d511aeb66dfac98cf30e97e87e4207dd76f as builder
+FROM --platform="${BUILDPLATFORM:-linux/amd64}" docker.io/busybox:1.37.0@sha256:1487d0af5f52b4ba31c7e465126ee2123fe3f2305d638e7827681e7cf6c83d5e as builder
 RUN mkdir /.cache && touch -t 202101010000.00 /.cache
 
 ARG TARGETOS=linux
@@ -8,7 +8,7 @@ ARG TARGETARCH=amd64
 ARG TARGETVARIANT=v1
 
 # renovate: datasource=github-releases depName=grpc-ecosystem/grpc-health-probe
-ARG GRPC_HEALTH_PROBE_VERSION=v0.4.46
+ARG GRPC_HEALTH_PROBE_VERSION=v0.4.47
 # Downloading grpc_health_probe from github releases with retry as we have seen it fail a lot on ci.
 RUN for i in `seq 1 50`; do \
     wget -qO/bin/grpc_health_probe "https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-${TARGETOS}-${TARGETARCH}" && \

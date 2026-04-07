@@ -16,7 +16,7 @@ import {FC} from 'react';
 import {Icon} from '@iconify/react';
 
 import {QueryServiceClient} from '@parca/client';
-import {Button} from '@parca/components';
+import {Button, useParcaContext} from '@parca/components';
 import {ProfileType} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
 
@@ -165,6 +165,8 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
   const isFlamechartViz = dashboardItems?.includes('flamechart');
   const isFlamechartVizOnly = dashboardItems?.length === 1 && isFlamechartViz;
 
+  const {enableFlamechartFiltering} = useParcaContext();
+
   const req = profileSource?.QueryRequest();
   if (req !== null && req !== undefined) {
     req.groupBy = {
@@ -202,7 +204,7 @@ export const VisualisationToolbar: FC<VisualisationToolbarProps> = ({
           )}
 
           <div className="flex mt-5">
-            {!isFlamechartVizOnly && <ProfileFilters />}
+            {(!isFlamechartVizOnly || enableFlamechartFiltering === true) && <ProfileFilters />}
 
             {profileViewExternalSubActions != null ? profileViewExternalSubActions : null}
           </div>

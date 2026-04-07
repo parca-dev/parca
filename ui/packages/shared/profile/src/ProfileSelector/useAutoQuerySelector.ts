@@ -149,6 +149,11 @@ export const useAutoQuerySelector = ({
       );
       if (profileType == null) {
         profileType = profileTypesData.types.find(
+          type => type.name === 'go_opentelemetry_io_ebpf_profiler' && type.delta
+        );
+      }
+      if (profileType == null) {
+        profileType = profileTypesData.types.find(
           type => type.name === 'otel_profiling_agent_on_cpu' && type.delta
         );
       }

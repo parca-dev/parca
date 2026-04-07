@@ -25,14 +25,14 @@ plugins:
       - generate_dependencies
 
   # renovate: datasource=github-releases depName=grpc-ecosystem/grpc-gateway
-  - plugin: buf.build/grpc-ecosystem/gateway:v2.26.3
+  - plugin: buf.build/grpc-ecosystem/gateway:v2.28.0
     out: gen/proto/go
     opt:
       - paths=source_relative
       - generate_unbound_methods=true
 
   # renovate: datasource=github-releases depName=grpc-ecosystem/grpc-gateway
-  - plugin: buf.build/grpc-ecosystem/openapiv2:v2.26.3
+  - plugin: buf.build/grpc-ecosystem/openapiv2:v2.28.0
     out: gen/proto/swagger
     opt:
       - allow_merge=false
