@@ -15,7 +15,8 @@ import {type ReactNode} from 'react';
 
 // eslint-disable-next-line import/named
 import {act, renderHook, waitFor} from '@testing-library/react';
-import {NuqsTestingAdapter, type OnUrlUpdateFunction} from 'nuqs/dist/adapters/testing';
+// eslint-disable-next-line import/no-unresolved
+import {NuqsTestingAdapter, type OnUrlUpdateFunction} from 'nuqs/adapters/testing';
 import {describe, expect, it, vi} from 'vitest';
 
 import {type ProfileFilter} from './useProfileFilters';

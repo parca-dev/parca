@@ -17,7 +17,8 @@ import {ReactNode, act} from 'react';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 // eslint-disable-next-line import/named
 import {renderHook, waitFor} from '@testing-library/react';
-import {NuqsTestingAdapter} from 'nuqs/dist/adapters/testing';
+// eslint-disable-next-line import/no-unresolved
+import {NuqsTestingAdapter} from 'nuqs/adapters/testing';
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 
 import {useQueryState} from './useQueryState';
