@@ -1,6 +1,4 @@
-// Copyright 2026 The Parca Authors
-// TODO: This license is not consistent with the license used in the project.
-//       Delete the inconsistent license and above line and rerun pre-commit to insert a good license.
+// Copyright 2022 The Parca Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at

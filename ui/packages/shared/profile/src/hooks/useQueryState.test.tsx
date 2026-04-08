@@ -17,7 +17,7 @@ import {ReactNode, act} from 'react';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 // eslint-disable-next-line import/named
 import {renderHook, waitFor} from '@testing-library/react';
-import {NuqsTestingAdapter} from 'nuqs/adapters/testing';
+import {NuqsTestingAdapter} from 'nuqs/dist/adapters/testing';
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 
 import {useQueryState} from './useQueryState';
@@ -1051,9 +1051,9 @@ describe('useQueryState', () => {
 
       // Get the committed state values to build reload URL
       const historyParams = result1.current.profileSelection?.HistoryParams();
-      const selectionA = String(historyParams?.selection ?? '');
-      const mergeFromA = String(historyParams?.merge_from ?? '');
-      const mergeToA = String(historyParams?.merge_to ?? '');
+      const selectionA = historyParams?.selection ?? '';
+      const mergeFromA = historyParams?.merge_from ?? '';
+      const mergeToA = historyParams?.merge_to ?? '';
 
       unmount();
       mockNavigateTo.mockClear();
@@ -1062,9 +1062,10 @@ describe('useQueryState', () => {
       const {result: result2} = renderHook(() => useQueryState({suffix: '_a'}), {
         wrapper: createWrapper(
           {},
-          `?selection_a=${encodeURIComponent(
-            selectionA
-          )}&merge_from_a=${mergeFromA}&merge_to_a=${mergeToA}`
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+          `?selection_a=${encodeURIComponent(selectionA)}&merge_from_a=${
+            mergeFromA as string
+          }&merge_to_a=${mergeToA as string}`
         ),
       });
 
