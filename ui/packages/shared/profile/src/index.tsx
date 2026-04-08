@@ -61,6 +61,22 @@ export {useProfileFiltersUrlState} from './ProfileView/components/ProfileFilters
 export {useProfileTypes} from './ProfileSelector';
 
 export {
+  stringParam,
+  boolParam,
+  intParam,
+  commaArrayParam,
+  invertCallStackParser,
+  groupByParser,
+  flamechartDimensionParser,
+  tableColumnsParser,
+  hiddenBinariesParser,
+  jsonParser,
+} from './hooks/urlParsers';
+
+export {useDashboardItems} from './hooks/useDashboardItems';
+export {useColorBy} from './hooks/useColorBy';
+
+export {
   ProfileExplorer,
   ProfileTypeSelector,
   CustomSelect,
