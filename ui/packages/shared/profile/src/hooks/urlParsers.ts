@@ -23,7 +23,6 @@ export const commaArrayParam = parseAsArrayOf(parseAsString, ',').withOptions(op
 
 // === Param-specific parsers with defaults ===
 export const invertCallStackParser = boolParam.withDefault(false);
-export const dashboardItemsParser = commaArrayParam.withDefault(['flamegraph']);
 export const groupByParser = commaArrayParam;
 export const flamechartDimensionParser = commaArrayParam;
 export const tableColumnsParser = commaArrayParam;

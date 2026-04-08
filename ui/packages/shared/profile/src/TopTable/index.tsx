@@ -14,7 +14,6 @@
 import React, {useCallback, useEffect, useMemo} from 'react';
 
 import {createColumnHelper, type ColumnDef} from '@tanstack/react-table';
-import {useQueryState} from 'nuqs';
 
 import {Top, TopNode, TopNodeMeta} from '@parca/client';
 import {Button, Table} from '@parca/components';
@@ -27,7 +26,7 @@ import {
 } from '@parca/utilities';
 
 import {useProfileViewContext} from '../ProfileView/context/ProfileViewContext';
-import {dashboardItemsParser} from '../hooks/urlParsers';
+import {useDashboardItems} from '../hooks/useDashboardItems';
 import {hexifyAddress} from '../utils';
 
 interface TopTableProps {
@@ -74,7 +73,7 @@ export const TopTable = React.memo(function TopTable({
   setActionButtons,
 }: TopTableProps): JSX.Element {
   const router = parseParams(window?.location.search);
-  const [dashboardItems] = useQueryState('dashboard_items', dashboardItemsParser);
+  const {dashboardItems} = useDashboardItems();
 
   const {compareMode} = useProfileViewContext();
 

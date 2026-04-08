@@ -31,7 +31,8 @@ import {
 import {arrowToString} from '../../ProfileFlameGraph/FlameGraphArrow/utils';
 import {ProfileSource} from '../../ProfileSource';
 import {useProfileViewContext} from '../../ProfileView/context/ProfileViewContext';
-import {dashboardItemsParser, stringParam} from '../../hooks/urlParsers';
+import {stringParam} from '../../hooks/urlParsers';
+import {useDashboardItems} from '../../hooks/useDashboardItems';
 import {useQuery} from '../../useQuery';
 
 interface Props {
@@ -109,10 +110,7 @@ export const useGraphTooltipMetaInfo = ({table, row}: Props): GraphTooltipMetaIn
     ])
     .filter(value => value[1] !== '') as Array<[string, string]>;
 
-  const [dashboardItems, setDashboardItems] = useQueryState(
-    'dashboard_items',
-    dashboardItemsParser
-  );
+  const {dashboardItems, setDashboardItems} = useDashboardItems();
 
   const [_unusedBuildId, setSourceBuildId] = useQueryState('source_buildid', stringParam);
 
@@ -121,7 +119,7 @@ export const useGraphTooltipMetaInfo = ({table, row}: Props): GraphTooltipMetaIn
   const [_unusedLine, setSourceLine] = useQueryState('source_line', stringParam);
 
   const openFile = (): void => {
-    void setDashboardItems([dashboardItems[0], 'source']);
+    setDashboardItems([dashboardItems[0], 'source']);
     if (mappingBuildID != null) {
       void setSourceBuildId(mappingBuildID);
     }

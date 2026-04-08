@@ -26,7 +26,8 @@ import {getLastItem} from '@parca/utilities';
 
 import {useGraphTooltip} from '../../GraphTooltipArrow/useGraphTooltip';
 import {useGraphTooltipMetaInfo} from '../../GraphTooltipArrow/useGraphTooltipMetaInfo';
-import {dashboardItemsParser, stringParam} from '../../hooks/urlParsers';
+import {stringParam} from '../../hooks/urlParsers';
+import {useDashboardItems} from '../../hooks/useDashboardItems';
 import {hexifyAddress, truncateString} from '../../utils';
 
 interface ContextMenuProps {
@@ -85,10 +86,7 @@ const ContextMenu = ({
     inlined,
   } = useGraphTooltipMetaInfo({table, row});
 
-  const [dashboardItems, setDashboardItems] = useQueryState(
-    'dashboard_items',
-    dashboardItemsParser
-  );
+  const {dashboardItems, setDashboardItems} = useDashboardItems();
   const [_sandwichFunctionName, setSandwichFunctionName] = useQueryState(
     'sandwich_function_name',
     stringParam
@@ -177,9 +175,9 @@ const ContextMenu = ({
         id="show-in-table"
         onClick={() => {
           if (isSandwich) {
-            void setDashboardItems(['table']);
+            setDashboardItems(['table']);
           } else {
-            void setDashboardItems([...dashboardItems, 'table']);
+            setDashboardItems([...dashboardItems, 'table']);
           }
         }}
       >
@@ -204,7 +202,7 @@ const ContextMenu = ({
             }
 
             void setSandwichFunctionName(functionName);
-            void setDashboardItems([...dashboardItems, 'sandwich']);
+            setDashboardItems([...dashboardItems, 'sandwich']);
             hideMenu();
           }}
           disabled={functionName === '' || functionName == null}

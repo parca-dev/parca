@@ -31,13 +31,13 @@ import {ProfileView} from './ProfileView';
 import {useProfileFilters} from './ProfileView/components/ProfileFilters/useProfileFilters';
 import type {SamplesSeries} from './ProfileView/types/visualization';
 import {
-  dashboardItemsParser,
   flamechartDimensionParser,
   groupByParser,
   intParam,
   invertCallStackParser,
   stringParam,
 } from './hooks/urlParsers';
+import {useDashboardItems} from './hooks/useDashboardItems';
 import {useQuery} from './useQuery';
 import {downloadPprof} from './utils';
 
@@ -56,10 +56,7 @@ export const ProfileViewWithData = ({
   onSwitchToFifteenMinutes,
 }: ProfileViewWithDataProps): JSX.Element => {
   const metadata = useGrpcMetadata();
-  const [dashboardItems, setDashboardItems] = useQueryState(
-    'dashboard_items',
-    dashboardItemsParser
-  );
+  const {dashboardItems, setDashboardItems} = useDashboardItems();
   const [sourceBuildID] = useQueryState('source_buildid', stringParam);
   const [sourceFilename] = useQueryState('source_filename', stringParam);
   const [groupBy] = useQueryState('group_by', groupByParser.withDefault([FIELD_FUNCTION_NAME]));
@@ -88,7 +85,7 @@ export const ProfileViewWithData = ({
     if (newDashboardItems.length === 0) {
       newDashboardItems = ['flamegraph'];
     }
-    void setDashboardItems(newDashboardItems);
+    setDashboardItems(newDashboardItems);
   }, [profileSource, dashboardItems, setDashboardItems]);
 
   const nodeTrimThreshold = useMemo(() => {

@@ -18,7 +18,8 @@ import {useQueryState} from 'nuqs';
 import {useParcaContext} from '@parca/components';
 
 import {ProfileSource} from '../../../ProfileSource';
-import {dashboardItemsParser, stringParam} from '../../../hooks/urlParsers';
+import {stringParam} from '../../../hooks/urlParsers';
+import {useDashboardItems} from '../../../hooks/useDashboardItems';
 import Dropdown, {DropdownElement, InnerAction} from './Dropdown';
 
 interface Props {
@@ -26,10 +27,7 @@ interface Props {
 }
 
 const ViewSelector = ({profileSource}: Props): JSX.Element => {
-  const [dashboardItems, setDashboardItems] = useQueryState(
-    'dashboard_items',
-    dashboardItemsParser
-  );
+  const {dashboardItems, setDashboardItems} = useDashboardItems();
   const [, setSandwichFunctionName] = useQueryState('sandwich_function_name', stringParam);
   const {enableSourcesView, enableSandwichView} = useParcaContext();
 
@@ -125,11 +123,11 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
           : 'Add Panel',
       onClick: () => {
         if (item.canBeSelected) {
-          void setDashboardItems([...dashboardItems, item.key]);
+          setDashboardItems([...dashboardItems, item.key]);
         } else {
           const newDashboardItems = dashboardItems.filter(v => v !== item.key);
 
-          void setDashboardItems(newDashboardItems);
+          setDashboardItems(newDashboardItems);
           if (item.key === 'sandwich') {
             void setSandwichFunctionName(null);
           }
@@ -151,18 +149,18 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
     const isOnlyChart = dashboardItems.length === 1;
 
     if (isOnlyChart && value === 'sandwich') {
-      void setDashboardItems([...dashboardItems, value]);
+      setDashboardItems([...dashboardItems, value]);
       return;
     }
 
     if (isOnlyChart) {
-      void setDashboardItems([value]);
+      setDashboardItems([value]);
       return;
     }
 
     const newDashboardItems = [dashboardItems[0], value];
 
-    void setDashboardItems(newDashboardItems);
+    setDashboardItems(newDashboardItems);
   };
 
   return (

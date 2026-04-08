@@ -17,19 +17,17 @@ import {useQueryState} from 'nuqs';
 
 import {useParcaContext} from '@parca/components';
 
-import {dashboardItemsParser, stringParam} from '../hooks/urlParsers';
+import {stringParam} from '../hooks/urlParsers';
+import {useDashboardItems} from '../hooks/useDashboardItems';
 
 const MoreDropdown = ({functionName}: {functionName: string}): React.JSX.Element | null => {
   const [_, setSandwichFunctionName] = useQueryState('sandwich_function_name', stringParam);
-  const [dashboardItems, setDashboardItems] = useQueryState(
-    'dashboard_items',
-    dashboardItemsParser
-  );
+  const {dashboardItems, setDashboardItems} = useDashboardItems();
   const {enableSandwichView} = useParcaContext();
 
   const onSandwichViewSelect = (): void => {
     void setSandwichFunctionName(functionName.trim());
-    void setDashboardItems([...dashboardItems, 'sandwich']);
+    setDashboardItems([...dashboardItems, 'sandwich']);
   };
 
   const menuItems: Array<{label: string; action: () => void}> = [];

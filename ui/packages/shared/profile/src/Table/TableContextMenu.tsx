@@ -23,7 +23,8 @@ import {valueFormatter} from '@parca/utilities';
 
 import {type Row} from '.';
 import {getTextForCumulative} from '../ProfileFlameGraph/FlameGraphArrow/utils';
-import {dashboardItemsParser, stringParam} from '../hooks/urlParsers';
+import {stringParam} from '../hooks/urlParsers';
+import {useDashboardItems} from '../hooks/useDashboardItems';
 import {truncateString} from '../utils';
 import {type ColumnName} from './utils/functions';
 
@@ -45,17 +46,14 @@ const TableContextMenu = ({
   columnVisibility,
 }: TableContextMenuProps): React.JSX.Element => {
   const [_, setSandwichFunctionName] = useQueryState('sandwich_function_name', stringParam);
-  const [dashboardItems, setDashboardItems] = useQueryState(
-    'dashboard_items',
-    dashboardItemsParser
-  );
+  const {dashboardItems, setDashboardItems} = useDashboardItems();
   const {enableSandwichView, isDarkMode} = useParcaContext();
 
   const onSandwichViewSelect = (): void => {
     if (row?.name != null && row.name.length > 0) {
       void setSandwichFunctionName(row.name.trim());
       if (!dashboardItems.includes('sandwich')) {
-        void setDashboardItems([...dashboardItems, 'sandwich']);
+        setDashboardItems([...dashboardItems, 'sandwich']);
       }
     }
   };

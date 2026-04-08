@@ -11,11 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {FC, PropsWithChildren, createContext, useCallback, useContext} from 'react';
+import {FC, PropsWithChildren, createContext, useContext} from 'react';
 
 import {useQueryState} from 'nuqs';
 
-import {dashboardItemsParser, stringParam} from '../../hooks/urlParsers';
+import {stringParam} from '../../hooks/urlParsers';
+import {useDashboardItems} from '../../hooks/useDashboardItems';
 import {VisualizationType} from '../types/visualization';
 
 interface DashboardContextType {
@@ -28,17 +29,7 @@ interface DashboardContextType {
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
 
 export const DashboardProvider: FC<PropsWithChildren> = ({children}) => {
-  const [dashboardItems, setRawDashboardItems] = useQueryState(
-    'dashboard_items',
-    dashboardItemsParser
-  );
-
-  const setDashboardItems = useCallback(
-    (items: string[]) => {
-      void setRawDashboardItems(items);
-    },
-    [setRawDashboardItems]
-  );
+  const {dashboardItems, setDashboardItems} = useDashboardItems();
   const [, setSandwichFunctionName] = useQueryState('sandwich_function_name', stringParam);
 
   const handleClosePanel = (visualizationType: VisualizationType): void => {
