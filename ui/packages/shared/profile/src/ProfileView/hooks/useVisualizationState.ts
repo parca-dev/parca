@@ -26,12 +26,12 @@ import {
 } from '../../ProfileFlameGraph/FlameGraphArrow';
 import {CurrentPathFrame} from '../../ProfileFlameGraph/FlameGraphArrow/utils';
 import {
-  colorByParser,
   flamechartDimensionParser,
   groupByParser,
   jsonParser,
   stringParam,
 } from '../../hooks/urlParsers';
+import {useColorBy} from '../../hooks/useColorBy';
 import {useResetFlameGraphState} from './useResetFlameGraphState';
 
 export const useVisualizationState = (): {
@@ -52,9 +52,6 @@ export const useVisualizationState = (): {
   alignFunctionName: string;
   setAlignFunctionName: (align: string) => void;
 } => {
-  const [colorByPreference, setColorByPreference] = useUserPreference<string>(
-    USER_PREFERENCES.COLOR_BY.key
-  );
   const [alignFunctionNamePreference, setAlignFunctionNamePreference] = useUserPreference<string>(
     USER_PREFERENCES.ALIGN_FUNCTION_NAME.key
   );
@@ -70,7 +67,7 @@ export const useVisualizationState = (): {
     [setRawCurPathArrow]
   );
   const [colorStackLegend] = useQueryState('color_stack_legend', stringParam);
-  const [colorBy, setStoreColorBy] = useQueryState('color_by', colorByParser);
+  const {colorBy, setColorBy} = useColorBy();
   const [alignFunctionNameRaw, setStoreAlignFunctionName] = useQueryState(
     'align_function_name',
     stringParam
@@ -144,14 +141,6 @@ export const useVisualizationState = (): {
   const resetSandwichFunctionName = useCallback((): void => {
     setSandwichFunctionName(null);
   }, [setSandwichFunctionName]);
-
-  const setColorBy = useCallback(
-    (value: string): void => {
-      void setStoreColorBy(value);
-      setColorByPreference(value);
-    },
-    [setStoreColorBy, setColorByPreference]
-  );
 
   const setAlignFunctionName = useCallback(
     (value: string): void => {

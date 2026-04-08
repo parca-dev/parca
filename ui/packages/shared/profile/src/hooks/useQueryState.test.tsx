@@ -1051,9 +1051,9 @@ describe('useQueryState', () => {
 
       // Get the committed state values to build reload URL
       const historyParams = result1.current.profileSelection?.HistoryParams();
-      const selectionA = historyParams?.selection ?? '';
-      const mergeFromA = historyParams?.merge_from ?? '';
-      const mergeToA = historyParams?.merge_to ?? '';
+      const selectionA = String(historyParams?.selection ?? '');
+      const mergeFromA = String(historyParams?.merge_from ?? '');
+      const mergeToA = String(historyParams?.merge_to ?? '');
 
       unmount();
       mockNavigateTo.mockClear();

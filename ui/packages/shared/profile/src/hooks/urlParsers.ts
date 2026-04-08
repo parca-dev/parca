@@ -22,7 +22,6 @@ export const intParam = parseAsInteger.withOptions(opts);
 export const commaArrayParam = parseAsArrayOf(parseAsString, ',').withOptions(opts);
 
 // === Param-specific parsers with defaults ===
-export const colorByParser = stringParam.withDefault('binary');
 export const invertCallStackParser = boolParam.withDefault(false);
 export const dashboardItemsParser = commaArrayParam.withDefault(['flamegraph']);
 export const groupByParser = commaArrayParam;
@@ -31,9 +30,10 @@ export const tableColumnsParser = commaArrayParam;
 export const hiddenBinariesParser = commaArrayParam.withDefault([]);
 
 // === JSON parser with BigInt support ===
-export const jsonParser = <T>() =>
-  createParser<T>({
+export function jsonParser<T>(): ReturnType<typeof createParser<T>> {
+  return createParser<T>({
     parse: (value: string) => JSON.parse(value) as T,
     serialize: (value: T) =>
       JSON.stringify(value, (_, v) => (typeof v === 'bigint' ? v.toString() : v)),
   }).withOptions(opts);
+}

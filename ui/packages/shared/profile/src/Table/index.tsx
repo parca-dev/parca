@@ -27,7 +27,8 @@ import useMappingList, {
   useFilenamesList,
 } from '../ProfileFlameGraph/FlameGraphArrow/useMappingList';
 import {useProfileViewContext} from '../ProfileView/context/ProfileViewContext';
-import {colorByParser, dashboardItemsParser, stringParam} from '../hooks/urlParsers';
+import {dashboardItemsParser, stringParam} from '../hooks/urlParsers';
+import {useColorBy} from '../hooks/useColorBy';
 import {alignedUint8Array} from '../utils';
 import TableContextMenuWrapper, {TableContextMenuWrapperRef} from './TableContextMenuWrapper';
 import {useColorManagement} from './hooks/useColorManagement';
@@ -75,7 +76,7 @@ export const Table = React.memo(function Table({
   const currentColorProfile = useCurrentColorProfile();
   const [dashboardItems] = useQueryState('dashboard_items', dashboardItemsParser);
   const [_, setSandwichFunctionName] = useQueryState('sandwich_function_name', stringParam);
-  const [colorBy, setColorBy] = useQueryState('color_by', colorByParser);
+  const {colorBy, setColorBy} = useColorBy();
   const {isDarkMode} = useParcaContext();
   const {compareMode} = useProfileViewContext();
 

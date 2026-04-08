@@ -113,9 +113,15 @@ const ProfileSelector = ({
   onSearchHook,
 }: ProfileSelectorProps): JSX.Element => {
   const {externalProfilerComponent, additionalMetricsGraph} = useParcaContext();
-  const [queryBrowserMode, setQueryBrowserMode] = useNuqsQueryState(
+  const [queryBrowserMode, setRawQueryBrowserMode] = useNuqsQueryState(
     'query_browser_mode',
     stringParam
+  );
+  const setQueryBrowserMode = useCallback(
+    (mode: string | null) => {
+      void setRawQueryBrowserMode(mode);
+    },
+    [setRawQueryBrowserMode]
   );
 
   const profileFilterDefaults = externalProfilerComponent?.profileFilterDefaults as
