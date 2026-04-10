@@ -23,6 +23,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/google/uuid"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/thanos-io/objstore"
 	"github.com/thanos-io/objstore/client"
 	"go.opentelemetry.io/otel/attribute"
@@ -82,15 +83,28 @@ type Store struct {
 	timeNow func() time.Time
 }
 
-type DebuginfoStoreMetrics struct {
-	store *Store
 
-	uploadTotal                *prometheus.CounterVec
-	uploadDuration             prometheus.Histogram
-	existsDuration             prometheus.Histogram
-	metadataUpdateTotal        *prometheus.CounterVec
-	metadataUpdateDuration     prometheus.Histogram
+type DebuginfoStore interface {
+    ShouldInitiateUpload(ctx context.Context, req *debuginfopb.ShouldInitiateUploadRequest) (*debuginfopb.ShouldInitiateUploadResponse, error)
+    InitiateUpload(ctx context.Context, req *debuginfopb.InitiateUploadRequest) (*debuginfopb.InitiateUploadResponse, error)
+    MarkUploadFinished(ctx context.Context, req *debuginfopb.MarkUploadFinishedRequest) (*debuginfopb.MarkUploadFinishedResponse, error)
+    Upload(stream debuginfopb.DebuginfoService_UploadServer) error
 }
+
+type DebuginfoStoreMetrics struct {
+    store DebuginfoStore
+
+    uploadTotal                *prometheus.CounterVec
+    uploadDuration             prometheus.Histogram
+    existsDuration             prometheus.Histogram
+    metadataUpdateTotal        *prometheus.CounterVec
+    metadataUpdateDuration     prometheus.Histogram
+}
+
+
+
+
+
 
 type SignedUploadClient interface {
 	SignedPUT(ctx context.Context, objectKey string, size int64, expiry time.Time) (signedURL string, err error)
@@ -111,7 +125,7 @@ func NewStore(
 	signedUpload SignedUpload,
 	maxUploadDuration time.Duration,
 	maxUploadSize int64,
-) (*DebuginfoStoreMetrics, error) {
+) (*Store, error) {
 	store := &Store{
 		tracer:            tracer,
 		logger:            log.With(logger, "component", "debuginfo"),
@@ -124,8 +138,9 @@ func NewStore(
 		timeNow:           time.Now,
 	}
 
-	return NewDebuginfoStoreMetrics(store, prometheus.DefaultRegisterer)
+	return store, nil
 }
+
 
 const (
 	ReasonDebuginfoInDebuginfod           = "Debuginfo exists in debuginfod, therefore no upload is necessary."
@@ -146,7 +161,7 @@ const (
 // ShouldInitiateUpload returns whether an upload should be initiated for the
 // given build ID. Checking if an upload should even be initiated allows the
 // parca-agent to avoid extracting debuginfos unnecessarily from a binary.
-func NewDebuginfoStoreMetrics(store *Store, reg prometheus.Registerer) *DebuginfoStoreMetrics {
+func NewDebuginfoStoreMetrics(store DebuginfoStore, reg prometheus.Registerer) *DebuginfoStoreMetrics {
 	uploadTotal := prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: "parca_debuginfo_store_upload_total",
 		Help: "Total number of uploads attempted.",
@@ -193,21 +208,19 @@ func NewDebuginfoStoreMetrics(store *Store, reg prometheus.Registerer) *Debuginf
 
 func (m *DebuginfoStoreMetrics) ShouldInitiateUpload(ctx context.Context, req *debuginfopb.ShouldInitiateUploadRequest) (*debuginfopb.ShouldInitiateUploadResponse, error) {
 	start := time.Now()
-	resp, err := m.store.ShouldInitiateUpload(ctx, req)
-	duration := time.Since(start)
+	defer func() {
+		m.existsDuration.Observe(time.Since(start).Seconds())
+	}()
 
-	m.existsDuration.Observe(duration.Seconds())
-	if err != nil {
-		return resp, err
-	}
-
-	return resp, nil
+	return m.store.ShouldInitiateUpload(ctx, req)
 }
+
+func (s *Store) ShouldInitiateUpload(ctx context.Context, req *debuginfopb.ShouldInitiateUploadRequest) (*debuginfopb.ShouldInitiateUploadResponse, error) {
 	span := trace.SpanFromContext(ctx)
 	span.SetAttributes(attribute.String("build_id", req.BuildId))
 
 	buildID := req.BuildId
-	if err := validateInput(buildID); err != nil {
+	if err := s.validateInput(buildID); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -349,6 +362,8 @@ func (m *DebuginfoStoreMetrics) InitiateUpload(ctx context.Context, req *debugin
 	m.uploadTotal.WithLabelValues("true").Inc()
 	return resp, nil
 }
+
+func (s *Store) InitiateUpload(ctx context.Context, req *debuginfopb.InitiateUploadRequest) (*debuginfopb.InitiateUploadResponse, error) {
 	span := trace.SpanFromContext(ctx)
 	span.SetAttributes(attribute.String("build_id", req.BuildId))
 
@@ -435,12 +450,14 @@ func (m *DebuginfoStoreMetrics) MarkUploadFinished(ctx context.Context, req *deb
 	m.metadataUpdateTotal.WithLabelValues("true").Inc()
 	return resp, nil
 }
+
+func (s *Store) MarkUploadFinished(ctx context.Context, req *debuginfopb.MarkUploadFinishedRequest) (*debuginfopb.MarkUploadFinishedResponse, error) {
 	span := trace.SpanFromContext(ctx)
 	span.SetAttributes(attribute.String("build_id", req.BuildId))
 	span.SetAttributes(attribute.String("upload_id", req.UploadId))
 
 	buildID := req.BuildId
-	if err := validateInput(buildID); err != nil {
+	if err := s.validateInput(buildID); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -475,6 +492,8 @@ func (m *DebuginfoStoreMetrics) Upload(stream debuginfopb.DebuginfoService_Uploa
 	m.uploadTotal.WithLabelValues("true").Inc()
 	return nil
 }
+
+func (s *Store) Upload(stream debuginfopb.DebuginfoService_UploadServer) error {
 	if s.signedUpload.Enabled {
 		return status.Error(codes.Unimplemented, "signed URL uploads are the only supported upload strategy for this service")
 	}
@@ -506,21 +525,9 @@ func (m *DebuginfoStoreMetrics) Upload(stream debuginfopb.DebuginfoService_Uploa
 	})
 }
 
-func (m *DebuginfoStoreMetrics) upload(ctx context.Context, buildID, uploadID string, typ debuginfopb.DebuginfoType, r io.Reader) error {
-	start := time.Now()
-	err := m.store.upload(ctx, buildID, uploadID, typ, r)
-	duration := time.Since(start)
 
-	m.uploadDuration.Observe(duration.Seconds())
-	if err != nil {
-		m.uploadTotal.WithLabelValues("false").Inc()
-		return err
-	}
-
-	m.uploadTotal.WithLabelValues("true").Inc()
-	return nil
-}
-	if err := validateInput(buildID); err != nil {
+func (s *Store) upload(ctx context.Context, buildID, uploadID string, typ debuginfopb.DebuginfoType, r io.Reader) error {
+	if err := s.validateInput(buildID); err != nil {
 		return status.Errorf(codes.InvalidArgument, "invalid build ID: %q", err)
 	}
 
@@ -548,24 +555,38 @@ func (m *DebuginfoStoreMetrics) upload(ctx context.Context, buildID, uploadID st
 }
 
 func (m *DebuginfoStoreMetrics) uploadIsStale(upload *debuginfopb.DebuginfoUpload) bool {
-	return m.store.uploadIsStale(upload)
+	return uploadIsStale(upload, m.store.(*Store).maxUploadDuration, m.store.(*Store).timeNow)
 }
-	return upload.StartedAt.AsTime().Add(s.maxUploadDuration + 2*time.Minute).Before(s.timeNow())
+
+func uploadIsStale(upload *debuginfopb.DebuginfoUpload, maxUploadDuration time.Duration, timeNow func() time.Time) bool {
+	return upload.StartedAt.AsTime().Add(maxUploadDuration + 2*time.Minute).Before(timeNow())
+}
+
+func (s *Store) uploadIsStale(upload *debuginfopb.DebuginfoUpload) bool {
+	return uploadIsStale(upload, s.maxUploadDuration, s.timeNow)
+}
+
+func (s *Store) validateInput(id string) error {
+	return validateInput(id)
 }
 
 func (m *DebuginfoStoreMetrics) validateInput(id string) error {
-	return m.store.validateInput(id)
+	return validateInput(id)
 }
-	if len(id) <= 2 {
-		return errors.New("unexpectedly short input")
-	}
 
-	return nil
+func validateInput(id string) error {
+    if len(id) <= 2 {
+        return errors.New("unexpectedly short input")
+    }
+    return nil
 }
 
 func (m *DebuginfoStoreMetrics) objectPath(buildID string, typ debuginfopb.DebuginfoType) string {
-	return m.store.objectPath(buildID, typ)
+	return objectPath(buildID, typ)
 }
+
+// objectPath returns the object path for a build ID and type.
+func objectPath(buildID string, typ debuginfopb.DebuginfoType) string {
 	switch typ {
 	case debuginfopb.DebuginfoType_DEBUGINFO_TYPE_EXECUTABLE:
 		return path.Join(buildID, "executable")
@@ -581,7 +602,10 @@ func (m *DebuginfoStoreMetrics) objectPath(buildID string, typ debuginfopb.Debug
 // in a debuginfod server the source path is directly in the URL in the form of
 // debuginfod.example.com/buildid/<build-id>/source/<file>.
 func (m *DebuginfoStoreMetrics) debuginfodSourcePath(buildID, file string) string {
-	return m.store.debuginfodSourcePath(buildID, file)
+	return debuginfodSourcePath(buildID, file)
 }
+
+// debuginfodSourcePath returns the source path for a build ID and file in debuginfod.
+func debuginfodSourcePath(buildID, file string) string {
 	return path.Join(buildID, "source", file)
 }
