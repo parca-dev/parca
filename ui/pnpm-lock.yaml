@@ -15,7 +15,7 @@ overrides:
   nth-check@<2.0.1: 2.1.1
   minimatch@>=5.0.0 <5.1.8: 5.1.9
   minimatch@>=9.0.0 <9.0.7: 9.0.9
-  basic-ftp@<5.2.0: 5.2.1
+  basic-ftp@<5.2.0: 5.2.2
   serialize-javascript@<7.0.5: 7.0.5
   underscore@<=1.13.7: 1.13.8
   svgo@>=2.1.0 <2.8.1: 2.8.2
@@ -5316,8 +5316,8 @@ packages:
     resolution: {integrity: sha512-NF+epuEdnUYVlGuhaxbbq+dvJttwLnGY+YixlXlME5KpQ5W3CnXA5cVTneY3SPbPDRkcjMbifrwmFYcClgOZeg==}
     engines: {node: '>= 0.8'}
 
-  basic-ftp@5.2.1:
-    resolution: {integrity: sha512-0yaL8JdxTknKDILitVpfYfV2Ob6yb3udX/hK97M7I3jOeznBNxQPtVvTUtnhUkyHlxFWyr5Lvknmgzoc7jf+1Q==}
+  basic-ftp@5.2.2:
+    resolution: {integrity: sha512-1tDrzKsdCg70WGvbFss/ulVAxupNauGnOlgpyjKzeQxzyllBLS0CGLV7tjIXTK3ZQA9/FBEm9qyFFN1bciA6pw==}
     engines: {node: '>=10.0.0'}
 
   batch@0.6.1:
@@ -18759,7 +18759,7 @@ snapshots:
     dependencies:
       safe-buffer: 5.1.2
 
-  basic-ftp@5.2.1: {}
+  basic-ftp@5.2.2: {}
 
   batch@0.6.1: {}
 
@@ -21346,7 +21346,7 @@ snapshots:
 
   get-uri@6.0.5:
     dependencies:
-      basic-ftp: 5.2.1
+      basic-ftp: 5.2.2
       data-uri-to-buffer: 6.0.2
       debug: 4.4.3
     transitivePeerDependencies:
