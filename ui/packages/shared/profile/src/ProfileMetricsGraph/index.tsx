@@ -15,6 +15,7 @@ import {useEffect, useMemo, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 import {AnimatePresence, motion} from 'framer-motion';
+import {useQueryState} from 'nuqs';
 
 import {
   Label,
@@ -25,11 +26,8 @@ import {
 import {
   DateTimeRange,
   MetricsGraphSkeleton,
-  NumberParser,
-  NumberSerializer,
   TextWithTooltip,
   useParcaContext,
-  useURLStateCustom,
 } from '@parca/components';
 import {Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
@@ -38,6 +36,7 @@ import {capitalizeOnlyFirstLetter, formatDate, timePattern, valueFormatter} from
 import {MergedProfileSelection, ProfileSelection} from '..';
 import MetricsGraph, {ContextMenuItemOrSubmenu, Series, SeriesPoint} from '../MetricsGraph';
 import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
+import {intParam} from '../hooks/urlParsers';
 import {getStepCountFromScreenWidth, useQueryRange} from './hooks/useQueryRange';
 
 const createProfileContextMenuItems = (
@@ -200,11 +199,10 @@ const ProfileMetricsGraph = ({
   comparing = false,
   sumBy,
 }: ProfileMetricsGraphProps): JSX.Element => {
-  const [rawStepCount] = useURLStateCustom<number>('step_count', {
-    defaultValue: String(getStepCountFromScreenWidth(10)),
-    parse: NumberParser,
-    stringify: NumberSerializer,
-  });
+  const [rawStepCount] = useQueryState(
+    'step_count',
+    intParam.withDefault(getStepCountFromScreenWidth(10))
+  );
   // Clamp step count so the step duration is at least 1 second as we don't have this enforced server-side anymore.
   const stepCount = useMemo(() => {
     const maxForOneSecond = Math.floor((to - from) / 1000);

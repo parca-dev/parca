@@ -14,7 +14,7 @@
 import cx from 'classnames';
 
 import {Label, QueryServiceClient} from '@parca/client';
-import {DateTimeRange, useParcaContext, useURLStateBatch} from '@parca/components';
+import {DateTimeRange, useParcaContext} from '@parca/components';
 import {Query} from '@parca/parser';
 
 import {ProfileSelection} from '..';
@@ -67,7 +67,6 @@ export function MetricsGraphSection({
   hasNoProfileTypes = false,
 }: MetricsGraphSectionProps): JSX.Element {
   const resetStateOnSeriesChange = useResetStateOnSeriesChange();
-  const batchUpdates = useURLStateBatch();
   const {profileExplorer} = useParcaContext();
   const {heightStyle} = useMetricsGraphDimensions(comparing, profileExplorer?.metricsGraph.height);
   const handleTimeRangeChange = (range: DateTimeRange): void => {
@@ -117,10 +116,8 @@ export function MetricsGraphSection({
 
     if (hasChanged) {
       // Immediately apply the filter when adding label matchers from the graph
-      batchUpdates(() => {
-        setNewQueryExpression(newQuery.toString());
-        commitDraft(undefined, newQuery.toString());
-      });
+      setNewQueryExpression(newQuery.toString());
+      commitDraft(undefined, newQuery.toString());
     }
   };
 
@@ -141,10 +138,8 @@ export function MetricsGraphSection({
 
     const mergeFrom = timestamp;
     const mergeTo = query.profileType().delta ? mergeFrom + BigInt(duration) : mergeFrom;
-    batchUpdates(() => {
-      resetStateOnSeriesChange(); // reset some state when a new series is selected
-      setProfileSelection(mergeFrom, mergeTo, query);
-    });
+    resetStateOnSeriesChange(); // reset some state when a new series is selected
+    setProfileSelection(mergeFrom, mergeTo, query);
   };
 
   return (
