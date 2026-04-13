@@ -13,8 +13,13 @@
 
 import {useCallback, useMemo} from 'react';
 
-import {useQueryState} from 'nuqs';
-
+import {
+  JSONParser,
+  JSONSerializer,
+  useURLState,
+  useURLStateBatch,
+  useURLStateCustom,
+} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 
 import {
@@ -25,19 +30,12 @@ import {
   FIELD_MAPPING_FILE,
 } from '../../ProfileFlameGraph/FlameGraphArrow';
 import {CurrentPathFrame} from '../../ProfileFlameGraph/FlameGraphArrow/utils';
-import {
-  flamechartDimensionParser,
-  groupByParser,
-  jsonParser,
-  stringParam,
-} from '../../hooks/urlParsers';
-import {useColorBy} from '../../hooks/useColorBy';
 import {useResetFlameGraphState} from './useResetFlameGraphState';
 
 export const useVisualizationState = (): {
   curPathArrow: CurrentPathFrame[];
   setCurPathArrow: (path: CurrentPathFrame[]) => void;
-  colorStackLegend: string | null;
+  colorStackLegend: string | undefined;
   colorBy: string;
   setColorBy: (colorBy: string) => void;
   groupBy: string[];
@@ -46,52 +44,46 @@ export const useVisualizationState = (): {
   setGroupByLabels: (labels: string[]) => void;
   flamechartDimension: string[];
   setFlamechartDimension: (labels: string[]) => void;
-  sandwichFunctionName: string | null;
-  setSandwichFunctionName: (sandwichFunctionName: string | null) => void;
+  sandwichFunctionName: string | undefined;
+  setSandwichFunctionName: (sandwichFunctionName: string | undefined) => void;
   resetSandwichFunctionName: () => void;
   alignFunctionName: string;
   setAlignFunctionName: (align: string) => void;
 } => {
+  const [colorByPreference, setColorByPreference] = useUserPreference<string>(
+    USER_PREFERENCES.COLOR_BY.key
+  );
   const [alignFunctionNamePreference, setAlignFunctionNamePreference] = useUserPreference<string>(
     USER_PREFERENCES.ALIGN_FUNCTION_NAME.key
   );
 
-  const [curPathArrow, setRawCurPathArrow] = useQueryState(
-    'cur_path',
-    jsonParser<CurrentPathFrame[]>().withDefault([])
+  const [curPathArrow, setCurPathArrow] = useURLStateCustom<CurrentPathFrame[]>('cur_path', {
+    parse: JSONParser<CurrentPathFrame[]>,
+    stringify: JSONSerializer,
+    defaultValue: '[]',
+  });
+  const [colorStackLegend] = useURLState<string | undefined>('color_stack_legend');
+  const [colorBy, setStoreColorBy] = useURLState('color_by', {
+    defaultValue: colorByPreference,
+  });
+  const [alignFunctionName, setStoreAlignFunctionName] = useURLState('align_function_name', {
+    defaultValue: alignFunctionNamePreference,
+  });
+  const [groupBy, setStoreGroupBy] = useURLState<string[]>('group_by', {
+    defaultValue: [FIELD_FUNCTION_NAME],
+    alwaysReturnArray: true,
+  });
+  const [sandwichFunctionName, setSandwichFunctionName] = useURLState<string | undefined>(
+    'sandwich_function_name'
   );
-  const setCurPathArrow = useCallback(
-    (path: CurrentPathFrame[]) => {
-      void setRawCurPathArrow(path);
-    },
-    [setRawCurPathArrow]
-  );
-  const [colorStackLegend] = useQueryState('color_stack_legend', stringParam);
-  const {colorBy, setColorBy} = useColorBy();
-  const [alignFunctionNameRaw, setStoreAlignFunctionName] = useQueryState(
-    'align_function_name',
-    stringParam
-  );
-  const alignFunctionName = alignFunctionNameRaw ?? alignFunctionNamePreference ?? 'left';
-  const [groupBy, setStoreGroupBy] = useQueryState(
-    'group_by',
-    groupByParser.withDefault([FIELD_FUNCTION_NAME])
-  );
-  const [sandwichFunctionName, setRawSandwichFunctionName] = useQueryState(
-    'sandwich_function_name',
-    stringParam
-  );
-  const setSandwichFunctionName = useCallback(
-    (name: string | null) => {
-      void setRawSandwichFunctionName(name);
-    },
-    [setRawSandwichFunctionName]
-  );
-  const [flamechartDimension, setStoreFlamechartDimension] = useQueryState(
+  const [flamechartDimension, setStoreFlamechartDimension] = useURLState<string[]>(
     'flamechart_dimension',
-    flamechartDimensionParser.withDefault([])
+    {
+      alwaysReturnArray: true,
+    }
   );
   const resetFlameGraphState = useResetFlameGraphState();
+  const batchUpdates = useURLStateBatch();
 
   const levelsOfProfiling = useMemo(
     () => [
@@ -105,46 +97,62 @@ export const useVisualizationState = (): {
 
   const setGroupBy = useCallback(
     (keys: string[]): void => {
-      void setStoreGroupBy(keys);
+      setStoreGroupBy(keys);
     },
     [setStoreGroupBy]
   );
 
   const toggleGroupBy = useCallback(
     (key: string): void => {
-      if (groupBy.includes(key)) {
-        setGroupBy(groupBy.filter(v => v !== key));
-      } else {
-        const filteredGroupBy = groupBy.filter(item => !levelsOfProfiling.includes(item));
-        setGroupBy([...filteredGroupBy, key]);
-      }
-      resetFlameGraphState();
+      // Batch updates to combine setGroupBy + resetFlameGraphState into single URL navigation
+      batchUpdates(() => {
+        if (groupBy.includes(key)) {
+          setGroupBy(groupBy.filter(v => v !== key)); // remove
+        } else {
+          const filteredGroupBy = groupBy.filter(item => !levelsOfProfiling.includes(item));
+          setGroupBy([...filteredGroupBy, key]); // add
+        }
+
+        resetFlameGraphState();
+      });
     },
-    [groupBy, setGroupBy, levelsOfProfiling, resetFlameGraphState]
+    [groupBy, setGroupBy, levelsOfProfiling, resetFlameGraphState, batchUpdates]
   );
 
   const setGroupByLabels = useCallback(
     (labels: string[]): void => {
-      setGroupBy(groupBy.filter(l => !l.startsWith(`${FIELD_LABELS}.`)).concat(labels));
-      resetFlameGraphState();
+      // Batch updates to combine setGroupBy + resetFlameGraphState into single URL navigation
+      batchUpdates(() => {
+        setGroupBy(groupBy.filter(l => !l.startsWith(`${FIELD_LABELS}.`)).concat(labels));
+
+        resetFlameGraphState();
+      });
     },
-    [groupBy, setGroupBy, resetFlameGraphState]
+    [groupBy, setGroupBy, resetFlameGraphState, batchUpdates]
   );
 
   const setFlamechartDimension = useCallback(
     (labels: string[]): void => {
-      void setStoreFlamechartDimension(labels.filter(l => l.startsWith(`${FIELD_LABELS}.`)));
+      setStoreFlamechartDimension(labels.filter(l => l.startsWith(`${FIELD_LABELS}.`)));
     },
     [setStoreFlamechartDimension]
   );
 
   const resetSandwichFunctionName = useCallback((): void => {
-    setSandwichFunctionName(null);
+    setSandwichFunctionName(undefined);
   }, [setSandwichFunctionName]);
+
+  const setColorBy = useCallback(
+    (value: string): void => {
+      setStoreColorBy(value);
+      setColorByPreference(value);
+    },
+    [setStoreColorBy, setColorByPreference]
+  );
 
   const setAlignFunctionName = useCallback(
     (value: string): void => {
-      void setStoreAlignFunctionName(value);
+      setStoreAlignFunctionName(value);
       setAlignFunctionNamePreference(value);
     },
     [setStoreAlignFunctionName, setAlignFunctionNamePreference]
@@ -154,7 +162,7 @@ export const useVisualizationState = (): {
     curPathArrow,
     setCurPathArrow,
     colorStackLegend,
-    colorBy,
+    colorBy: (colorBy as string) ?? '',
     setColorBy,
     groupBy,
     setGroupBy,
@@ -165,7 +173,7 @@ export const useVisualizationState = (): {
     sandwichFunctionName,
     setSandwichFunctionName,
     resetSandwichFunctionName,
-    alignFunctionName,
+    alignFunctionName: (alignFunctionName as string) ?? 'left',
     setAlignFunctionName,
   };
 };

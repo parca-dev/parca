@@ -11,23 +11,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useQueryState} from 'nuqs';
-
-import {Select} from '@parca/components';
+import {Select, useURLState} from '@parca/components';
 
 import {
   FIELD_CUMULATIVE,
   FIELD_DIFF,
   FIELD_FUNCTION_NAME,
 } from '../../../ProfileFlameGraph/FlameGraphArrow';
-import {stringParam} from '../../../hooks/urlParsers';
 import {useProfileViewContext} from '../../context/ProfileViewContext';
 
 const SortByDropdown = (): React.JSX.Element => {
-  const [storeSortBy, setStoreSortBy] = useQueryState(
-    'sort_by',
-    stringParam.withDefault(FIELD_FUNCTION_NAME)
-  );
+  const [storeSortBy, setStoreSortBy] = useURLState('sort_by', {
+    defaultValue: FIELD_FUNCTION_NAME,
+  });
 
   const {compareMode} = useProfileViewContext();
 
@@ -74,8 +70,8 @@ const SortByDropdown = (): React.JSX.Element => {
             },
           },
         ]}
-        selectedKey={storeSortBy}
-        onSelection={key => void setStoreSortBy(key)}
+        selectedKey={storeSortBy as string}
+        onSelection={key => setStoreSortBy(key)}
         placeholder={'Sort By'}
         primary={false}
         disabled={false}

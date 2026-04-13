@@ -13,10 +13,14 @@
 
 import {useEffect, useMemo, useRef} from 'react';
 
-import {createParser, useQueryState} from 'nuqs';
-
 import {LabelSet, QueryRequest_ReportType, QueryServiceClient} from '@parca/client';
-import {Button, useParcaContext} from '@parca/components';
+import {
+  Button,
+  useParcaContext,
+  useURLState,
+  useURLStateCustom,
+  type OptionsCustom,
+} from '@parca/components';
 import {Matcher, MatcherTypes, ProfileType, Query} from '@parca/parser';
 import {TimeUnits, formatDate, formatDuration} from '@parca/utilities';
 
@@ -25,7 +29,6 @@ import {boundsFromProfileSource} from '../ProfileFlameGraph/FlameGraphArrow/util
 import {MergedProfileSource, ProfileSource, timeFormat} from '../ProfileSource';
 import {useProfileFilters} from '../ProfileView/components/ProfileFilters/useProfileFilters';
 import type {SamplesData} from '../ProfileView/types/visualization';
-import {flamechartDimensionParser} from '../hooks/urlParsers';
 import {useQuery} from '../useQuery';
 import {NumberDuo} from '../utils';
 import {SamplesStrip} from './SamplesStrips';
@@ -35,8 +38,11 @@ interface SelectedTimeframe {
   bounds: NumberDuo;
 }
 
-const timeframeParser = createParser<SelectedTimeframe>({
-  parse: (value: string) => {
+const TimeframeStateSerializer: OptionsCustom<SelectedTimeframe | undefined> = {
+  parse: (value: string | string[] | undefined) => {
+    if (value == null || value === '' || value === 'undefined' || Array.isArray(value)) {
+      return undefined;
+    }
     try {
       const [labelPart, boundsPart] = value.split('|');
       if (labelPart != null && boundsPart != null) {
@@ -55,13 +61,16 @@ const timeframeParser = createParser<SelectedTimeframe>({
     } catch {
       // Ignore parsing errors
     }
-    return null;
+    return undefined;
   },
-  serialize: (value: SelectedTimeframe) => {
+  stringify: (value: SelectedTimeframe | undefined) => {
+    if (value == null) {
+      return '';
+    }
     const labelsStr = value.labels.labels.map(l => `${l.name}:${l.value}`).join(',');
     return `${labelsStr}|${value.bounds[0]},${value.bounds[1]}`;
   },
-}).withOptions({history: 'replace'});
+};
 
 interface ProfileFlameChartProps {
   samplesData?: SamplesData;
@@ -123,16 +132,14 @@ export const ProfileFlameChart = ({
   const {protoFilters} = useProfileFilters();
   const zoomControlsRef = useRef<HTMLDivElement>(null);
 
-  const [selectedTimeframe, setSelectedTimeframe] = useQueryState(
-    'flamechart_timeframe',
-    timeframeParser
-  );
+  const [selectedTimeframe, setSelectedTimeframe] = useURLStateCustom<
+    SelectedTimeframe | undefined
+  >('flamechart_timeframe', TimeframeStateSerializer);
 
   // Read flamechart dimension from URL state to detect changes
-  const [flamechartDimension] = useQueryState(
-    'flamechart_dimension',
-    flamechartDimensionParser.withDefault([])
-  );
+  const [flamechartDimension] = useURLState<string[]>('flamechart_dimension', {
+    alwaysReturnArray: true,
+  });
 
   // Reset selection when the parent time range (profileSource) changes
   const timeBoundsKey = boundsFromProfileSource(profileSource).join(',');
@@ -140,7 +147,7 @@ export const ProfileFlameChart = ({
   useEffect(() => {
     if (prevTimeBoundsKey.current !== timeBoundsKey) {
       prevTimeBoundsKey.current = timeBoundsKey;
-      void setSelectedTimeframe(null);
+      setSelectedTimeframe(undefined);
     }
   }, [timeBoundsKey, setSelectedTimeframe]);
 
@@ -150,16 +157,16 @@ export const ProfileFlameChart = ({
   useEffect(() => {
     if (prevDimensionKey.current !== dimensionKey) {
       prevDimensionKey.current = dimensionKey;
-      void setSelectedTimeframe(null);
+      setSelectedTimeframe(undefined);
     }
   }, [dimensionKey, setSelectedTimeframe]);
 
   // Handle timeframe selection from strips
   const handleSelectedTimeframe = (labels: LabelSet, bounds: NumberDuo | undefined): void => {
     if (bounds === undefined) {
-      void setSelectedTimeframe(null);
+      setSelectedTimeframe(undefined);
     } else {
-      void setSelectedTimeframe({labels, bounds});
+      setSelectedTimeframe({labels, bounds});
     }
   };
 

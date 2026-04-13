@@ -13,13 +13,9 @@
 
 import {ReactNode} from 'react';
 
-import {useQueryState} from 'nuqs';
-
-import {useParcaContext} from '@parca/components';
+import {useParcaContext, useURLState, useURLStateBatch} from '@parca/components';
 
 import {ProfileSource} from '../../../ProfileSource';
-import {stringParam} from '../../../hooks/urlParsers';
-import {useDashboardItems} from '../../../hooks/useDashboardItems';
 import Dropdown, {DropdownElement, InnerAction} from './Dropdown';
 
 interface Props {
@@ -27,9 +23,15 @@ interface Props {
 }
 
 const ViewSelector = ({profileSource}: Props): JSX.Element => {
-  const {dashboardItems, setDashboardItems} = useDashboardItems();
-  const [, setSandwichFunctionName] = useQueryState('sandwich_function_name', stringParam);
+  const [dashboardItems = ['flamegraph'], setDashboardItems] = useURLState<string[]>(
+    'dashboard_items',
+    {
+      alwaysReturnArray: true,
+    }
+  );
+  const [, setSandwichFunctionName] = useURLState<string | undefined>('sandwich_function_name');
   const {enableSourcesView, enableSandwichView} = useParcaContext();
+  const batchUpdates = useURLStateBatch();
 
   const allItems: Array<{
     key: string;
@@ -127,9 +129,14 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
         } else {
           const newDashboardItems = dashboardItems.filter(v => v !== item.key);
 
-          setDashboardItems(newDashboardItems);
+          // Batch updates when removing sandwich panel to combine both URL changes
           if (item.key === 'sandwich') {
-            void setSandwichFunctionName(null);
+            batchUpdates(() => {
+              setDashboardItems(newDashboardItems);
+              setSandwichFunctionName(undefined);
+            });
+          } else {
+            setDashboardItems(newDashboardItems);
           }
         }
       },

@@ -1,6 +1,6 @@
 {
   "name": "@parca/profile",
-  "version": "0.19.140",
+  "version": "0.19.139",
   "description": "Profile viewing libraries",
   "dependencies": {
     "@floating-ui/react": "^0.27.12",
@@ -42,7 +42,6 @@
     "graphviz-wasm": "3.0.2",
     "lodash.throttle": "^4.1.1",
     "lz4js": "^0.2.0",
-    "nuqs": "^2.4.1",
     "react": "18.3.1",
     "react-beautiful-dnd": "^13.1.1",
     "react-contexify": "^6.0.0",
