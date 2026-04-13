@@ -14,15 +14,14 @@
 import React, {useRef, useState} from 'react';
 
 import {AnimatePresence, motion} from 'framer-motion';
-import {useQueryState} from 'nuqs';
 
+import {useURLState} from '@parca/components';
 import {TEST_IDS, testId} from '@parca/test-utils';
 
 import {ProfileSource} from '../ProfileSource';
 import {useDashboard} from '../ProfileView/context/DashboardContext';
 import {useVisualizationState} from '../ProfileView/hooks/useVisualizationState';
 import {SandwichData} from '../ProfileView/types/visualization';
-import {stringParam} from '../hooks/urlParsers';
 import {CalleesSection} from './components/CalleesSection';
 import {CallersSection} from './components/CallersSection';
 
@@ -36,7 +35,7 @@ const Sandwich = React.memo(function Sandwich({
   profileSource,
 }: Props): React.JSX.Element {
   const {dashboardItems} = useDashboard();
-  const [sandwichFunctionName] = useQueryState('sandwich_function_name', stringParam);
+  const [sandwichFunctionName] = useURLState<string | undefined>('sandwich_function_name');
 
   const callersRef = React.useRef<HTMLDivElement | null>(null);
   const calleesRef = React.useRef<HTMLDivElement | null>(null);
@@ -58,7 +57,7 @@ const Sandwich = React.memo(function Sandwich({
           transition={{duration: 0.5}}
         >
           <div className="relative flex flex-row">
-            {sandwichFunctionName != null ? (
+            {sandwichFunctionName !== undefined ? (
               <div className="w-full flex flex-col" ref={callersCalleesContainerRef}>
                 <CallersSection
                   callersRef={callersRef}

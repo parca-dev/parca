@@ -14,6 +14,7 @@
 import {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {QueryServiceClient} from '@parca/client';
+import {useURLStateBatch} from '@parca/components';
 import {Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
 import type {NavigateFunction} from '@parca/utilities';
@@ -33,6 +34,7 @@ const ProfileExplorerCompare = ({
   navigateTo,
 }: ProfileExplorerCompareProps): JSX.Element => {
   const [showMetricsGraph, setShowMetricsGraph] = useState(true);
+  const batchUpdates = useURLStateBatch();
   const {closeCompareMode, isCompareMode, isCompareAbsolute} = useCompareModeMeta();
 
   // Read ProfileSource states from URL for both sides
@@ -63,10 +65,12 @@ const ProfileExplorerCompare = ({
     }
 
     if (querySelectionB.expression === '' && querySelectionA.expression !== '') {
-      setDraftExpressionB(querySelectionA.expression);
-      setDraftTimeRangeB(querySelectionA.from, querySelectionA.to, querySelectionA.timeSelection);
-      // Commit to update the URL and trigger metrics graph load
-      commitDraftB();
+      batchUpdates(() => {
+        setDraftExpressionB(querySelectionA.expression);
+        setDraftTimeRangeB(querySelectionA.from, querySelectionA.to, querySelectionA.timeSelection);
+        // Commit to update the URL and trigger metrics graph load
+        commitDraftB();
+      });
     }
   }, [
     isCompareMode,
@@ -78,6 +82,7 @@ const ProfileExplorerCompare = ({
     setDraftExpressionB,
     setDraftTimeRangeB,
     commitDraftB,
+    batchUpdates,
   ]);
 
   const closeProfileA = useCallback((): void => {

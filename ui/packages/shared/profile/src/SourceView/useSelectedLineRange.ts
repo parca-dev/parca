@@ -11,25 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback} from 'react';
+import {useMemo} from 'react';
 
-import {createParser, useQueryState} from 'nuqs';
-
-interface SelectedLineRange {
-  start: number;
-  end: number;
-}
-
-const lineRangeParser = createParser<SelectedLineRange>({
-  parse: (value: string) => {
-    const [start, end] = value.split('-');
-    const startNum = parseInt(start, 10);
-    if (isNaN(startNum)) return null;
-    const endNum = end !== undefined ? parseInt(end, 10) : startNum;
-    return {start: startNum, end: isNaN(endNum) ? startNum : endNum};
-  },
-  serialize: (value: SelectedLineRange) => `${value.start}-${value.end}`,
-}).withOptions({history: 'replace'});
+import {useURLState} from '@parca/components';
 
 interface LineRange {
   startLine: number;
@@ -38,23 +22,24 @@ interface LineRange {
 }
 
 const useLineRange = (): LineRange => {
-  const [lineRange, setRawLineRange] = useQueryState(
-    'source_line',
-    lineRangeParser.withDefault({start: -1, end: -1})
-  );
+  const [sourceLine, setSourceLine] = useURLState<string | undefined>('source_line');
+  const [startLine, endLine] = useMemo(() => {
+    if (sourceLine == null) {
+      return [-1, -1];
+    }
+    const [start, end] = sourceLine.split('-');
 
-  const setLineRange = useCallback(
-    (start: number, end: number): void => {
-      void setRawLineRange({start, end});
-    },
-    [setRawLineRange]
-  );
+    if (end === undefined) {
+      return [parseInt(start, 10), parseInt(start, 10)];
+    }
+    return [parseInt(start, 10), parseInt(end, 10)];
+  }, [sourceLine]);
 
-  return {
-    startLine: lineRange.start,
-    endLine: lineRange.end,
-    setLineRange,
+  const setLineRange = (start: number, end: number): void => {
+    setSourceLine(`${start}-${end}`);
   };
+
+  return {startLine, endLine, setLineRange};
 };
 
 export default useLineRange;

@@ -13,18 +13,15 @@
 
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
-import {useQueryState} from 'nuqs';
 import {Item, Menu, Submenu} from 'react-contexify';
 
 import 'react-contexify/dist/ReactContexify.css';
 
-import {useParcaContext} from '@parca/components';
+import {useParcaContext, useURLState, useURLStateBatch} from '@parca/components';
 import {valueFormatter} from '@parca/utilities';
 
 import {type Row} from '.';
 import {getTextForCumulative} from '../ProfileFlameGraph/FlameGraphArrow/utils';
-import {stringParam} from '../hooks/urlParsers';
-import {useDashboardItems} from '../hooks/useDashboardItems';
 import {truncateString} from '../utils';
 import {type ColumnName} from './utils/functions';
 
@@ -45,16 +42,22 @@ const TableContextMenu = ({
   totalUnfiltered,
   columnVisibility,
 }: TableContextMenuProps): React.JSX.Element => {
-  const [_, setSandwichFunctionName] = useQueryState('sandwich_function_name', stringParam);
-  const {dashboardItems, setDashboardItems} = useDashboardItems();
+  const [_, setSandwichFunctionName] = useURLState<string | undefined>('sandwich_function_name');
+  const [dashboardItems, setDashboardItems] = useURLState<string[]>('dashboard_items', {
+    alwaysReturnArray: true,
+  });
   const {enableSandwichView, isDarkMode} = useParcaContext();
+  const batchUpdates = useURLStateBatch();
 
   const onSandwichViewSelect = (): void => {
     if (row?.name != null && row.name.length > 0) {
-      void setSandwichFunctionName(row.name.trim());
-      if (!dashboardItems.includes('sandwich')) {
-        setDashboardItems([...dashboardItems, 'sandwich']);
-      }
+      // Batch updates to combine setSandwichFunctionName + setDashboardItems into single URL navigation
+      batchUpdates(() => {
+        setSandwichFunctionName(row.name.trim());
+        if (!dashboardItems.includes('sandwich')) {
+          setDashboardItems([...dashboardItems, 'sandwich']);
+        }
+      });
     }
   };
 

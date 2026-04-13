@@ -12,20 +12,19 @@
 // limitations under the License.
 
 import {Icon} from '@iconify/react';
-import {useQueryState} from 'nuqs';
 
-import {Button} from '@parca/components';
+import {Button, useURLState} from '@parca/components';
 import {TEST_IDS, testId} from '@parca/test-utils';
 
-import {invertCallStackParser} from '../../../hooks/urlParsers';
 import {useResetFlameGraphState} from '../../hooks/useResetFlameGraphState';
 
 const InvertCallStack = (): JSX.Element => {
-  const [isInvert, setInvertStack] = useQueryState('invert_call_stack', invertCallStackParser);
+  const [invertStack = '', setInvertStack] = useURLState('invert_call_stack');
+  const isInvert = invertStack === 'true';
   const resetFlameGraphState = useResetFlameGraphState();
 
   const handleSetInvert = (value: boolean): void => {
-    void setInvertStack(value);
+    setInvertStack(value ? 'true' : '');
 
     resetFlameGraphState();
   };

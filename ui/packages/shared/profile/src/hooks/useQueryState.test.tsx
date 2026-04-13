@@ -17,13 +17,59 @@ import {ReactNode, act} from 'react';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 // eslint-disable-next-line import/named
 import {renderHook, waitFor} from '@testing-library/react';
-// eslint-disable-next-line import/no-unresolved
-import {NuqsTestingAdapter} from 'nuqs/adapters/testing';
 import {beforeEach, describe, expect, it, vi} from 'vitest';
+
+import {URLStateProvider} from '@parca/components';
 
 import {useQueryState} from './useQueryState';
 
-const mockNavigateTo = vi.fn();
+// Mock window.location
+const mockLocation = {
+  pathname: '/test',
+  search: '',
+};
+
+// Mock the navigate function that actually updates the mock location
+const mockNavigateTo = vi.fn((path: string, params: Record<string, string | string[]>) => {
+  // Convert params object to query string
+  const searchParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      if (Array.isArray(value)) {
+        // For arrays, join with commas
+        searchParams.set(key, value.join(','));
+      } else {
+        searchParams.set(key, String(value));
+      }
+    }
+  });
+  mockLocation.search = `?${searchParams.toString()}`;
+});
+
+// Mock the getQueryParamsFromURL function
+vi.mock('@parca/components/src/hooks/URLState/utils', async () => {
+  const actual = await vi.importActual('@parca/components/src/hooks/URLState/utils');
+  return {
+    ...actual,
+    getQueryParamsFromURL: () => {
+      if (mockLocation.search === '') return {};
+      const params = new URLSearchParams(mockLocation.search);
+      const result: Record<string, string | string[]> = {};
+      for (const [key, value] of params.entries()) {
+        const decodedValue = decodeURIComponent(value);
+        const existing = result[key];
+        if (existing !== undefined) {
+          result[key] = Array.isArray(existing)
+            ? [...existing, decodedValue]
+            : [existing, decodedValue];
+        } else {
+          result[key] = decodedValue;
+        }
+      }
+      return result;
+    },
+  };
+});
 
 // Mock useSumBy with stateful behavior using React's useState
 vi.mock('../useSumBy', async () => {
@@ -92,10 +138,9 @@ const setProfileTypesData = (data: typeof mockProfileTypesData): void => {
   mockProfileTypesData = data;
 };
 
-// Helper to create wrapper with NuqsTestingAdapter
+// Helper to create wrapper with URLStateProvider
 const createWrapper = (
-  _paramPreferences = {},
-  searchParams: string | Record<string, string> = {}
+  paramPreferences = {}
 ): (({children}: {children: ReactNode}) => JSX.Element) => {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -105,17 +150,24 @@ const createWrapper = (
     },
   });
   const Wrapper = ({children}: {children: ReactNode}): JSX.Element => (
-    <NuqsTestingAdapter searchParams={searchParams} hasMemory={true}>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    </NuqsTestingAdapter>
+    <QueryClientProvider client={queryClient}>
+      <URLStateProvider navigateTo={mockNavigateTo} paramPreferences={paramPreferences}>
+        {children}
+      </URLStateProvider>
+    </QueryClientProvider>
   );
-  Wrapper.displayName = 'NuqsTestingWrapper';
+  Wrapper.displayName = 'URLStateProviderWrapper';
   return Wrapper;
 };
 
 describe('useQueryState', () => {
   beforeEach(() => {
     mockNavigateTo.mockClear();
+    Object.defineProperty(window, 'location', {
+      value: mockLocation,
+      writable: true,
+    });
+    mockLocation.search = '';
     // Reset profile types mock state
     setProfileTypesLoading(false);
     setProfileTypesData(undefined);
@@ -143,12 +195,10 @@ describe('useQueryState', () => {
     });
 
     it('should handle suffix for comparison mode', () => {
-      const {result} = renderHook(() => useQueryState({suffix: '_a'}), {
-        wrapper: createWrapper(
-          {},
-          '?expression_a=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{}&from_a=1000&to_a=2000'
-        ),
-      });
+      mockLocation.search =
+        '?expression_a=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{}&from_a=1000&to_a=2000';
+
+      const {result} = renderHook(() => useQueryState({suffix: '_a'}), {wrapper: createWrapper()});
 
       const {querySelection} = result.current;
       expect(querySelection.expression).toBe('process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{}');
@@ -186,11 +236,14 @@ describe('useQueryState', () => {
       });
 
       await waitFor(() => {
-        expect(result.current.querySelection.expression).toBe(
-          'memory:alloc_objects:count:space:bytes:delta{}'
-        );
-        expect(result.current.querySelection.mergeFrom).toBe('1000000000');
-        expect(result.current.querySelection.mergeTo).toBe('2000000000');
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+        expect(params.expression).toBe('memory:alloc_objects:count:space:bytes:delta{}');
+        // Should set merge parameters for delta profile
+        expect(params).toHaveProperty('merge_from');
+        expect(params).toHaveProperty('merge_to');
+        expect(params.merge_from).toBe('1000000000');
+        expect(params.merge_to).toBe('2000000000');
       });
     });
 
@@ -211,9 +264,11 @@ describe('useQueryState', () => {
       });
 
       await waitFor(() => {
-        expect(String(result.current.querySelection.from)).toBe('3000');
-        expect(String(result.current.querySelection.to)).toBe('4000');
-        expect(result.current.querySelection.timeSelection).toBe('relative:minute|5');
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+        expect(params.from).toBe('3000');
+        expect(params.to).toBe('4000');
+        expect(params.time_selection).toBe('relative:minute|5');
       });
     });
 
@@ -234,8 +289,9 @@ describe('useQueryState', () => {
       });
 
       await waitFor(() => {
-        // sumBy is managed by the mocked useSumBy hook; verify it was set in draft
-        expect(result.current.draftSelection.sumBy).toEqual(['namespace', 'container']);
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+        expect(params.sum_by).toBe('namespace,container');
       });
     });
 
@@ -257,8 +313,10 @@ describe('useQueryState', () => {
       });
 
       await waitFor(() => {
-        expect(result.current.querySelection.mergeFrom).toBe('5000000000');
-        expect(result.current.querySelection.mergeTo).toBe('6000000000');
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+        expect(params.merge_from).toBe('5000000000');
+        expect(params.merge_to).toBe('6000000000');
       });
     });
   });
@@ -287,25 +345,22 @@ describe('useQueryState', () => {
       });
 
       await waitFor(() => {
-        // Verify all state values are correct after the batch
-        expect(result.current.querySelection.expression).toBe(
-          'memory:alloc_space:bytes:space:bytes:delta{}'
-        );
-        expect(String(result.current.querySelection.from)).toBe('7000');
-        expect(String(result.current.querySelection.to)).toBe('8000');
-        expect(result.current.querySelection.timeSelection).toBe('relative:minute|30');
-        // sumBy is managed by the mocked useSumBy hook; verify it was set in draft
-        expect(result.current.draftSelection.sumBy).toEqual(['pod', 'node']);
+        // Should only navigate once for all updates
+        expect(mockNavigateTo).toHaveBeenCalledTimes(1);
+        const [, params] = mockNavigateTo.mock.calls[0];
+        expect(params.expression).toBe('memory:alloc_space:bytes:space:bytes:delta{}');
+        expect(params.from).toBe('7000');
+        expect(params.to).toBe('8000');
+        expect(params.time_selection).toBe('relative:minute|30');
+        expect(params.sum_by).toBe('pod,node');
       });
     });
 
     it('should handle partial updates', async () => {
-      const {result} = renderHook(() => useQueryState(), {
-        wrapper: createWrapper(
-          {},
-          '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{}&from=1000&to=2000&time_selection=relative:hour|1'
-        ),
-      });
+      mockLocation.search =
+        '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{}&from=1000&to=2000&time_selection=relative:hour|1';
+
+      const {result} = renderHook(() => useQueryState(), {wrapper: createWrapper()});
 
       act(() => {
         // Only update expression, other values should remain
@@ -324,12 +379,12 @@ describe('useQueryState', () => {
       });
 
       await waitFor(() => {
-        expect(result.current.querySelection.expression).toBe(
-          'memory:inuse_space:bytes:space:bytes{}'
-        );
-        expect(String(result.current.querySelection.from)).toBe('1000');
-        expect(String(result.current.querySelection.to)).toBe('2000');
-        expect(result.current.querySelection.timeSelection).toBe('relative:hour|1');
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+        expect(params.expression).toBe('memory:inuse_space:bytes:space:bytes{}');
+        expect(params.from).toBe('1000');
+        expect(params.to).toBe('2000');
+        expect(params.time_selection).toBe('relative:hour|1');
       });
     });
 
@@ -350,23 +405,21 @@ describe('useQueryState', () => {
       });
 
       await waitFor(() => {
-        expect(result.current.querySelection.expression).toBe(
-          'memory:alloc_space:bytes:space:bytes:delta{}'
-        );
-        expect(result.current.querySelection.mergeFrom).toBe('9000000000');
-        expect(result.current.querySelection.mergeTo).toBe('10000000000');
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+        expect(params.expression).toBe('memory:alloc_space:bytes:space:bytes:delta{}');
+        expect(params.merge_from).toBe('9000000000');
+        expect(params.merge_to).toBe('10000000000');
       });
     });
   });
 
   describe('Helper functions', () => {
     it('should set profile name correctly', async () => {
-      const {result} = renderHook(() => useQueryState(), {
-        wrapper: createWrapper(
-          {},
-          '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{job="parca"}'
-        ),
-      });
+      mockLocation.search =
+        '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{job="parca"}';
+
+      const {result} = renderHook(() => useQueryState(), {wrapper: createWrapper()});
 
       act(() => {
         result.current.setDraftProfileName('memory:inuse_space:bytes:space:bytes');
@@ -382,19 +435,16 @@ describe('useQueryState', () => {
       });
 
       await waitFor(() => {
-        expect(result.current.querySelection.expression).toBe(
-          'memory:inuse_space:bytes:space:bytes{job="parca"}'
-        );
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+        expect(params.expression).toBe('memory:inuse_space:bytes:space:bytes{job="parca"}');
       });
     });
 
     it('should set matchers correctly using draft', async () => {
-      const {result} = renderHook(() => useQueryState(), {
-        wrapper: createWrapper(
-          {},
-          '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{}'
-        ),
-      });
+      mockLocation.search = '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{}';
+
+      const {result} = renderHook(() => useQueryState(), {wrapper: createWrapper()});
 
       act(() => {
         result.current.setDraftMatchers('namespace="default",pod="my-pod"');
@@ -404,6 +454,7 @@ describe('useQueryState', () => {
       expect(result.current.draftSelection.expression).toBe(
         'process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{namespace="default",pod="my-pod"}'
       );
+      expect(mockNavigateTo).not.toHaveBeenCalled();
 
       // Commit the draft
       act(() => {
@@ -411,7 +462,9 @@ describe('useQueryState', () => {
       });
 
       await waitFor(() => {
-        expect(result.current.querySelection.expression).toBe(
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+        expect(params.expression).toBe(
           'process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{namespace="default",pod="my-pod"}'
         );
       });
@@ -435,13 +488,12 @@ describe('useQueryState', () => {
       });
 
       await waitFor(() => {
-        expect(result.current.querySelection.expression).toBe(
-          'process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{}'
-        );
-        expect(String(result.current.querySelection.from)).toBe('1111');
-        expect(String(result.current.querySelection.to)).toBe('2222');
-        // sumBy is managed by the mocked useSumBy hook; verify it was set in draft
-        expect(result.current.draftSelection.sumBy).toEqual(['label_a']);
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+        expect(params.expression_a).toBe('process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{}');
+        expect(params.from_a).toBe('1111');
+        expect(params.to_a).toBe('2222');
+        expect(params.sum_by_a).toBe('label_a');
       });
     });
 
@@ -461,13 +513,12 @@ describe('useQueryState', () => {
       });
 
       await waitFor(() => {
-        expect(result.current.querySelection.expression).toBe(
-          'memory:alloc_space:bytes:space:bytes:delta{}'
-        );
-        expect(String(result.current.querySelection.from)).toBe('3333');
-        expect(String(result.current.querySelection.to)).toBe('4444');
-        // sumBy is managed by the mocked useSumBy hook; verify it was set in draft
-        expect(result.current.draftSelection.sumBy).toEqual(['label_b']);
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+        expect(params.expression_b).toBe('memory:alloc_space:bytes:space:bytes:delta{}');
+        expect(params.from_b).toBe('3333');
+        expect(params.to_b).toBe('4444');
+        expect(params.sum_by_b).toBe('label_b');
       });
     });
   });
@@ -483,30 +534,30 @@ describe('useQueryState', () => {
         result.current.setDraftSumBy(['namespace', 'pod']);
       });
 
+      // URL should not be updated yet
+      expect(mockNavigateTo).not.toHaveBeenCalled();
+
       // Commit all changes at once
       act(() => {
         result.current.commitDraft();
       });
 
-      // Verify all state values are correct
+      // Now URL should be updated exactly once with all changes
       await waitFor(() => {
-        expect(result.current.querySelection.expression).toBe(
-          'memory:alloc_space:bytes:space:bytes:delta{}'
-        );
-        expect(String(result.current.querySelection.from)).toBe('5000');
-        expect(String(result.current.querySelection.to)).toBe('6000');
-        // sumBy is managed by the mocked useSumBy hook; verify it was set in draft
-        expect(result.current.draftSelection.sumBy).toEqual(['namespace', 'pod']);
+        expect(mockNavigateTo).toHaveBeenCalledTimes(1);
+        const [, params] = mockNavigateTo.mock.calls[0];
+        expect(params.expression).toBe('memory:alloc_space:bytes:space:bytes:delta{}');
+        expect(params.from).toBe('5000');
+        expect(params.to).toBe('6000');
+        expect(params.sum_by).toBe('namespace,pod');
       });
     });
 
     it('should handle draft profile name changes', () => {
-      const {result} = renderHook(() => useQueryState(), {
-        wrapper: createWrapper(
-          {},
-          '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{job="test"}'
-        ),
-      });
+      mockLocation.search =
+        '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{job="test"}';
+
+      const {result} = renderHook(() => useQueryState(), {wrapper: createWrapper()});
 
       // Change profile name in draft
       act(() => {
@@ -517,6 +568,9 @@ describe('useQueryState', () => {
       expect(result.current.draftSelection.expression).toBe(
         'memory:inuse_space:bytes:space:bytes{job="test"}'
       );
+
+      // URL should not be updated yet
+      expect(mockNavigateTo).not.toHaveBeenCalled();
     });
   });
 
@@ -562,12 +616,10 @@ describe('useQueryState', () => {
     });
 
     it('should clear merge params for non-delta profiles', async () => {
-      const {result} = renderHook(() => useQueryState(), {
-        wrapper: createWrapper(
-          {},
-          '?expression=memory:alloc_objects:count:space:bytes:delta{}&merge_from=1000000000&merge_to=2000000000'
-        ),
-      });
+      mockLocation.search =
+        '?expression=memory:alloc_objects:count:space:bytes:delta{}&merge_from=1000000000&merge_to=2000000000';
+
+      const {result} = renderHook(() => useQueryState(), {wrapper: createWrapper()});
 
       // Switch to non-delta profile (without :delta suffix) using draft
       act(() => {
@@ -580,22 +632,19 @@ describe('useQueryState', () => {
       });
 
       await waitFor(() => {
-        expect(result.current.querySelection.expression).toBe(
-          'memory:inuse_space:bytes:space:bytes{}'
-        );
-        // Merge params should not be set for non-delta profiles
-        expect(result.current.querySelection.mergeFrom).toBeUndefined();
-        expect(result.current.querySelection.mergeTo).toBeUndefined();
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+        expect(params.expression).toBe('memory:inuse_space:bytes:space:bytes{}');
+        expect(params).not.toHaveProperty('merge_from');
+        expect(params).not.toHaveProperty('merge_to');
       });
     });
 
     it('should preserve other URL parameters when updating', async () => {
-      const {result} = renderHook(() => useQueryState(), {
-        wrapper: createWrapper(
-          {},
-          '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{}&other_param=value&unrelated=test'
-        ),
-      });
+      mockLocation.search =
+        '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{}&other_param=value&unrelated=test';
+
+      const {result} = renderHook(() => useQueryState(), {wrapper: createWrapper()});
 
       // Update draft and commit
       act(() => {
@@ -607,21 +656,21 @@ describe('useQueryState', () => {
       });
 
       await waitFor(() => {
-        expect(result.current.querySelection.expression).toBe(
-          'memory:inuse_space:bytes:space:bytes{}'
-        );
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+        expect(params.expression).toBe('memory:inuse_space:bytes:space:bytes{}');
+        expect(params.other_param).toBe('value');
+        expect(params.unrelated).toBe('test');
       });
     });
   });
 
   describe('Commit with refreshed time range (time range re-evaluation)', () => {
     it('should use refreshed time range values instead of draft state when provided', async () => {
-      const {result} = renderHook(() => useQueryState(), {
-        wrapper: createWrapper(
-          {},
-          '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds{}&from=1000&to=2000&time_selection=relative:minute|15'
-        ),
-      });
+      mockLocation.search =
+        '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds{}&from=1000&to=2000&time_selection=relative:minute|15';
+
+      const {result} = renderHook(() => useQueryState(), {wrapper: createWrapper()});
 
       // Draft state has original values
       expect(result.current.draftSelection.from).toBe(1000);
@@ -638,10 +687,12 @@ describe('useQueryState', () => {
       });
 
       await waitFor(() => {
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
         // Should use refreshed time range values, not draft values
-        expect(String(result.current.querySelection.from)).toBe('5000');
-        expect(String(result.current.querySelection.to)).toBe('6000');
-        expect(result.current.querySelection.timeSelection).toBe('relative:minute|15');
+        expect(params.from).toBe('5000');
+        expect(params.to).toBe('6000');
+        expect(params.time_selection).toBe('relative:minute|15');
       });
     });
 
@@ -667,8 +718,7 @@ describe('useQueryState', () => {
       });
 
       await waitFor(() => {
-        expect(String(result.current.querySelection.from)).toBe('3000');
-        expect(String(result.current.querySelection.to)).toBe('4000');
+        expect(mockNavigateTo).toHaveBeenCalled();
       });
 
       // Draft state should be updated with the refreshed time range
@@ -677,12 +727,12 @@ describe('useQueryState', () => {
     });
 
     it('should trigger navigation even when expression unchanged (time re-evaluation)', async () => {
-      const {result} = renderHook(() => useQueryState(), {
-        wrapper: createWrapper(
-          {},
-          '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds{}&from=1000&to=2000&time_selection=relative:minute|5'
-        ),
-      });
+      mockLocation.search =
+        '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds{}&from=1000&to=2000&time_selection=relative:minute|5';
+
+      const {result} = renderHook(() => useQueryState(), {wrapper: createWrapper()});
+
+      mockNavigateTo.mockClear();
 
       // First commit with new time values
       act(() => {
@@ -694,9 +744,14 @@ describe('useQueryState', () => {
       });
 
       await waitFor(() => {
-        expect(String(result.current.querySelection.from)).toBe('5000');
-        expect(String(result.current.querySelection.to)).toBe('6000');
+        expect(mockNavigateTo).toHaveBeenCalledTimes(1);
       });
+
+      const firstCallParams = mockNavigateTo.mock.calls[0][1];
+      expect(firstCallParams.from).toBe('5000');
+      expect(firstCallParams.to).toBe('6000');
+
+      mockNavigateTo.mockClear();
 
       // Second commit with different time values (simulating clicking Search again)
       act(() => {
@@ -708,9 +763,15 @@ describe('useQueryState', () => {
       });
 
       await waitFor(() => {
-        expect(String(result.current.querySelection.from)).toBe('7000');
-        expect(String(result.current.querySelection.to)).toBe('8000');
+        expect(mockNavigateTo).toHaveBeenCalledTimes(1);
       });
+
+      const secondCallParams = mockNavigateTo.mock.calls[0][1];
+      expect(secondCallParams.from).toBe('7000');
+      expect(secondCallParams.to).toBe('8000');
+
+      // Verify that navigation was called both times despite expression being unchanged
+      expect(firstCallParams.from).not.toBe(secondCallParams.from);
     });
 
     it('should auto-calculate merge params for delta profiles when using refreshed time range', async () => {
@@ -734,19 +795,20 @@ describe('useQueryState', () => {
       });
 
       await waitFor(() => {
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+
         // Verify merge params are calculated from refreshed time range
-        expect(result.current.querySelection.mergeFrom).toBe('5000000000'); // 5000ms * 1_000_000
-        expect(result.current.querySelection.mergeTo).toBe('6000000000'); // 6000ms * 1_000_000
+        expect(params.merge_from).toBe('5000000000'); // 5000ms * 1_000_000
+        expect(params.merge_to).toBe('6000000000'); // 6000ms * 1_000_000
       });
     });
 
     it('should use draft values when refreshedTimeRange is not provided', async () => {
-      const {result} = renderHook(() => useQueryState(), {
-        wrapper: createWrapper(
-          {},
-          '?expression=memory:inuse_space:bytes:space:bytes{}&from=1000&to=2000&time_selection=relative:hour|1'
-        ),
-      });
+      mockLocation.search =
+        '?expression=memory:inuse_space:bytes:space:bytes{}&from=1000&to=2000&time_selection=relative:hour|1';
+
+      const {result} = renderHook(() => useQueryState(), {wrapper: createWrapper()});
 
       // Change draft values
       act(() => {
@@ -759,10 +821,13 @@ describe('useQueryState', () => {
       });
 
       await waitFor(() => {
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+
         // Should use updated draft values
-        expect(String(result.current.querySelection.from)).toBe('3000');
-        expect(String(result.current.querySelection.to)).toBe('4000');
-        expect(result.current.querySelection.timeSelection).toBe('relative:minute|30');
+        expect(params.from).toBe('3000');
+        expect(params.to).toBe('4000');
+        expect(params.time_selection).toBe('relative:minute|30');
       });
     });
   });
@@ -770,11 +835,11 @@ describe('useQueryState', () => {
   describe('State persistence after page reload', () => {
     it('should retain committed values after page reload simulation', async () => {
       // Initial state (using delta profile since sumBy only applies to delta)
+      mockLocation.search =
+        '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{}&from=1000&to=2000';
+
       const {result: result1, unmount} = renderHook(() => useQueryState(), {
-        wrapper: createWrapper(
-          {},
-          '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{}&from=1000&to=2000'
-        ),
+        wrapper: createWrapper(),
       });
 
       // User makes changes to draft (using delta profile since sumBy only applies to delta)
@@ -790,19 +855,22 @@ describe('useQueryState', () => {
       });
 
       await waitFor(() => {
-        expect(result1.current.querySelection.expression).toBe(
-          'memory:alloc_space:bytes:space:bytes:delta{}'
-        );
+        expect(mockNavigateTo).toHaveBeenCalled();
       });
 
-      // Build the query string from the committed state
+      // Get the params that were committed to URL
+      const committedParams = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1][1];
+
+      // Simulate page reload by updating mockLocation.search with committed values
       const queryString = new URLSearchParams({
-        expression: String(result1.current.querySelection.expression),
-        from: String(result1.current.querySelection.from),
-        to: String(result1.current.querySelection.to),
-        time_selection: String(result1.current.querySelection.timeSelection),
-        sum_by: (result1.current.querySelection.sumBy ?? []).join(','),
+        expression: committedParams.expression as string,
+        from: committedParams.from as string,
+        to: committedParams.to as string,
+        time_selection: committedParams.time_selection as string,
+        sum_by: committedParams.sum_by as string,
       }).toString();
+
+      mockLocation.search = `?${queryString}`;
 
       // Unmount the old hook instance
       unmount();
@@ -810,10 +878,8 @@ describe('useQueryState', () => {
       // Clear navigation mock to verify no new navigation on reload
       mockNavigateTo.mockClear();
 
-      // Create new hook instance (simulating page reload) with the committed search params
-      const {result: result2} = renderHook(() => useQueryState(), {
-        wrapper: createWrapper({}, `?${queryString}`),
-      });
+      // Create new hook instance (simulating page reload)
+      const {result: result2} = renderHook(() => useQueryState(), {wrapper: createWrapper()});
 
       // Verify state is loaded from URL after "reload"
       expect(result2.current.querySelection.expression).toBe(
@@ -822,6 +888,7 @@ describe('useQueryState', () => {
       expect(result2.current.querySelection.from).toBe(5000);
       expect(result2.current.querySelection.to).toBe(6000);
       expect(result2.current.querySelection.timeSelection).toBe('relative:minute|15');
+      expect(result2.current.querySelection.sumBy).toEqual(['namespace', 'pod']);
 
       // Draft should be synced with URL state on page load
       expect(result2.current.draftSelection.expression).toBe(
@@ -829,15 +896,19 @@ describe('useQueryState', () => {
       );
       expect(result2.current.draftSelection.from).toBe(5000);
       expect(result2.current.draftSelection.to).toBe(6000);
+      expect(result2.current.draftSelection.sumBy).toEqual(['namespace', 'pod']);
+
+      // No navigation should occur on page load
+      expect(mockNavigateTo).not.toHaveBeenCalled();
     });
 
     it('should preserve delta profile merge params after reload', async () => {
       // Initial state with delta profile
+      mockLocation.search =
+        '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{}&from=1000&to=2000';
+
       const {result: result1, unmount} = renderHook(() => useQueryState(), {
-        wrapper: createWrapper(
-          {},
-          '?expression=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{}&from=1000&to=2000'
-        ),
+        wrapper: createWrapper(),
       });
 
       // Commit with time override
@@ -850,27 +921,31 @@ describe('useQueryState', () => {
       });
 
       await waitFor(() => {
-        expect(result1.current.querySelection.mergeFrom).toBe('5000000000');
-        expect(result1.current.querySelection.mergeTo).toBe('6000000000');
+        expect(mockNavigateTo).toHaveBeenCalled();
       });
+
+      const committedParams = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1][1];
+
+      // Verify merge params were set
+      expect(committedParams.merge_from).toBe('5000000000');
+      expect(committedParams.merge_to).toBe('6000000000');
 
       // Simulate page reload with all params including merge params
       const queryString = new URLSearchParams({
-        expression: String(result1.current.querySelection.expression),
-        from: String(result1.current.querySelection.from),
-        to: String(result1.current.querySelection.to),
-        time_selection: String(result1.current.querySelection.timeSelection),
-        merge_from: String(result1.current.querySelection.mergeFrom),
-        merge_to: String(result1.current.querySelection.mergeTo),
+        expression: committedParams.expression as string,
+        from: committedParams.from as string,
+        to: committedParams.to as string,
+        time_selection: committedParams.time_selection as string,
+        merge_from: committedParams.merge_from as string,
+        merge_to: committedParams.merge_to as string,
       }).toString();
 
+      mockLocation.search = `?${queryString}`;
       unmount();
       mockNavigateTo.mockClear();
 
       // Create new hook instance
-      const {result: result2} = renderHook(() => useQueryState(), {
-        wrapper: createWrapper({}, `?${queryString}`),
-      });
+      const {result: result2} = renderHook(() => useQueryState(), {wrapper: createWrapper()});
 
       // Verify merge params are preserved
       expect(result2.current.querySelection.mergeFrom).toBe('5000000000');
@@ -891,12 +966,10 @@ describe('useQueryState', () => {
 
     it('should compute ProfileSelection from URL params', () => {
       // Set URL with ProfileSelection params - using valid profile type
-      const {result} = renderHook(() => useQueryState({suffix: '_a'}), {
-        wrapper: createWrapper(
-          {},
-          '?merge_from_a=1234567890&merge_to_a=9876543210&selection_a=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{pod="test"}'
-        ),
-      });
+      mockLocation.search =
+        '?merge_from_a=1234567890&merge_to_a=9876543210&selection_a=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{pod="test"}';
+
+      const {result} = renderHook(() => useQueryState({suffix: '_a'}), {wrapper: createWrapper()});
 
       const {profileSelection} = result.current;
       expect(profileSelection).not.toBeNull();
@@ -933,14 +1006,13 @@ describe('useQueryState', () => {
       });
 
       await waitFor(() => {
-        const {profileSelection} = result.current;
-        expect(profileSelection).not.toBeNull();
-        const historyParams = profileSelection?.HistoryParams();
-        expect(historyParams?.selection).toBe(
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+        expect(params.selection_a).toBe(
           'memory:inuse_space:bytes:space:bytes{namespace="default"}'
         );
-        expect(historyParams?.merge_from).toBe('5000000000');
-        expect(historyParams?.merge_to).toBe('6000000000');
+        expect(params.merge_from_a).toBe('5000000000');
+        expect(params.merge_to_a).toBe('6000000000');
       });
     });
 
@@ -962,25 +1034,20 @@ describe('useQueryState', () => {
       });
 
       await waitFor(() => {
-        const {profileSelection} = resultB.current;
-        expect(profileSelection).not.toBeNull();
-        const historyParams = profileSelection?.HistoryParams();
-        expect(historyParams?.selection).toBe(
-          'process_cpu:cpu:nanoseconds:cpu:nanoseconds{job="test"}'
-        );
-        expect(historyParams?.merge_from).toBe('7000000000');
-        expect(historyParams?.merge_to).toBe('8000000000');
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+        expect(params.selection_b).toBe('process_cpu:cpu:nanoseconds:cpu:nanoseconds{job="test"}');
+        expect(params.merge_from_b).toBe('7000000000');
+        expect(params.merge_to_b).toBe('8000000000');
       });
     });
 
     it('should clear ProfileSelection when commitDraft is called', async () => {
       // Start with a ProfileSelection in URL - using valid profile type
-      const {result} = renderHook(() => useQueryState({suffix: '_a'}), {
-        wrapper: createWrapper(
-          {},
-          '?expression_a=process_cpu:cpu:nanoseconds:cpu:nanoseconds{}&merge_from_a=1000000000&merge_to_a=2000000000&selection_a=process_cpu:cpu:nanoseconds:cpu:nanoseconds{pod="test"}'
-        ),
-      });
+      mockLocation.search =
+        '?expression_a=process_cpu:cpu:nanoseconds:cpu:nanoseconds{}&merge_from_a=1000000000&merge_to_a=2000000000&selection_a=process_cpu:cpu:nanoseconds:cpu:nanoseconds{pod="test"}';
+
+      const {result} = renderHook(() => useQueryState({suffix: '_a'}), {wrapper: createWrapper()});
 
       // Verify ProfileSelection exists
       expect(result.current.profileSelection).not.toBeNull();
@@ -996,23 +1063,22 @@ describe('useQueryState', () => {
       });
 
       await waitFor(() => {
-        // ProfileSelection should be cleared
-        expect(result.current.profileSelection).toBeNull();
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+
+        // ProfileSelection params should be cleared
+        expect(params).not.toHaveProperty('selection_a');
 
         // But QuerySelection params should still be present
-        expect(result.current.querySelection.expression).toBe(
-          'memory:inuse_space:bytes:space:bytes{}'
-        );
+        expect(params.expression_a).toBe('memory:inuse_space:bytes:space:bytes{}');
       });
     });
 
     it('should handle ProfileSelection with delta profiles correctly', () => {
-      const {result} = renderHook(() => useQueryState({suffix: '_a'}), {
-        wrapper: createWrapper(
-          {},
-          '?merge_from_a=1000000000&merge_to_a=2000000000&selection_a=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{node="worker"}'
-        ),
-      });
+      mockLocation.search =
+        '?merge_from_a=1000000000&merge_to_a=2000000000&selection_a=process_cpu:cpu:nanoseconds:cpu:nanoseconds:delta{node="worker"}';
+
+      const {result} = renderHook(() => useQueryState({suffix: '_a'}), {wrapper: createWrapper()});
 
       const {profileSelection} = result.current;
       expect(profileSelection).not.toBeNull();
@@ -1047,27 +1113,24 @@ describe('useQueryState', () => {
       });
 
       await waitFor(() => {
-        expect(result1.current.profileSelection).not.toBeNull();
+        expect(mockNavigateTo).toHaveBeenCalled();
       });
 
-      // Get the committed state values to build reload URL
-      const historyParams = result1.current.profileSelection?.HistoryParams();
-      const selectionA = historyParams?.selection ?? '';
-      const mergeFromA = historyParams?.merge_from ?? '';
-      const mergeToA = historyParams?.merge_to ?? '';
+      const committedParams = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1][1];
 
+      // Simulate page reload by updating mockLocation.search
+      const selectionA = String(committedParams.selection_a ?? '');
+      const mergeFromA = String(committedParams.merge_from_a ?? '');
+      const mergeToA = String(committedParams.merge_to_a ?? '');
+      mockLocation.search = `?selection_a=${encodeURIComponent(
+        selectionA
+      )}&merge_from_a=${mergeFromA}&merge_to_a=${mergeToA}`;
       unmount();
       mockNavigateTo.mockClear();
 
-      // Create new hook instance (simulating page reload) with the committed search params
+      // Create new hook instance (simulating page reload)
       const {result: result2} = renderHook(() => useQueryState({suffix: '_a'}), {
-        wrapper: createWrapper(
-          {},
-          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          `?selection_a=${encodeURIComponent(selectionA)}&merge_from_a=${
-            mergeFromA as string
-          }&merge_to_a=${mergeToA as string}`
-        ),
+        wrapper: createWrapper(),
       });
 
       // Verify ProfileSelection is loaded from URL after reload
@@ -1076,12 +1139,13 @@ describe('useQueryState', () => {
 
       // Use interface methods to test
       expect(profileSelection?.Type()).toBe('merge');
-      const reloadedHistoryParams = profileSelection?.HistoryParams();
-      expect(reloadedHistoryParams?.merge_from).toBe('3000000000');
-      expect(reloadedHistoryParams?.merge_to).toBe('4000000000');
-      expect(reloadedHistoryParams?.selection).toBe(
-        'memory:alloc_objects:count:space:bytes{pod="test"}'
-      );
+      const historyParams = profileSelection?.HistoryParams();
+      expect(historyParams?.merge_from).toBe('3000000000');
+      expect(historyParams?.merge_to).toBe('4000000000');
+      expect(historyParams?.selection).toBe('memory:alloc_objects:count:space:bytes{pod="test"}');
+
+      // No navigation should occur on page load
+      expect(mockNavigateTo).not.toHaveBeenCalled();
     });
 
     it('should handle independent ProfileSelection for both sides in comparison mode', async () => {
@@ -1117,8 +1181,10 @@ describe('useQueryState', () => {
       });
 
       await waitFor(() => {
-        expect(result.current.stateA.profileSelection).not.toBeNull();
+        expect(mockNavigateTo).toHaveBeenCalled();
       });
+
+      mockNavigateTo.mockClear();
 
       // Set ProfileSelection for side B
       act(() => {
@@ -1129,7 +1195,19 @@ describe('useQueryState', () => {
         );
       });
 
-      // Verify both ProfileSelections exist
+      await waitFor(() => {
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+
+        // Both selections should be in URL with different suffixes
+        expect(params.selection_a).toBe('process_cpu:cpu:nanoseconds:cpu:nanoseconds{pod="app-a"}');
+        expect(params.selection_b).toBe('process_cpu:cpu:nanoseconds:cpu:nanoseconds{pod="app-b"}');
+        expect(params.merge_from_a).toBe('1000000000');
+        expect(params.merge_from_b).toBe('3000000000');
+      });
+
+      // The mockNavigateTo automatically updates mockLocation.search, so the URL change
+      // should propagate to the hooks automatically. Verify both ProfileSelections exist.
       await waitFor(() => {
         expect(result.current.stateA.profileSelection).not.toBeNull();
         expect(result.current.stateB.profileSelection).not.toBeNull();
@@ -1138,9 +1216,9 @@ describe('useQueryState', () => {
 
     it('should return null ProfileSelection when only partial params exist', () => {
       // Missing selection param
-      const {result} = renderHook(() => useQueryState({suffix: '_a'}), {
-        wrapper: createWrapper({}, '?merge_from_a=1000000000&merge_to_a=2000000000'),
-      });
+      mockLocation.search = '?merge_from_a=1000000000&merge_to_a=2000000000';
+
+      const {result} = renderHook(() => useQueryState({suffix: '_a'}), {wrapper: createWrapper()});
 
       expect(result.current.profileSelection).toBeNull();
     });
@@ -1159,12 +1237,10 @@ describe('useQueryState', () => {
       });
 
       await waitFor(() => {
-        const {profileSelection} = result.current;
-        expect(profileSelection).not.toBeNull();
-        const historyParams = profileSelection?.HistoryParams();
-        // The expression gets re-serialized through Query.parse which adds spaces after commas
-        expect(historyParams?.selection).toBe(
-          'memory:alloc_objects:count:space:bytes:delta{namespace="default", pod="app-1", container="main"}'
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+        expect(params.selection_a).toBe(
+          'memory:alloc_objects:count:space:bytes:delta{namespace="default",pod="app-1",container="main"}'
         );
       });
     });
@@ -1183,24 +1259,20 @@ describe('useQueryState', () => {
       });
 
       await waitFor(() => {
-        const {profileSelection} = result.current;
-        expect(profileSelection).not.toBeNull();
-        const historyParams = profileSelection?.HistoryParams();
-        expect(historyParams?.selection).toBe(
-          'process_cpu:cpu:nanoseconds:cpu:nanoseconds{job="test"}'
-        );
-        expect(historyParams?.merge_from).toBe('1000000000');
-        expect(historyParams?.merge_to).toBe('2000000000');
+        // Should only navigate once despite setting 3 params (selection, merge_from, merge_to)
+        expect(mockNavigateTo).toHaveBeenCalledTimes(1);
+        const [, params] = mockNavigateTo.mock.calls[0];
+        expect(params.selection_a).toBe('process_cpu:cpu:nanoseconds:cpu:nanoseconds{job="test"}');
+        expect(params.merge_from_a).toBe('1000000000');
+        expect(params.merge_to_a).toBe('2000000000');
       });
     });
 
     it('should preserve other URL params when setting ProfileSelection', async () => {
-      const {result} = renderHook(() => useQueryState({suffix: '_a'}), {
-        wrapper: createWrapper(
-          {},
-          '?expression_a=process_cpu:cpu:nanoseconds:cpu:nanoseconds{}&other_param=value&unrelated=test'
-        ),
-      });
+      mockLocation.search =
+        '?expression_a=process_cpu:cpu:nanoseconds:cpu:nanoseconds{}&other_param=value&unrelated=test';
+
+      const {result} = renderHook(() => useQueryState({suffix: '_a'}), {wrapper: createWrapper()});
 
       const mockQuery = {
         toString: () => 'process_cpu:cpu:nanoseconds:cpu:nanoseconds{pod="test"}',
@@ -1212,18 +1284,16 @@ describe('useQueryState', () => {
       });
 
       await waitFor(() => {
-        // ProfileSelection params should be set
-        const {profileSelection} = result.current;
-        expect(profileSelection).not.toBeNull();
-        const historyParams = profileSelection?.HistoryParams();
-        expect(historyParams?.selection).toBe(
-          'process_cpu:cpu:nanoseconds:cpu:nanoseconds{pod="test"}'
-        );
+        expect(mockNavigateTo).toHaveBeenCalled();
+        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
 
-        // Expression should still be present
-        expect(result.current.querySelection.expression).toBe(
-          'process_cpu:cpu:nanoseconds:cpu:nanoseconds{}'
-        );
+        // ProfileSelection params should be set
+        expect(params.selection_a).toBe('process_cpu:cpu:nanoseconds:cpu:nanoseconds{pod="test"}');
+
+        // Other params should be preserved
+        expect(params.expression_a).toBe('process_cpu:cpu:nanoseconds:cpu:nanoseconds{}');
+        expect(params.other_param).toBe('value');
+        expect(params.unrelated).toBe('test');
       });
     });
   });

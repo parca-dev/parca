@@ -15,14 +15,12 @@ import React, {useCallback, useEffect, useMemo} from 'react';
 
 import {tableFromIPC} from '@uwdata/flechette';
 import {AnimatePresence, motion} from 'framer-motion';
-import {useQueryState} from 'nuqs';
 import {Item, Menu, useContextMenu} from 'react-contexify';
 
 import {Source} from '@parca/client';
-import {SourceSkeleton, useParcaContext, type ProfileData} from '@parca/components';
+import {SourceSkeleton, useParcaContext, useURLState, type ProfileData} from '@parca/components';
 
 import {ExpandOnHover} from '../GraphTooltipArrow/ExpandOnHoverValue';
-import {stringParam} from '../hooks/urlParsers';
 import {alignedUint8Array, truncateStringReverse} from '../utils';
 import {Highlighter, profileAwareRenderer, type LineDataLookup} from './Highlighter';
 import useLineRange from './useSelectedLineRange';
@@ -44,7 +42,7 @@ export const SourceView = React.memo(function SourceView({
   filtered,
   setActionButtons,
 }: SourceViewProps): JSX.Element {
-  const [sourceFileName] = useQueryState('source_filename', stringParam);
+  const [sourceFileName] = useURLState<string | undefined>('source_filename');
   const {isDarkMode, sourceViewContextMenuItems = []} = useParcaContext();
 
   const sourceCode = useMemo(() => {

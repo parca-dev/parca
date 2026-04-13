@@ -14,6 +14,8 @@
 import {CompressionType, setCompressionCodec} from '@uwdata/flechette';
 import * as lz4 from 'lz4js';
 
+import type {ParamPreferences} from '@parca/components';
+
 import MatchersInput from './MatchersInput';
 import MetricsGraph, {type ContextMenuItemOrSubmenu, type Series} from './MetricsGraph';
 import ProfileExplorer from './ProfileExplorer';
@@ -58,23 +60,20 @@ export {QueryControls} from './QueryControls';
 export {default as ProfileFilters} from './ProfileView/components/ProfileFilters';
 export {useProfileFiltersUrlState} from './ProfileView/components/ProfileFilters/useProfileFiltersUrlState';
 
+export const DEFAULT_PROFILE_EXPLORER_PARAM_VALUES: ParamPreferences = {
+  dashboard_items: {
+    defaultValue: 'flamegraph',
+    splitOnCommas: true, // This param should split on commas for array values
+  },
+  group_by: {
+    splitOnCommas: true,
+  },
+  flamechart_dimension: {
+    splitOnCommas: true,
+  },
+};
+
 export {useProfileTypes} from './ProfileSelector';
-
-export {
-  stringParam,
-  boolParam,
-  intParam,
-  commaArrayParam,
-  invertCallStackParser,
-  groupByParser,
-  flamechartDimensionParser,
-  tableColumnsParser,
-  hiddenBinariesParser,
-  jsonParser,
-} from './hooks/urlParsers';
-
-export {useDashboardItems} from './hooks/useDashboardItems';
-export {useColorBy} from './hooks/useColorBy';
 
 export {
   ProfileExplorer,

@@ -15,11 +15,15 @@ import React, {LegacyRef, ReactNode, useCallback, useEffect, useMemo, useState} 
 
 import cx from 'classnames';
 import {AnimatePresence, motion} from 'framer-motion';
-import {useQueryState} from 'nuqs';
 import {useMeasure} from 'react-use';
 
 import {FlamegraphArrow} from '@parca/client';
-import {FlameGraphSkeleton, SandwichFlameGraphSkeleton, useParcaContext} from '@parca/components';
+import {
+  FlameGraphSkeleton,
+  SandwichFlameGraphSkeleton,
+  useParcaContext,
+  useURLState,
+} from '@parca/components';
 import {ProfileType} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
 import {capitalizeOnlyFirstLetter, divide} from '@parca/utilities';
@@ -29,7 +33,6 @@ import DiffLegend from '../ProfileView/components/DiffLegend';
 import {useProfileViewContext} from '../ProfileView/context/ProfileViewContext';
 import {useProfileMetadata} from '../ProfileView/hooks/useProfileMetadata';
 import {useVisualizationState} from '../ProfileView/hooks/useVisualizationState';
-import {boolParam} from '../hooks/urlParsers';
 import {FlameGraphArrow} from './FlameGraphArrow';
 import {CurrentPathFrame} from './FlameGraphArrow/utils';
 
@@ -134,8 +137,8 @@ const ProfileFlameGraph = function ProfileFlameGraphNonMemo({
   // For non-delta profiles, like goroutines or memory, we want the profiles to be compared absolutely.
   const compareAbsoluteDefault = profileType?.delta === false ? 'true' : 'false';
 
-  const [compareAbsolute] = useQueryState('compare_absolute', boolParam);
-  const isCompareAbsolute = compareAbsolute ?? compareAbsoluteDefault === 'true';
+  const [compareAbsolute = compareAbsoluteDefault] = useURLState('compare_absolute');
+  const isCompareAbsolute = compareAbsolute === 'true';
 
   const mappingsListCount = useMemo(
     () => mappingsList.filter(m => m !== '').length,
@@ -177,7 +180,7 @@ const ProfileFlameGraph = function ProfileFlameGraphNonMemo({
   // If there is only one mapping file, we want to color by filename by default.
   useEffect(() => {
     if (mappingsListCount === 1 && colorBy !== 'filename') {
-      void setColorBy('filename');
+      setColorBy('filename');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mappingsListCount]);
