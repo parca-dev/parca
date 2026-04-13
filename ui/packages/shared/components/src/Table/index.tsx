@@ -139,6 +139,7 @@ const Table = <T,>({
   scrollToIndex,
   estimatedRowHeight = 26,
 }: Props<T>): JSX.Element => {
+  'use no memo';
   const [sorting, setSorting] = useState<SortingState>(initialSorting);
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const scrollingRef = useRef<number>();

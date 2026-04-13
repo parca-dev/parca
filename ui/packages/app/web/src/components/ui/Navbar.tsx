@@ -61,7 +61,7 @@ const Navbar = () => {
   const compareA = queryParams.get('compare_a');
   const compareB = queryParams.get('compare_b');
 
-  const queryParamsURL = parseParams(window.location.search);
+  const queryParamsURL = parseParams(location.search);
 
   /* eslint-disable @typescript-eslint/naming-convention */
   const {

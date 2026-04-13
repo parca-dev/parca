@@ -11,6 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/* eslint-disable react-hooks/set-state-in-effect */
+
 import {useEffect, useRef, useState} from 'react';
 
 interface UseBatchedRenderingOptions {
@@ -29,6 +31,7 @@ export const useBatchedRendering = <T>(
   items: T[],
   options: UseBatchedRenderingOptions = {}
 ): UseBatchedRenderingResult<T> => {
+  'use no memo';
   const {batchSize = 500, batchDelay = 0} = options;
 
   const [renderedCount, setRenderedCount] = useState(0);

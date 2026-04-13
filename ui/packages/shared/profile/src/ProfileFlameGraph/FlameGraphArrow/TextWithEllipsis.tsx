@@ -11,6 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/* eslint-disable react-hooks/set-state-in-effect */
+
 import {useEffect, useRef, useState} from 'react';
 
 import {useURLState} from '@parca/components';
@@ -64,6 +66,7 @@ function calculateTruncatedText(
 }
 
 function TextWithEllipsis({text, x, y, width}: Props): JSX.Element {
+  'use no memo';
   const textRef = useRef<SVGTextElement>(null);
   const [displayText, setDisplayText] = useState(text);
   const [alignFunctionName] = useURLState('align_function_name');

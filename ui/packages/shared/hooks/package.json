@@ -6,7 +6,7 @@
   "scripts": {
     "test": "jest --coverage --config ../../../jest.config.js ./src/*",
     "prepublish": "pnpm run build",
-    "build": "tsc",
+    "build": "babel src --out-dir dist --config-file ../../../babel.react-compiler.cjs --extensions .ts,.tsx --copy-files --no-copy-ignored && tsc --emitDeclarationOnly",
     "build-swc": "swc ./src -d dist --copy-files",
     "watch": "tsc-watch"
   },

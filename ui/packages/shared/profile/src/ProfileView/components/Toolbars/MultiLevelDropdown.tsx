@@ -11,6 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/* eslint-disable react-hooks/set-state-in-effect */
+
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 
 import {Menu} from '@headlessui/react';
@@ -73,6 +75,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
   customSubmenu,
   renderAsDiv = false,
 }) => {
+  'use no memo';
   const menuRef = useRef<HTMLDivElement>(null);
   const [shouldOpenLeft, setShouldOpenLeft] = useState(false);
 
