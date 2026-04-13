@@ -11,17 +11,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useURLState} from '@parca/components';
+import {useQueryState} from 'nuqs';
+
+import {stringParam} from '../../hooks/urlParsers';
 
 export const useResetFlameGraphState = (): (() => void) => {
-  const [val, setCurPath] = useURLState('cur_path');
+  const [val, setCurPath] = useQueryState('cur_path', stringParam);
 
   return () => {
     setTimeout(() => {
-      if (val === undefined) {
+      if (val === null) {
         return;
       }
-      setCurPath(undefined);
+      void setCurPath(null);
     });
   };
 };

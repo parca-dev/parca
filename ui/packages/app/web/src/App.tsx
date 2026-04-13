@@ -11,6 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {NuqsAdapter} from 'nuqs/adapters/react-router/v6';
 import {BrowserRouter, Navigate, Route, Routes} from 'react-router-dom';
 import {PersistGate} from 'redux-persist/integration/react';
 
@@ -68,18 +69,20 @@ const App = () => {
     <Provider store={reduxStore}>
       <PersistGate loading={null} persistor={persistor}>
         <BrowserRouter basename={getBasename()}>
-          <QueryClientProvider client={queryClient}>
-            <ThemeProvider>
-              <Header />
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/targets" element={<TargetsPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/PATH_PREFIX_VAR" element={<Navigate to="/" replace />} />
-                <Route path="*" element={<Component404 />} />
-              </Routes>
-            </ThemeProvider>
-          </QueryClientProvider>
+          <NuqsAdapter>
+            <QueryClientProvider client={queryClient}>
+              <ThemeProvider>
+                <Header />
+                <Routes>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/targets" element={<TargetsPage />} />
+                  <Route path="/settings" element={<SettingsPage />} />
+                  <Route path="/PATH_PREFIX_VAR" element={<Navigate to="/" replace />} />
+                  <Route path="*" element={<Component404 />} />
+                </Routes>
+              </ThemeProvider>
+            </QueryClientProvider>
+          </NuqsAdapter>
         </BrowserRouter>
       </PersistGate>
     </Provider>

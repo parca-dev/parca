@@ -44,7 +44,6 @@ export type {PillVariant, SelectElement, SelectItem};
 
 export * from './CopyToClipboard';
 export * from './ParcaContext';
-export * from './hooks/URLState';
 export * from './DividerWithLabel';
 
 export {
