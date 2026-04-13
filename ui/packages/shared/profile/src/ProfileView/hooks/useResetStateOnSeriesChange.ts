@@ -11,19 +11,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useURLState} from '@parca/components';
+import {useQueryStates} from 'nuqs';
+
+import {stringParam} from '../../hooks/urlParsers';
 
 export const useResetStateOnSeriesChange = (): (() => void) => {
-  const [curPath, setCurPath] = useURLState('cur_path');
-  const [sandwichFunctionName, setSandwichFunctionName] = useURLState('sandwich_function_name');
+  const [state, setState] = useQueryStates(
+    {
+      cur_path: stringParam,
+      sandwich_function_name: stringParam,
+    },
+    {history: 'replace'}
+  );
 
   return () => {
     setTimeout(() => {
-      if (curPath !== undefined) {
-        setCurPath(undefined);
-      }
-      if (sandwichFunctionName !== undefined) {
-        setSandwichFunctionName(undefined);
+      const updates: Record<string, null> = {};
+      if (state.cur_path !== null) updates.cur_path = null;
+      if (state.sandwich_function_name !== null) updates.sandwich_function_name = null;
+
+      if (Object.keys(updates).length > 0) {
+        void setState(updates);
       }
     });
   };

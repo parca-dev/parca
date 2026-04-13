@@ -18,8 +18,8 @@ import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {Menu} from '@headlessui/react';
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
+import {useQueryState} from 'nuqs';
 
-import {useURLState} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {ProfileType} from '@parca/parser';
 
@@ -29,6 +29,7 @@ import {
   FIELD_LOCATION_ADDRESS,
   FIELD_MAPPING_FILE,
 } from '../../../ProfileFlameGraph/FlameGraphArrow';
+import {boolParam, hiddenBinariesParser, stringParam} from '../../../hooks/urlParsers';
 import {useProfileViewContext} from '../../context/ProfileViewContext';
 import SwitchMenuItem from './SwitchMenuItem';
 
@@ -209,14 +210,15 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
 }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [shouldOpenLeft, setShouldOpenLeft] = useState(false);
-  const [storeSortBy] = useURLState('sort_by', {
-    defaultValue: FIELD_FUNCTION_NAME,
-  });
-  const [colorStackLegend, setStoreColorStackLegend] = useURLState('color_stack_legend');
-  const [hiddenBinaries, setHiddenBinaries] = useURLState('hidden_binaries', {
-    defaultValue: [],
-    alwaysReturnArray: true,
-  });
+  const [storeSortBy] = useQueryState('sort_by', stringParam.withDefault(FIELD_FUNCTION_NAME));
+  const [colorStackLegend, setStoreColorStackLegend] = useQueryState(
+    'color_stack_legend',
+    stringParam
+  );
+  const [hiddenBinaries, setHiddenBinaries] = useQueryState(
+    'hidden_binaries',
+    hiddenBinariesParser
+  );
   const {compareMode} = useProfileViewContext();
   const [colorProfileName] = useUserPreference<string>(
     USER_PREFERENCES.FLAMEGRAPH_COLOR_PROFILE.key
@@ -226,11 +228,10 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
 
   // By default, we want delta profiles (CPU) to be relatively compared.
   // For non-delta profiles, like goroutines or memory, we want the profiles to be compared absolutely.
-  const compareAbsoluteDefault = profileType?.delta === false ? 'true' : 'false';
+  const compareAbsoluteDefault = profileType?.delta === false;
 
-  const [compareAbsolute = compareAbsoluteDefault, setCompareAbsolute] =
-    useURLState('compare_absolute');
-  const isCompareAbsolute = compareAbsolute === 'true';
+  const [compareAbsolute, setCompareAbsolute] = useQueryState('compare_absolute', boolParam);
+  const isCompareAbsolute = compareAbsolute ?? compareAbsoluteDefault;
 
   useEffect(() => {
     const checkOverflow = (): void => {
@@ -251,20 +252,20 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
   }, [isTableVizOnly]);
 
   const handleBinaryToggle = (index: number): void => {
-    const updatedBinaries = [...(hiddenBinaries as string[])];
+    const updatedBinaries = [...hiddenBinaries];
     updatedBinaries.splice(index, 1);
-    setHiddenBinaries(updatedBinaries);
+    void setHiddenBinaries(updatedBinaries);
   };
 
   const setColorStackLegend = useCallback(
     (value: string): void => {
-      setStoreColorStackLegend(value);
+      void setStoreColorStackLegend(value);
     },
     [setStoreColorStackLegend]
   );
 
   const resetLegend = (): void => {
-    setHiddenBinaries([]);
+    void setHiddenBinaries([]);
   };
 
   const menuItems: MenuItemType[] = [
@@ -332,7 +333,7 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
     },
     {
       label: isCompareAbsolute ? 'Compare Relative' : 'Compare Absolute',
-      onclick: () => setCompareAbsolute(isCompareAbsolute ? 'false' : 'true'),
+      onclick: () => void setCompareAbsolute(!isCompareAbsolute),
       hide: !compareMode,
       icon: isCompareAbsolute ? 'fluent-mdl2:compare' : 'fluent-mdl2:compare-uneven',
     },
@@ -362,7 +363,7 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
     },
     {
       label: 'Reset Legend',
-      hide: hiddenBinaries === undefined || hiddenBinaries.length === 0,
+      hide: hiddenBinaries.length === 0,
       onclick: () => resetLegend(),
       id: 'h-reset-legend-button',
       icon: 'system-uicons:reset',
@@ -370,7 +371,7 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
     {
       label: 'Hidden Binaries',
       id: 'h-hidden-binaries',
-      items: (hiddenBinaries as string[])?.map((binary, index) => ({
+      items: hiddenBinaries.map((binary, index) => ({
         label: binary,
         customSubmenu: (
           <div className="flex items-center gap-2 w-full">
@@ -386,7 +387,7 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
           </div>
         ),
       })),
-      hide: hiddenBinaries === undefined || hiddenBinaries.length === 0,
+      hide: hiddenBinaries.length === 0,
       icon: 'ph:eye-closed',
     },
   ];
@@ -427,10 +428,8 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
                       {...item}
                       onSelect={onSelect}
                       closeDropdown={close}
-                      activeValueForSortBy={storeSortBy as string}
-                      activeValueForColorBy={
-                        colorBy === undefined || colorBy === '' ? 'binary' : colorBy
-                      }
+                      activeValueForSortBy={storeSortBy}
+                      activeValueForColorBy={colorBy}
                       activeValuesForLevel={groupBy}
                       renderAsDiv={item.renderAsDiv}
                     />

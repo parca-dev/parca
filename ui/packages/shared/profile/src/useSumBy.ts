@@ -177,16 +177,16 @@ export const useSumByFromParams = (param: string | string[] | undefined): string
   return sumBy;
 };
 
-export const sumByToParam = (sumBy: string[] | undefined): string | string[] | undefined => {
+export const sumByToParam = (sumBy: string[] | undefined): string | null => {
   if (sumBy === undefined) {
-    return undefined;
+    return null;
   }
 
   if (sumBy.length === 0) {
     return '__none__';
   }
 
-  return sumBy;
+  return sumBy.join(',');
 };
 
 // Combined hook that handles all sumBy logic: fetching labels, computing defaults, and managing selection

@@ -101,6 +101,7 @@ interface Props {
   flamechartHelpText?: ReactNode;
   additionalMetricsGraph?: (props: AdditionalMetricsGraphProps) => ReactNode;
   enableFlamechartFiltering?: boolean;
+  defaultDashboardItems?: string[];
 }
 
 export const defaultValue: Props = {
@@ -129,6 +130,7 @@ export const defaultValue: Props = {
   enableSandwichView: false,
   isDarkMode: false,
   preferencesModal: false,
+  defaultDashboardItems: ['flamegraph'],
 };
 
 const ParcaContext = createContext<Props>(defaultValue);

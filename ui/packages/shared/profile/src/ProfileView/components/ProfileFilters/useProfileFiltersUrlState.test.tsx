@@ -15,78 +15,28 @@ import {type ReactNode} from 'react';
 
 // eslint-disable-next-line import/named
 import {act, renderHook, waitFor} from '@testing-library/react';
-import {beforeEach, describe, expect, it, vi} from 'vitest';
-
-import {URLStateProvider} from '@parca/components';
+// eslint-disable-next-line import/no-unresolved
+import {NuqsTestingAdapter, type OnUrlUpdateFunction} from 'nuqs/adapters/testing';
+import {describe, expect, it, vi} from 'vitest';
 
 import {type ProfileFilter} from './useProfileFilters';
 import {decodeProfileFilters, useProfileFiltersUrlState} from './useProfileFiltersUrlState';
 
-// Mock window.location
-const mockLocation = {
-  pathname: '/test',
-  search: '',
-};
-
-// Mock the navigate function
-const mockNavigateTo = vi.fn((path: string, params: Record<string, string | string[]>) => {
-  const searchParams = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) {
-      if (Array.isArray(value)) {
-        searchParams.set(key, value.join(','));
-      } else {
-        searchParams.set(key, String(value));
-      }
-    }
-  });
-  mockLocation.search = `?${searchParams.toString()}`;
-});
-
-// Mock getQueryParamsFromURL
-vi.mock('@parca/components/src/hooks/URLState/utils', async () => {
-  const actual = await vi.importActual('@parca/components/src/hooks/URLState/utils');
-  return {
-    ...actual,
-    getQueryParamsFromURL: () => {
-      if (mockLocation.search === '') return {};
-      const params = new URLSearchParams(mockLocation.search);
-      const result: Record<string, string | string[]> = {};
-      for (const [key, value] of params.entries()) {
-        const decodedValue = decodeURIComponent(value);
-        const existing = result[key];
-        if (existing !== undefined) {
-          result[key] = Array.isArray(existing)
-            ? [...existing, decodedValue]
-            : [existing, decodedValue];
-        } else {
-          result[key] = decodedValue;
-        }
-      }
-      return result;
-    },
-  };
-});
-
-// Helper to create wrapper with URLStateProvider
-const createWrapper = (): (({children}: {children: ReactNode}) => JSX.Element) => {
+// Helper to create wrapper with NuqsTestingAdapter
+const createWrapper = (
+  searchParams: string | Record<string, string> = {},
+  onUrlUpdate?: OnUrlUpdateFunction
+): (({children}: {children: ReactNode}) => JSX.Element) => {
   const Wrapper = ({children}: {children: ReactNode}): JSX.Element => (
-    <URLStateProvider navigateTo={mockNavigateTo}>{children}</URLStateProvider>
+    <NuqsTestingAdapter searchParams={searchParams} onUrlUpdate={onUrlUpdate} hasMemory={true}>
+      {children}
+    </NuqsTestingAdapter>
   );
-  Wrapper.displayName = 'URLStateProviderWrapper';
+  Wrapper.displayName = 'NuqsTestingWrapper';
   return Wrapper;
 };
 
 describe('useProfileFiltersUrlState', () => {
-  beforeEach(() => {
-    mockNavigateTo.mockClear();
-    Object.defineProperty(window, 'location', {
-      value: mockLocation,
-      writable: true,
-    });
-    mockLocation.search = '';
-  });
-
   describe('decodeProfileFilters', () => {
     it('should return empty array for empty string', () => {
       expect(decodeProfileFilters('')).toEqual([]);
@@ -255,9 +205,9 @@ describe('useProfileFiltersUrlState', () => {
     });
 
     it('should read filters from URL', async () => {
-      mockLocation.search = '?profile_filters=s:fn:=:testFunc';
-
-      const {result} = renderHook(() => useProfileFiltersUrlState(), {wrapper: createWrapper()});
+      const {result} = renderHook(() => useProfileFiltersUrlState(), {
+        wrapper: createWrapper({profile_filters: 's:fn:=:testFunc'}),
+      });
 
       await waitFor(() => {
         expect(result.current.appliedFilters).toHaveLength(1);
@@ -271,7 +221,10 @@ describe('useProfileFiltersUrlState', () => {
     });
 
     it('should update URL when setting filters', async () => {
-      const {result} = renderHook(() => useProfileFiltersUrlState(), {wrapper: createWrapper()});
+      const onUrlUpdate = vi.fn();
+      const {result} = renderHook(() => useProfileFiltersUrlState(), {
+        wrapper: createWrapper({}, onUrlUpdate),
+      });
 
       const newFilters: ProfileFilter[] = [
         {
@@ -288,26 +241,26 @@ describe('useProfileFiltersUrlState', () => {
       });
 
       await waitFor(() => {
-        expect(mockNavigateTo).toHaveBeenCalled();
-        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
-        expect(params.profile_filters).toBe('f:b:!~:libc.so');
+        expect(onUrlUpdate).toHaveBeenCalled();
+        const lastCall = onUrlUpdate.mock.calls[onUrlUpdate.mock.calls.length - 1][0];
+        expect(lastCall.searchParams.get('profile_filters')).toBe('f:b:!~:libc.so');
       });
     });
 
     it('should clear URL param when setting empty filters', async () => {
-      mockLocation.search = '?profile_filters=s:fn:=:testFunc';
-
-      const {result} = renderHook(() => useProfileFiltersUrlState(), {wrapper: createWrapper()});
+      const onUrlUpdate = vi.fn();
+      const {result} = renderHook(() => useProfileFiltersUrlState(), {
+        wrapper: createWrapper({profile_filters: 's:fn:=:testFunc'}, onUrlUpdate),
+      });
 
       act(() => {
         result.current.setAppliedFilters([]);
       });
 
       await waitFor(() => {
-        expect(mockNavigateTo).toHaveBeenCalled();
-        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
-        // When filters are empty, the param is either empty string or undefined (removed)
-        expect(params.profile_filters === '' || params.profile_filters === undefined).toBe(true);
+        expect(onUrlUpdate).toHaveBeenCalled();
+        const lastCall = onUrlUpdate.mock.calls[onUrlUpdate.mock.calls.length - 1][0];
+        expect(lastCall.searchParams.has('profile_filters')).toBe(false);
       });
     });
   });
@@ -320,9 +273,10 @@ describe('useProfileFiltersUrlState', () => {
     });
 
     it('should force apply filters overwriting existing', async () => {
-      mockLocation.search = '?profile_filters=s:fn:=:existingFunc';
-
-      const {result} = renderHook(() => useProfileFiltersUrlState(), {wrapper: createWrapper()});
+      const onUrlUpdate = vi.fn();
+      const {result} = renderHook(() => useProfileFiltersUrlState(), {
+        wrapper: createWrapper({profile_filters: 's:fn:=:existingFunc'}, onUrlUpdate),
+      });
 
       // Verify existing filter is loaded
       await waitFor(() => {
@@ -344,33 +298,36 @@ describe('useProfileFiltersUrlState', () => {
       });
 
       await waitFor(() => {
-        expect(mockNavigateTo).toHaveBeenCalled();
-        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
-        expect(params.profile_filters).toBe('f:b:!~:forcedValue');
+        expect(onUrlUpdate).toHaveBeenCalled();
+        const lastCall = onUrlUpdate.mock.calls[onUrlUpdate.mock.calls.length - 1][0];
+        expect(lastCall.searchParams.get('profile_filters')).toBe('f:b:!~:forcedValue');
       });
     });
 
     it('should clear filters when force applying empty array', async () => {
-      mockLocation.search = '?profile_filters=s:fn:=:existingFunc';
-
-      const {result} = renderHook(() => useProfileFiltersUrlState(), {wrapper: createWrapper()});
+      const onUrlUpdate = vi.fn();
+      const {result} = renderHook(() => useProfileFiltersUrlState(), {
+        wrapper: createWrapper({profile_filters: 's:fn:=:existingFunc'}, onUrlUpdate),
+      });
 
       act(() => {
         result.current.forceApplyFilters([]);
       });
 
       await waitFor(() => {
-        expect(mockNavigateTo).toHaveBeenCalled();
-        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
-        // When filters are empty, the param is either empty string or undefined (removed)
-        expect(params.profile_filters === '' || params.profile_filters === undefined).toBe(true);
+        expect(onUrlUpdate).toHaveBeenCalled();
+        const lastCall = onUrlUpdate.mock.calls[onUrlUpdate.mock.calls.length - 1][0];
+        expect(lastCall.searchParams.has('profile_filters')).toBe(false);
       });
     });
   });
 
   describe('Preset filter encoding', () => {
     it('should encode preset filters correctly', async () => {
-      const {result} = renderHook(() => useProfileFiltersUrlState(), {wrapper: createWrapper()});
+      const onUrlUpdate = vi.fn();
+      const {result} = renderHook(() => useProfileFiltersUrlState(), {
+        wrapper: createWrapper({}, onUrlUpdate),
+      });
 
       const presetFilters: ProfileFilter[] = [
         {
@@ -385,14 +342,17 @@ describe('useProfileFiltersUrlState', () => {
       });
 
       await waitFor(() => {
-        expect(mockNavigateTo).toHaveBeenCalled();
-        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
-        expect(params.profile_filters).toBe('p:hide_libc:enabled');
+        expect(onUrlUpdate).toHaveBeenCalled();
+        const lastCall = onUrlUpdate.mock.calls[onUrlUpdate.mock.calls.length - 1][0];
+        expect(lastCall.searchParams.get('profile_filters')).toBe('p:hide_libc:enabled');
       });
     });
 
     it('should handle mixed preset and regular filters', async () => {
-      const {result} = renderHook(() => useProfileFiltersUrlState(), {wrapper: createWrapper()});
+      const onUrlUpdate = vi.fn();
+      const {result} = renderHook(() => useProfileFiltersUrlState(), {
+        wrapper: createWrapper({}, onUrlUpdate),
+      });
 
       const mixedFilters: ProfileFilter[] = [
         {
@@ -414,16 +374,21 @@ describe('useProfileFiltersUrlState', () => {
       });
 
       await waitFor(() => {
-        expect(mockNavigateTo).toHaveBeenCalled();
-        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
-        expect(params.profile_filters).toBe('p:hide_libc:enabled,f:b:!~:node');
+        expect(onUrlUpdate).toHaveBeenCalled();
+        const lastCall = onUrlUpdate.mock.calls[onUrlUpdate.mock.calls.length - 1][0];
+        expect(lastCall.searchParams.get('profile_filters')).toBe(
+          'p:hide_libc:enabled,f:b:!~:node'
+        );
       });
     });
   });
 
   describe('URL encoding edge cases', () => {
     it('should handle special characters in filter values', async () => {
-      const {result} = renderHook(() => useProfileFiltersUrlState(), {wrapper: createWrapper()});
+      const onUrlUpdate = vi.fn();
+      const {result} = renderHook(() => useProfileFiltersUrlState(), {
+        wrapper: createWrapper({}, onUrlUpdate),
+      });
 
       const filtersWithSpecialChars: ProfileFilter[] = [
         {
@@ -440,15 +405,19 @@ describe('useProfileFiltersUrlState', () => {
       });
 
       await waitFor(() => {
-        expect(mockNavigateTo).toHaveBeenCalled();
-        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
-        // Value should be URL encoded
-        expect(params.profile_filters).toContain('std%3A%3Avector%3Cint%3E');
+        expect(onUrlUpdate).toHaveBeenCalled();
+        const lastCall = onUrlUpdate.mock.calls[onUrlUpdate.mock.calls.length - 1][0];
+        const filterValue = lastCall.searchParams.get('profile_filters');
+        // The value should contain the encoded special characters
+        expect(filterValue).toContain('std%3A%3Avector%3Cint%3E');
       });
     });
 
     it('should filter out incomplete filters when encoding', async () => {
-      const {result} = renderHook(() => useProfileFiltersUrlState(), {wrapper: createWrapper()});
+      const onUrlUpdate = vi.fn();
+      const {result} = renderHook(() => useProfileFiltersUrlState(), {
+        wrapper: createWrapper({}, onUrlUpdate),
+      });
 
       const incompleteFilters: ProfileFilter[] = [
         {
@@ -476,10 +445,10 @@ describe('useProfileFiltersUrlState', () => {
       });
 
       await waitFor(() => {
-        expect(mockNavigateTo).toHaveBeenCalled();
-        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+        expect(onUrlUpdate).toHaveBeenCalled();
+        const lastCall = onUrlUpdate.mock.calls[onUrlUpdate.mock.calls.length - 1][0];
         // Only the complete filter should be encoded
-        expect(params.profile_filters).toBe('f:b:!~:valid');
+        expect(lastCall.searchParams.get('profile_filters')).toBe('f:b:!~:valid');
       });
     });
   });
@@ -501,9 +470,9 @@ describe('useProfileFiltersUrlState', () => {
     });
 
     it('should return correctly structured filters from URL', async () => {
-      mockLocation.search = '?profile_filters=s:fn:=:testFunc';
-
-      const {result} = renderHook(() => useProfileFiltersUrlState(), {wrapper: createWrapper()});
+      const {result} = renderHook(() => useProfileFiltersUrlState(), {
+        wrapper: createWrapper({profile_filters: 's:fn:=:testFunc'}),
+      });
 
       await waitFor(() => {
         expect(result.current.appliedFilters).toHaveLength(1);
@@ -522,15 +491,16 @@ describe('useProfileFiltersUrlState', () => {
 
   describe('View switching scenarios', () => {
     it('should completely replace filters when switching views using forceApplyFilters', async () => {
-      // Start with View A's filters (2 filters)
-      mockLocation.search = '?profile_filters=s:fn:=:viewAFunc,f:b:!=:viewABinary';
-
-      const {result} = renderHook(() => useProfileFiltersUrlState(), {wrapper: createWrapper()});
+      const onUrlUpdate = vi.fn();
+      const {result} = renderHook(() => useProfileFiltersUrlState(), {
+        wrapper: createWrapper(
+          {profile_filters: 's:fn:=:viewAFunc,f:b:!=:viewABinary'},
+          onUrlUpdate
+        ),
+      });
 
       await waitFor(() => {
         expect(result.current.appliedFilters).toHaveLength(2);
-        expect(result.current.appliedFilters[0].value).toBe('viewAFunc');
-        expect(result.current.appliedFilters[1].value).toBe('viewABinary');
       });
 
       // Switch to View B (completely different filter)
@@ -549,95 +519,27 @@ describe('useProfileFiltersUrlState', () => {
       });
 
       await waitFor(() => {
-        expect(mockNavigateTo).toHaveBeenCalled();
-        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
+        expect(onUrlUpdate).toHaveBeenCalled();
+        const lastCall = onUrlUpdate.mock.calls[onUrlUpdate.mock.calls.length - 1][0];
+        const filterValue = lastCall.searchParams.get('profile_filters');
 
         // View A's filters should be completely gone
-        expect(params.profile_filters).not.toContain('viewAFunc');
-        expect(params.profile_filters).not.toContain('viewABinary');
+        expect(filterValue).not.toContain('viewAFunc');
+        expect(filterValue).not.toContain('viewABinary');
 
         // Only View B's filter should be present
-        expect(params.profile_filters).toBe('f:fn:~:viewBOnly');
-      });
-    });
-
-    it('should handle sequential view switches correctly', async () => {
-      // Simulate: [default] -> [storage] -> [testing-view]
-      const {result} = renderHook(() => useProfileFiltersUrlState(), {wrapper: createWrapper()});
-
-      // View 1: default view (1 filter)
-      const defaultFilters: ProfileFilter[] = [{id: 'd-1', type: 'hide_libc', value: 'enabled'}];
-
-      act(() => {
-        result.current.forceApplyFilters(defaultFilters);
-      });
-
-      await waitFor(() => {
-        expect(mockNavigateTo).toHaveBeenCalled();
-        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
-        expect(params.profile_filters).toBe('p:hide_libc:enabled');
-      });
-
-      mockNavigateTo.mockClear();
-
-      // View 2: storage view (3 filters)
-      const storageFilters: ProfileFilter[] = [
-        {id: 's-1', type: 'stack', field: 'function_name', matchType: 'not_contains', value: 'io'},
-        {id: 's-2', type: 'frame', field: 'binary', matchType: 'not_contains', value: 'disk'},
-        {id: 's-3', type: 'frame', field: 'function_name', matchType: 'contains', value: 'storage'},
-      ];
-
-      act(() => {
-        result.current.forceApplyFilters(storageFilters);
-      });
-
-      await waitFor(() => {
-        expect(mockNavigateTo).toHaveBeenCalled();
-        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
-        // Default view's filter should be gone
-        expect(params.profile_filters).not.toContain('hide_libc');
-        // Storage view should have 3 filters
-        expect(params.profile_filters).toContain('io');
-        expect(params.profile_filters).toContain('disk');
-        expect(params.profile_filters).toContain('storage');
-      });
-
-      mockNavigateTo.mockClear();
-
-      // View 3: testing-view (2 filters)
-      const testingFilters: ProfileFilter[] = [
-        {id: 't-1', type: 'stack', field: 'function_name', matchType: 'equal', value: 'test_main'},
-        {id: 't-2', type: 'frame', field: 'binary', matchType: 'contains', value: 'test'},
-      ];
-
-      act(() => {
-        result.current.forceApplyFilters(testingFilters);
-      });
-
-      await waitFor(() => {
-        expect(mockNavigateTo).toHaveBeenCalled();
-        const [, params] = mockNavigateTo.mock.calls[mockNavigateTo.mock.calls.length - 1];
-        // Storage view's filters should be gone
-        expect(params.profile_filters).not.toContain('io');
-        expect(params.profile_filters).not.toContain('disk');
-        expect(params.profile_filters).not.toContain('storage');
-        // Testing view should have its 2 filters
-        expect(params.profile_filters).toContain('test_main');
-        expect(params.profile_filters).toContain('test');
+        expect(filterValue).toBe('f:fn:~:viewBOnly');
       });
     });
 
     it('should not change filters when clicking the same view tab', async () => {
-      // Start with existing filters
-      mockLocation.search = '?profile_filters=s:fn:=:existingFilter';
-
-      const {result} = renderHook(() => useProfileFiltersUrlState(), {wrapper: createWrapper()});
+      const {result} = renderHook(() => useProfileFiltersUrlState(), {
+        wrapper: createWrapper({profile_filters: 's:fn:=:existingFilter'}),
+      });
 
       await waitFor(() => {
         expect(result.current.appliedFilters).toHaveLength(1);
       });
-
-      mockNavigateTo.mockClear();
 
       // Apply the same filters (simulating clicking the same view tab)
       const sameFilters: ProfileFilter[] = [

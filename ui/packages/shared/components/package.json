@@ -1,6 +1,6 @@
 {
   "name": "@parca/components",
-  "version": "0.16.411",
+  "version": "0.16.412",
   "description": "A component library for Parca",
   "main": "dist/index.js",
   "scripts": {
@@ -37,6 +37,7 @@
     "graphviz-wasm": "3.0.2",
     "lodash": "^4.17.21",
     "moment-timezone": "^0.6.0",
+    "nuqs": "^2.4.1",
     "react-datepicker": "6.9.0",
     "react-popper": "^2.3.0",
     "react-textarea-autosize": "^8.4.0",
