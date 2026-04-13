@@ -14,15 +14,14 @@
 import {useEffect, useMemo, useState} from 'react';
 
 import {createColumnHelper, type ColumnDef} from '@tanstack/table-core';
-import {useQueryState} from 'nuqs';
 
+import {useURLState} from '@parca/components';
 import {ProfileType} from '@parca/parser';
 import {valueFormatter} from '@parca/utilities';
 
 import {Row} from '../../../Table';
 import ColumnsVisibility from '../../../Table/ColumnsVisibility';
 import {ColumnName, addPlusSign, getRatioString} from '../../../Table/utils/functions';
-import {tableColumnsParser} from '../../../hooks/urlParsers';
 import {useProfileViewContext} from '../../context/ProfileViewContext';
 
 interface Props {
@@ -33,7 +32,9 @@ interface Props {
 
 const TableColumnsDropdown = ({profileType, total, filtered}: Props): JSX.Element => {
   const {compareMode} = useProfileViewContext();
-  const [tableColumns, setTableColumns] = useQueryState('table_columns', tableColumnsParser);
+  const [tableColumns, setTableColumns] = useURLState<string[]>('table_columns', {
+    alwaysReturnArray: true,
+  });
 
   const columnHelper = createColumnHelper<Row>();
 
@@ -189,7 +190,7 @@ const TableColumnsDropdown = ({profileType, total, filtered}: Props): JSX.Elemen
     const newTableColumns = (Object.keys(updatedColumns) as ColumnName[]).filter(
       col => updatedColumns[col]
     );
-    void setTableColumns(newTableColumns);
+    setTableColumns(newTableColumns);
   };
 
   return (

@@ -14,12 +14,11 @@
 import {useMemo} from 'react';
 
 import {createColumnHelper, type ColumnDef} from '@tanstack/table-core';
-import {useQueryState} from 'nuqs';
 
+import {useURLState} from '@parca/components';
 import {valueFormatter} from '@parca/utilities';
 
 import {type Row} from '..';
-import {tableColumnsParser} from '../../hooks/urlParsers';
 import {ColorCell} from '../ColorCell';
 import {addPlusSign, ratioString, type ColumnName} from '../utils/functions';
 
@@ -44,7 +43,9 @@ export function useTableConfiguration({
   compareMode,
 }: UseTableConfigurationProps): TableConfiguration {
   const columnHelper = createColumnHelper<Row>();
-  const [tableColumns] = useQueryState('table_columns', tableColumnsParser);
+  const [tableColumns] = useURLState<string[]>('table_columns', {
+    alwaysReturnArray: true,
+  });
 
   const columnVisibility = useMemo(() => {
     const defaults: Record<string, boolean> = {

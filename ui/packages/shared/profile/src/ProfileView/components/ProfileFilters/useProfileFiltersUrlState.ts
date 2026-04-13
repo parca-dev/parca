@@ -13,8 +13,7 @@
 
 import {useCallback, useMemo} from 'react';
 
-import {createParser, useQueryState} from 'nuqs';
-
+import {useURLStateBatch, useURLStateCustom, type ParamValueSetterCustom} from '@parca/components';
 import {safeDecode} from '@parca/utilities';
 
 import {isPresetKey} from './filterPresets';
@@ -138,31 +137,30 @@ export const decodeProfileFilters = (encoded: string): ProfileFilter[] => {
   }
 };
 
-const profileFiltersParser = createParser<ProfileFilter[]>({
-  parse: (value: string) => decodeProfileFilters(value),
-  serialize: (value: ProfileFilter[]) => encodeProfileFilters(value),
-  eq: (a, b) => encodeProfileFilters(a) === encodeProfileFilters(b),
-})
-  .withDefault([])
-  .withOptions({history: 'replace'});
-
 export const useProfileFiltersUrlState = (): {
   appliedFilters: ProfileFilter[];
-  setAppliedFilters: (filters: ProfileFilter[]) => void;
+  setAppliedFilters: ParamValueSetterCustom<ProfileFilter[]>;
   forceApplyFilters: (filters: ProfileFilter[]) => void;
 } => {
-  const [appliedFilters, setRawFilters] = useQueryState('profile_filters', profileFiltersParser);
+  const batchUpdates = useURLStateBatch();
+
+  // Store applied filters in URL state for persistence using compact encoding
+  const [appliedFilters, setAppliedFilters] = useURLStateCustom<ProfileFilter[]>(
+    `profile_filters`,
+    {
+      parse: value => {
+        return decodeProfileFilters(value as string);
+      },
+      stringify: value => {
+        return encodeProfileFilters(value);
+      },
+      defaultValue: [],
+    }
+  );
 
   const memoizedAppliedFilters = useMemo(() => {
     return appliedFilters ?? [];
   }, [appliedFilters]);
-
-  const setAppliedFilters = useCallback(
-    (filters: ProfileFilter[]) => {
-      void setRawFilters(filters);
-    },
-    [setRawFilters]
-  );
 
   // Force apply filters (bypasses preserve-existing strategy)
   const forceApplyFilters = useCallback(
@@ -174,9 +172,11 @@ export const useProfileFiltersUrlState = (): {
         return f.value !== '' && f.type != null && f.field != null && f.matchType != null;
       });
 
-      setAppliedFilters(validFilters);
+      batchUpdates(() => {
+        setAppliedFilters(validFilters);
+      });
     },
-    [setAppliedFilters]
+    [batchUpdates, setAppliedFilters]
   );
 
   return {

@@ -11,37 +11,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useQueryStates} from 'nuqs';
+import {useURLState, useURLStateBatch} from '@parca/components';
 
-import {stringParam} from '../../hooks/urlParsers';
 import {useProfileFilters} from '../components/ProfileFilters/useProfileFilters';
 
 export const useResetStateOnProfileTypeChange = (): (() => void) => {
-  const [state, setState] = useQueryStates(
-    {
-      group_by: stringParam,
-      cur_path: stringParam,
-      sum_by_a: stringParam,
-      sum_by_b: stringParam,
-      sandwich_function_name: stringParam,
-    },
-    {history: 'replace'}
-  );
+  const [groupBy, setGroupBy] = useURLState('group_by');
+  const [curPath, setCurPath] = useURLState('cur_path');
+  const [sumByA, setSumByA] = useURLState('sum_by_a');
+  const [sumByB, setSumByB] = useURLState('sum_by_b');
   const {resetFilters} = useProfileFilters();
+  const [sandwichFunctionName, setSandwichFunctionName] = useURLState('sandwich_function_name');
+  const batchUpdates = useURLStateBatch();
 
   return () => {
-    // Atomic reset: clear all params in single URL update
-    const updates: Record<string, null> = {};
-    if (state.group_by !== null) updates.group_by = null;
-    if (state.cur_path !== null) updates.cur_path = null;
-    if (state.sandwich_function_name !== null) updates.sandwich_function_name = null;
-    if (state.sum_by_a !== null) updates.sum_by_a = null;
-    if (state.sum_by_b !== null) updates.sum_by_b = null;
+    // Batch all URL state resets into a single navigation
+    batchUpdates(() => {
+      if (groupBy !== undefined) {
+        setGroupBy(undefined);
+      }
+      if (curPath !== undefined) {
+        setCurPath(undefined);
+      }
+      if (sandwichFunctionName !== undefined) {
+        setSandwichFunctionName(undefined);
+      }
+      if (sumByA !== undefined) {
+        setSumByA(undefined);
+      }
+      if (sumByB !== undefined) {
+        setSumByB(undefined);
+      }
 
-    if (Object.keys(updates).length > 0) {
-      void setState(updates);
-    }
-
-    resetFilters();
+      resetFilters();
+    });
   };
 };

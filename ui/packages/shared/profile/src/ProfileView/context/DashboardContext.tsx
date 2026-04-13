@@ -13,10 +13,8 @@
 
 import {FC, PropsWithChildren, createContext, useContext} from 'react';
 
-import {useQueryState} from 'nuqs';
+import {useURLState} from '@parca/components';
 
-import {stringParam} from '../../hooks/urlParsers';
-import {useDashboardItems} from '../../hooks/useDashboardItems';
 import {VisualizationType} from '../types/visualization';
 
 interface DashboardContextType {
@@ -29,8 +27,10 @@ interface DashboardContextType {
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
 
 export const DashboardProvider: FC<PropsWithChildren> = ({children}) => {
-  const {dashboardItems, setDashboardItems} = useDashboardItems();
-  const [, setSandwichFunctionName] = useQueryState('sandwich_function_name', stringParam);
+  const [dashboardItems, setDashboardItems] = useURLState<string[]>('dashboard_items', {
+    alwaysReturnArray: true,
+  });
+  const [, setSandwichFunctionName] = useURLState<string | undefined>('sandwich_function_name');
 
   const handleClosePanel = (visualizationType: VisualizationType): void => {
     const newDashboardItems = dashboardItems.filter(item => item !== visualizationType);
@@ -38,7 +38,7 @@ export const DashboardProvider: FC<PropsWithChildren> = ({children}) => {
 
     // Reset sandwich function name when closing sandwich panel
     if (visualizationType === 'sandwich') {
-      void setSandwichFunctionName(null);
+      setSandwichFunctionName(undefined);
     }
   };
 
