@@ -248,7 +248,6 @@ func (sp *scrapePool) Sync(tgs []*targetgroup.Group) {
 // It returns after all stopped scrape loops terminated.
 func (sp *scrapePool) sync(targets []*Target) {
 	sp.mtx.Lock()
-	defer sp.mtx.Unlock()
 
 	var (
 		uniqueTargets = map[uint64]struct{}{}
@@ -276,27 +275,32 @@ func (sp *scrapePool) sync(targets []*Target) {
 		}
 	}
 
-	var wg sync.WaitGroup
-
-	// Stop and remove old targets and scraper loops.
+	// Collect loops to stop and remove them from the pool's state while
+	// still holding sp.mtx. The actual wait happens after the lock is
+	// released so a hung scrape loop cannot wedge other sp.mtx readers
+	// (and, transitively, the scrape manager's mtxScrape).
+	var toStop []loop
 	for hash := range sp.activeTargets {
 		if _, ok := uniqueTargets[hash]; !ok {
-			wg.Add(1)
-			go func(l loop) {
-				l.stop()
-
-				wg.Done()
-			}(sp.loops[hash])
-
+			toStop = append(toStop, sp.loops[hash])
 			delete(sp.loops, hash)
 			delete(sp.activeTargets, hash)
 		}
 	}
+	sp.mtx.Unlock()
 
 	// Wait for all potentially stopped scrapers to terminate.
 	// This covers the case of flapping targets. If the server is under high load, a new scraper
 	// may be active and tries to insert. The old scraper that didn't terminate yet could still
 	// be inserting a previous sample set.
+	var wg sync.WaitGroup
+	for _, l := range toStop {
+		wg.Add(1)
+		go func(l loop) {
+			l.stop()
+			wg.Done()
+		}(l)
+	}
 	wg.Wait()
 }
 
@@ -461,7 +465,7 @@ mainLoop:
 
 		profileType := sl.target.labels.Get(ProfileName)
 
-		scrapeCtx, cancel := context.WithTimeout(sl.ctx, timeout)
+		scrapeCtx, cancel := context.WithTimeout(sl.scrapeCtx, timeout)
 		scrapeErr := sl.scraper.scrape(scrapeCtx, buf, profileType)
 		cancel()
 
@@ -582,7 +586,7 @@ func processScrapeResp(buf *bytes.Buffer, sl *scrapeLoop, profileType string) er
 		byt = newBuf.Bytes()
 	}
 
-	_, err = sl.store.WriteRaw(sl.ctx, &profilepb.WriteRawRequest{
+	_, err = sl.store.WriteRaw(sl.scrapeCtx, &profilepb.WriteRawRequest{
 		Normalized: sl.normalizedAddresses,
 		Series: []*profilepb.RawProfileSeries{
 			{
