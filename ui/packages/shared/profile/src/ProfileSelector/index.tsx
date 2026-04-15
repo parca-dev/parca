@@ -104,7 +104,7 @@ const ProfileSelector = ({
   closeProfile,
   enforcedProfileName,
   comparing,
-  navigateTo,
+  navigateTo: _navigateTo,
   showMetricsGraph = true,
   showSumBySelector = true,
   showProfileTypeSelector = true,
