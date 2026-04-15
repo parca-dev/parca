@@ -11,6 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/* eslint-disable react-hooks/refs */
+
 import React, {createContext, useCallback, useContext, useMemo, useRef} from 'react';
 
 import {Table} from '@uwdata/flechette';
@@ -68,6 +70,7 @@ export const TooltipProvider: React.FC<TooltipProviderProps> = ({
   onTooltipUpdate,
   tooltipId = 'default',
 }) => {
+  'use no memo';
   const tooltipStateRef = useRef<TooltipState>({row: null, x: 0, y: 0});
 
   const updateTooltip = useCallback(

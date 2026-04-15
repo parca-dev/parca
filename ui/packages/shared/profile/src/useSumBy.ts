@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 
 import {QueryServiceClient} from '@parca/client';
 import {DateTimeRange} from '@parca/components';
@@ -70,14 +70,19 @@ export const useSumBySelection = (
   );
 
   // Update userSelectedSumBy when defaultValue changes (e.g., during navigation)
-  useEffect(() => {
+  const [prevProfileType, setPrevProfileType] = useState(profileType);
+  const [prevDefaultValue, setPrevDefaultValue] = useState(defaultValue);
+
+  if (prevProfileType !== profileType || prevDefaultValue !== defaultValue) {
+    setPrevProfileType(profileType);
+    setPrevDefaultValue(defaultValue);
     if (profileType != null && defaultValue !== undefined) {
       setUserSelectedSumBy(prev => ({
         ...prev,
         [profileType.toString()]: defaultValue,
       }));
     }
-  }, [profileType, defaultValue]);
+  }
 
   const setSumBy = useCallback(
     (sumBy: string[]) => {
@@ -97,19 +102,11 @@ export const useSumBySelection = (
 
   const {defaultSumBy} = useDefaultSumBy(profileType, labelNamesLoading, labels);
 
-  // Store the last valid sumBy value to return during loading
-  const lastValidSumByRef = useRef<string[]>(DEFAULT_EMPTY_SUM_BY);
-
   const sumBy = useMemo(() => {
-    if (labelNamesLoading) {
-      // For smoother UX, return draftSumBy first if available during loading
-      // as this must be recently computed with the draft time range labels.
-      if (draftSumBy !== undefined) {
-        return draftSumBy;
-      }
-      if (lastValidSumByRef.current == null) {
-        return lastValidSumByRef.current;
-      }
+    // For smoother UX, return draftSumBy first if available during loading
+    // as this must be recently computed with the draft time range labels.
+    if (labelNamesLoading && draftSumBy !== undefined) {
+      return draftSumBy;
     }
 
     // Prefer non-empty URL default over auto-computed default to avoid a
@@ -124,9 +121,6 @@ export const useSumBySelection = (
     if (profileType?.delta !== true) {
       result = DEFAULT_EMPTY_SUM_BY;
     }
-
-    // Store the computed value for next loading state
-    lastValidSumByRef.current = result;
 
     return result;
   }, [userSelectedSumBy, profileType, defaultSumBy, labelNamesLoading, draftSumBy, defaultValue]);

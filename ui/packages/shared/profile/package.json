@@ -1,6 +1,6 @@
 {
   "name": "@parca/profile",
-  "version": "0.19.141",
+  "version": "0.19.142",
   "description": "Profile viewing libraries",
   "dependencies": {
     "@floating-ui/react": "^0.27.12",
@@ -72,7 +72,7 @@
   "scripts": {
     "test": "jest --coverage --config ../../../jest.config.js ./src/*",
     "prepublish": "pnpm run build",
-    "build": "tsc && pnpm run compile:styles",
+    "build": "babel src --out-dir dist --config-file ../../../babel.react-compiler.cjs --extensions .ts,.tsx --copy-files --no-copy-ignored && tsc --emitDeclarationOnly && pnpm run compile:styles",
     "build-swc": "swc ./src -d dist --copy-files && pnpm run compile:styles",
     "watch": "tsc-watch --onCompilationComplete 'pnpm run compile:styles'",
     "compile:styles": "tailwindcss -o dist/styles.css --minify"

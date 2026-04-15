@@ -190,18 +190,26 @@ func (m *Manager) reloader() {
 }
 
 func (m *Manager) reload() {
-	m.mtxScrape.Lock()
-	defer m.mtxScrape.Unlock()
-	var wg sync.WaitGroup
 	level.Debug(m.logger).Log("msg", "Reloading scrape manager")
+
+	type syncWork struct {
+		sp     *scrapePool
+		groups []*targetgroup.Group
+	}
+
+	// Snapshot the work to do under the lock, but release it before waiting
+	// on pool syncs. Holding mtxScrape across sp.Sync() means a single slow
+	// or hung pool would block the scrape manager's Run() loop from draining
+	// new target sets, causing all pools to scrape stale endpoints.
+	m.mtxScrape.Lock()
+	work := make([]syncWork, 0, len(m.targetSets))
 	for setName, groups := range m.targetSets {
-		var sp *scrapePool
-		existing, ok := m.scrapePools[setName]
+		sp, ok := m.scrapePools[setName]
 		if !ok {
 			scrapeConfig, ok := m.scrapeConfigs[setName]
 			if !ok {
 				level.Error(m.logger).Log("msg", "error reloading target set", "err", "invalid config id:"+setName)
-				return
+				continue
 			}
 			sp = newScrapePool(
 				scrapeConfig,
@@ -221,16 +229,19 @@ func (m *Manager) reload() {
 				},
 			)
 			m.scrapePools[setName] = sp
-		} else {
-			sp = existing
 		}
+		work = append(work, syncWork{sp: sp, groups: groups})
+	}
+	m.mtxScrape.Unlock()
 
+	var wg sync.WaitGroup
+	for _, w := range work {
 		wg.Add(1)
 		// Run the sync in parallel as these take a while and at high load can't catch up.
-		go func(sp *scrapePool, groups []*targetgroup.Group) {
-			sp.Sync(groups)
-			wg.Done()
-		}(sp, groups)
+		go func(w syncWork) {
+			defer wg.Done()
+			w.sp.Sync(w.groups)
+		}(w)
 	}
 	wg.Wait()
 }

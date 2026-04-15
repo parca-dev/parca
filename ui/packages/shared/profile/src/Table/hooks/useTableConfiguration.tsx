@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useMemo, useState} from 'react';
+import {useMemo} from 'react';
 
 import {createColumnHelper, type ColumnDef} from '@tanstack/table-core';
 import {useQueryState} from 'nuqs';
@@ -46,8 +46,8 @@ export function useTableConfiguration({
   const columnHelper = createColumnHelper<Row>();
   const [tableColumns] = useQueryState('table_columns', tableColumnsParser);
 
-  const [columnVisibility, setColumnVisibility] = useState(() => {
-    return {
+  const columnVisibility = useMemo(() => {
+    const defaults: Record<string, boolean> = {
       color: true,
       flat: true,
       flatPercentage: false,
@@ -62,19 +62,13 @@ export function useTableConfiguration({
       functionFileName: false,
       mappingFile: false,
     };
-  });
-
-  useEffect(() => {
     if (Array.isArray(tableColumns)) {
-      setColumnVisibility(prevState => {
-        const newState = {...prevState};
-        (Object.keys(newState) as ColumnName[]).forEach(column => {
-          newState[column] = tableColumns.includes(column);
-        });
-        return newState;
+      (Object.keys(defaults) as ColumnName[]).forEach(column => {
+        defaults[column] = tableColumns.includes(column);
       });
     }
-  }, [tableColumns]);
+    return defaults;
+  }, [tableColumns, compareMode]);
 
   const columns = useMemo<Array<ColumnDef<Row>>>(() => {
     const baseColumns: Array<ColumnDef<Row>> = [
