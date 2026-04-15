@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.16.1032](https://github.com/parca-dev/parca/compare/@parca/web@0.16.1031...@parca/web@0.16.1032) (2026-04-15)
+
+### Bug Fixes
+
+- **ui:** self-host Google Fonts to eliminate third-party dependency ([#6326](https://github.com/parca-dev/parca/issues/6326)) ([b03ea62](https://github.com/parca-dev/parca/commit/b03ea623371dd5e3d8a678502c40b3d4f5782ff1)), closes [#6292](https://github.com/parca-dev/parca/issues/6292)
+
 ## [0.16.1031](https://github.com/parca-dev/parca/compare/@parca/web@0.16.1030...@parca/web@0.16.1031) (2026-04-13)
 
 **Note:** Version bump only for package @parca/web
