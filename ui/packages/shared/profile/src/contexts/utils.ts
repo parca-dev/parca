@@ -11,8 +11,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useMemo} from 'react';
-
 export interface LabelNameMapping {
   displayName: string;
   fullName: string;
@@ -23,21 +21,17 @@ export const transformLabelName = (labelName: string): string => {
 };
 
 export const useLabelNameMappings = (labelNames: string[]): LabelNameMapping[] => {
-  return useMemo(() => {
-    return labelNames.map(name => ({
-      displayName: transformLabelName(name),
-      fullName: name,
-    }));
-  }, [labelNames]);
+  return labelNames.map(name => ({
+    displayName: transformLabelName(name),
+    fullName: name,
+  }));
 };
 
 export const useExtractedLabelNames = (
   response: {labelNames?: string[]} | undefined,
   error: Error | undefined | null
 ): string[] => {
-  return useMemo(() => {
-    return (error === undefined || error == null) && response !== undefined && response != null
-      ? response.labelNames?.filter(e => e !== '__name__') ?? []
-      : [];
-  }, [response, error]);
+  return (error === undefined || error == null) && response !== undefined && response != null
+    ? response.labelNames?.filter(e => e !== '__name__') ?? []
+    : [];
 };
