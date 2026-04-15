@@ -294,7 +294,6 @@ const ProfileSelector = ({
     setProfileName,
     setQueryExpression,
     querySelection,
-    navigateTo,
     loading: sumByLoading,
     defaultProfileType: externalProfilerComponent?.defaultProfileType,
   });

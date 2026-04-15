@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import {useQueryState as useNuqsQueryState, useQueryStates} from 'nuqs';
 
@@ -50,7 +50,10 @@ interface UseQueryStateReturn {
   setDraftMatchers: (matchers: string) => void;
 
   // Commit function
-  commitDraft: (refreshedTimeRange?: {from: number; to: number; timeSelection: string}) => void;
+  commitDraft: (
+    refreshedTimeRange?: {from: number; to: number; timeSelection: string},
+    expression?: string
+  ) => void;
 
   // ProfileSelection state (separate from QuerySelection)
   profileSelection: ProfileSelection | null;
@@ -229,8 +232,20 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
 
   // Sync computed sumBy to URL if URL doesn't already have a value
   // to ensure the shared URL can always pick it up.
+  // Only run once (when sumByParam first becomes available), not on every change,
+  // to avoid oscillation with external writers (useViewQueryState).
+  const hasSyncedSumByRef = useRef(false);
   useEffect(() => {
-    if (sumByParam === null && computedSumByFromURL !== undefined && !sumBySelectionLoading) {
+    if (sumByParam !== null) {
+      hasSyncedSumByRef.current = true;
+    }
+    if (
+      !hasSyncedSumByRef.current &&
+      sumByParam === null &&
+      computedSumByFromURL !== undefined &&
+      !sumBySelectionLoading
+    ) {
+      hasSyncedSumByRef.current = true;
       void setSumByParam(sumByToParam(computedSumByFromURL));
     }
   }, [sumByParam, computedSumByFromURL, sumBySelectionLoading, setSumByParam]);

@@ -13,13 +13,16 @@
 
 import {useEffect, useRef} from 'react';
 
+import {useQueryStates} from 'nuqs';
+
 import {ProfileTypesResponse} from '@parca/client';
 import {selectAutoQuery, setAutoQuery, useAppDispatch, useAppSelector} from '@parca/store';
-import {type NavigateFunction} from '@parca/utilities';
 
-import {ProfileSelectionFromParams, SuffixParams} from '..';
+import {ProfileSelectionFromParams} from '..';
 import {QuerySelection} from '../ProfileSelector';
 import {constructProfileName} from '../ProfileTypeSelector';
+import {boolParam, stringParam} from '../hooks/urlParsers';
+import {useDashboardItems} from '../hooks/useDashboardItems';
 
 interface Props {
   selectedProfileName: string;
@@ -27,7 +30,6 @@ interface Props {
   setProfileName: (name: string) => void;
   setQueryExpression: () => void;
   querySelection: QuerySelection;
-  navigateTo: NavigateFunction;
   loading: boolean;
   defaultProfileType?: string;
 }
@@ -38,18 +40,40 @@ export const useAutoQuerySelector = ({
   setProfileName,
   setQueryExpression,
   querySelection,
-  navigateTo,
   loading,
   defaultProfileType,
 }: Props): void => {
   const autoQuery = useAppSelector(selectAutoQuery);
   const dispatch = useAppDispatch();
-  const queryParams = new URLSearchParams(location.search);
-  const compareA = queryParams.get('compare_a');
-  const compareB = queryParams.get('compare_b');
-  const comparing = compareA === 'true' || compareB === 'true';
-  const expressionA = queryParams.get('expression_a');
-  const expressionB = queryParams.get('expression_b');
+
+  const {setDashboardItems} = useDashboardItems();
+
+  const [compareState, setCompareParams] = useQueryStates(
+    {
+      compare_a: boolParam,
+      compare_b: boolParam,
+      expression_a: stringParam,
+      from_a: stringParam,
+      to_a: stringParam,
+      time_selection_a: stringParam,
+      sum_by_a: stringParam,
+      merge_from_a: stringParam,
+      merge_to_a: stringParam,
+      selection_a: stringParam,
+      expression_b: stringParam,
+      from_b: stringParam,
+      to_b: stringParam,
+      time_selection_b: stringParam,
+      sum_by_b: stringParam,
+      search_string: stringParam,
+    },
+    {history: 'replace'}
+  );
+
+  // Read compare params through nuqs (not location.search) to stay in sync
+  const comparing = compareState.compare_a === true || compareState.compare_b === true;
+  const expressionA = compareState.expression_a;
+  const expressionB = compareState.expression_b;
 
   // Track if we've already set up compare mode to prevent infinite loops
   const hasSetupCompareMode = useRef(false);
@@ -64,13 +88,7 @@ export const useAutoQuerySelector = ({
     // 2. expressionA exists
     // 3. expressionB doesn't exist yet (meaning we need to set it up)
     // 4. We haven't already set it up in this session
-    if (
-      comparing &&
-      expressionA !== null &&
-      expressionA !== undefined &&
-      expressionB === null &&
-      !hasSetupCompareMode.current
-    ) {
+    if (comparing && expressionA !== null && expressionB === null && !hasSetupCompareMode.current) {
       if (querySelection.expression === undefined) {
         return;
       }
@@ -87,42 +105,46 @@ export const useAutoQuerySelector = ({
         sumBy: querySelection.sumBy,
       };
 
-      const sumBy = queryA.sumBy?.join(',');
+      const sumBy = queryA.sumBy?.join(',') ?? null;
 
-      let compareQuery: Record<string, string> = {
-        compare_a: 'true',
+      const mergeFromA = profileA != null ? profileA.HistoryParams().merge_from?.toString() : null;
+      const mergeToA = profileA != null ? profileA.HistoryParams().merge_to?.toString() : null;
+      const selectionA = profileA != null ? profileA.HistoryParams().selection?.toString() : null;
+
+      hasSetupCompareMode.current = true;
+
+      // Set all compare params atomically via nuqs
+      void setCompareParams({
+        compare_a: true,
+        compare_b: true,
         expression_a: queryA.expression,
         from_a: queryA.from.toString(),
         to_a: queryA.to.toString(),
         time_selection_a: queryA.timeSelection,
-
-        compare_b: 'true',
+        sum_by_a: sumBy,
+        merge_from_a: mergeFromA,
+        merge_to_a: mergeToA,
+        selection_a: selectionA,
         expression_b: queryA.expression,
         from_b: queryA.from.toString(),
         to_b: queryA.to.toString(),
         time_selection_b: queryA.timeSelection,
-      };
-
-      if (sumBy != null) {
-        compareQuery.sum_by_a = sumBy;
-        compareQuery.sum_by_b = sumBy;
-      }
-
-      if (profileA != null) {
-        compareQuery = {
-          ...SuffixParams(profileA.HistoryParams(), '_a'),
-          ...compareQuery,
-        };
-      }
-
-      hasSetupCompareMode.current = true;
-      void navigateTo('/', {
-        ...compareQuery,
-        search_string: '',
-        dashboard_items: ['flamegraph'],
+        sum_by_b: sumBy,
+        search_string: null,
       });
+
+      setDashboardItems(['flamegraph']);
     }
-  }, [comparing, querySelection, navigateTo, expressionA, expressionB, dispatch, loading]);
+  }, [
+    comparing,
+    querySelection,
+    expressionA,
+    expressionB,
+    dispatch,
+    loading,
+    setCompareParams,
+    setDashboardItems,
+  ]);
 
   // Effect to load some initial data on load when is no selection
   useEffect(() => {

@@ -65,8 +65,15 @@ const ProfileExplorerCompare = ({
     if (querySelectionB.expression === '' && querySelectionA.expression !== '') {
       setDraftExpressionB(querySelectionA.expression);
       setDraftTimeRangeB(querySelectionA.from, querySelectionA.to, querySelectionA.timeSelection);
-      // Commit to update the URL and trigger metrics graph load
-      commitDraftB();
+      // Commit with explicit values since draft useState hasn't applied yet
+      commitDraftB(
+        {
+          from: querySelectionA.from,
+          to: querySelectionA.to,
+          timeSelection: querySelectionA.timeSelection,
+        },
+        querySelectionA.expression
+      );
     }
   }, [
     isCompareMode,
