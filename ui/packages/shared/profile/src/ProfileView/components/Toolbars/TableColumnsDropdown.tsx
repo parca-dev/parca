@@ -170,6 +170,7 @@ const TableColumnsDropdown = ({profileType, total, filtered}: Props): JSX.Elemen
 
   useEffect(() => {
     if (Array.isArray(tableColumns)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setColumnVisibility(prevState => {
         const newState = {...prevState};
         (Object.keys(newState) as ColumnName[]).forEach(column => {
