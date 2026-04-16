@@ -11,9 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
-import {DateTimeRange, useParcaContext, useURLState, useURLStateBatch} from '@parca/components';
+import {useQueryState as useNuqsQueryState, useQueryStates} from 'nuqs';
+
+import {DateTimeRange, useParcaContext} from '@parca/components';
 import {Query} from '@parca/parser';
 
 import {QuerySelection} from '../ProfileSelector';
@@ -21,6 +23,7 @@ import {ProfileSelection, ProfileSelectionFromParams, ProfileSource} from '../Pr
 import {useResetFlameGraphState} from '../ProfileView/hooks/useResetFlameGraphState';
 import {useResetStateOnProfileTypeChange} from '../ProfileView/hooks/useResetStateOnProfileTypeChange';
 import {DEFAULT_EMPTY_SUM_BY, sumByToParam, useSumBy, useSumByFromParams} from '../useSumBy';
+import {commaArrayParam, stringParam} from './urlParsers';
 
 interface UseQueryStateOptions {
   suffix?: '_a' | '_b'; // For comparison mode
@@ -47,7 +50,10 @@ interface UseQueryStateReturn {
   setDraftMatchers: (matchers: string) => void;
 
   // Commit function
-  commitDraft: (refreshedTimeRange?: {from: number; to: number; timeSelection: string}) => void;
+  commitDraft: (
+    refreshedTimeRange?: {from: number; to: number; timeSelection: string},
+    expression?: string
+  ) => void;
 
   // ProfileSelection state (separate from QuerySelection)
   profileSelection: ProfileSelection | null;
@@ -67,9 +73,9 @@ interface UseQueryStateReturn {
   // parsed query
   parsedQuery: Query | null;
 
-  setExpressionParam: (value: string | undefined) => void;
-  setSumByParam: (value: string | undefined) => void;
-  setGroupByParam: (value: string[] | undefined) => void;
+  setExpressionParam: (value: string | null) => void;
+  setSumByParam: (value: string | null) => void;
+  setGroupByParam: (value: string[] | null) => void;
 }
 
 export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryStateReturn => {
@@ -84,41 +90,65 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     onProfileTypeChange,
   } = options;
 
-  const batchUpdates = useURLStateBatch();
   const resetFlameGraphState = useResetFlameGraphState();
   const resetStateOnProfileTypeChange = useResetStateOnProfileTypeChange();
 
-  // URL state hooks with appropriate suffixes
-  const [expression, setExpressionState] = useURLState<string>(`expression${suffix}`, {
-    defaultValue: defaultExpression,
-  });
+  // URL state hooks with appropriate suffixes via useQueryStates
+  const [queryParams, setQueryParams] = useQueryStates(
+    {
+      expression: stringParam,
+      from: stringParam,
+      to: stringParam,
+      time_selection: stringParam,
+      sum_by: stringParam,
+      merge_from: stringParam,
+      merge_to: stringParam,
+      selection: stringParam,
+    },
+    {
+      history: 'replace',
+      urlKeys: {
+        expression: `expression${suffix}`,
+        from: `from${suffix}`,
+        to: `to${suffix}`,
+        time_selection: `time_selection${suffix}`,
+        sum_by: `sum_by${suffix}`,
+        merge_from: `merge_from${suffix}`,
+        merge_to: `merge_to${suffix}`,
+        selection: `selection${suffix}`,
+      },
+    }
+  );
 
-  const [from, setFromState] = useURLState<string>(`from${suffix}`, {
-    defaultValue: defaultFrom?.toString(),
-  });
+  const expression = queryParams.expression ?? defaultExpression;
+  const from = queryParams.from ?? defaultFrom?.toString();
+  const to = queryParams.to ?? defaultTo?.toString();
+  const timeSelection = queryParams.time_selection ?? defaultTimeSelection;
+  const sumByParam = queryParams.sum_by;
+  const mergeFrom = queryParams.merge_from;
+  const mergeTo = queryParams.merge_to;
+  const selectionParam = queryParams.selection;
 
-  const [to, setToState] = useURLState<string>(`to${suffix}`, {
-    defaultValue: defaultTo?.toString(),
-  });
+  // Individual setters for direct access
+  const setExpressionState = useCallback(
+    (val: string | null) => void setQueryParams({expression: val}),
+    [setQueryParams]
+  );
+  const setSumByParam = useCallback(
+    (val: string | null) => void setQueryParams({sum_by: val}),
+    [setQueryParams]
+  );
 
-  const [timeSelection, setTimeSelectionState] = useURLState<string>(`time_selection${suffix}`, {
-    defaultValue: defaultTimeSelection,
-  });
-
-  const [sumByParam, setSumByParam] = useURLState<string>(`sum_by${suffix}`);
-
-  const [, setGroupByParam] = useURLState<string>('group_by', {
-    alwaysReturnArray: true,
-  });
-
-  const [mergeFrom, setMergeFromState] = useURLState<string>(`merge_from${suffix}`);
-  const [mergeTo, setMergeToState] = useURLState<string>(`merge_to${suffix}`);
-
-  // ProfileSelection URL state hooks - reuses merge_from/merge_to but adds selection
-  const [selectionParam, setSelectionParam] = useURLState<string>(`selection${suffix}`);
+  const [, setRawGroupByParam] = useNuqsQueryState('group_by', commaArrayParam);
+  const setGroupByParam = useCallback(
+    (val: string[] | null) => {
+      void setRawGroupByParam(val);
+    },
+    [setRawGroupByParam]
+  );
 
   // Parse sumBy from URL parameter format
-  const sumBy = useSumByFromParams(sumByParam);
+  const sumBy = useSumByFromParams(sumByParam ?? undefined);
 
   // Draft state management
   const [draftExpression, setDraftExpression] = useState<string>(expression ?? defaultExpression);
@@ -202,9 +232,21 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
 
   // Sync computed sumBy to URL if URL doesn't already have a value
   // to ensure the shared URL can always pick it up.
+  // Only run once (when sumByParam first becomes available), not on every change,
+  // to avoid oscillation with external writers (useViewQueryState).
+  const hasSyncedSumByRef = useRef(false);
   useEffect(() => {
-    if (sumByParam === undefined && computedSumByFromURL !== undefined && !sumBySelectionLoading) {
-      setSumByParam(sumByToParam(computedSumByFromURL));
+    if (sumByParam !== null) {
+      hasSyncedSumByRef.current = true;
+    }
+    if (
+      !hasSyncedSumByRef.current &&
+      sumByParam === null &&
+      computedSumByFromURL !== undefined &&
+      !sumBySelectionLoading
+    ) {
+      hasSyncedSumByRef.current = true;
+      void setSumByParam(sumByToParam(computedSumByFromURL));
     }
   }, [sumByParam, computedSumByFromURL, sumBySelectionLoading, setSumByParam]);
 
@@ -212,8 +254,8 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
   const querySelection: QuerySelection = useMemo(() => {
     const range = DateTimeRange.fromRangeKey(
       timeSelection ?? defaultTimeSelection,
-      from !== undefined && from !== '' ? parseInt(from) : defaultFrom,
-      to !== undefined && to !== '' ? parseInt(to) : defaultTo
+      from != null && from !== '' ? parseInt(from) : defaultFrom,
+      to != null && to !== '' ? parseInt(to) : defaultTo
     );
 
     return {
@@ -222,7 +264,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
       to: range.getToMs(),
       timeSelection: range.getRangeKey(),
       sumBy: computedSumByFromURL,
-      ...(mergeFrom !== undefined && mergeFrom !== '' && mergeTo !== undefined && mergeTo !== ''
+      ...(mergeFrom != null && mergeFrom !== '' && mergeTo != null && mergeTo !== ''
         ? {mergeFrom, mergeTo}
         : {}),
     };
@@ -275,7 +317,11 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
 
   // Compute ProfileSelection from URL params
   const profileSelection = useMemo<ProfileSelection | null>(() => {
-    return ProfileSelectionFromParams(mergeFrom, mergeTo, selectionParam);
+    return ProfileSelectionFromParams(
+      mergeFrom ?? undefined,
+      mergeTo ?? undefined,
+      selectionParam ?? undefined
+    );
   }, [mergeFrom, mergeTo, selectionParam]);
 
   // Compute ProfileSource from ProfileSelection
@@ -293,83 +339,77 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
       refreshedTimeRange?: {from: number; to: number; timeSelection: string},
       expression?: string
     ) => {
-      batchUpdates(() => {
-        // Use provided expression or current draft expression
-        const finalExpression = expression ?? draftExpression;
+      // Use provided expression or current draft expression
+      const finalExpression = expression ?? draftExpression;
 
-        // Update draft state with new expression if provided
-        if (expression !== undefined) {
-          setDraftExpression(expression);
+      // Update draft state with new expression if provided
+      if (expression !== undefined) {
+        setDraftExpression(expression);
+      }
+
+      // Calculate the actual from/to values from draftSelection if not provided
+      const calculatedFrom = draftSelection.from.toString();
+      const calculatedTo = draftSelection.to.toString();
+
+      const finalFrom =
+        refreshedTimeRange?.from?.toString() ?? (draftFrom !== '' ? draftFrom : calculatedFrom);
+      const finalTo =
+        refreshedTimeRange?.to?.toString() ?? (draftTo !== '' ? draftTo : calculatedTo);
+      const finalTimeSelection = refreshedTimeRange?.timeSelection ?? draftTimeSelection;
+
+      // Update draft state with refreshed time range if provided
+      if (refreshedTimeRange?.from !== undefined) {
+        setDraftFrom(finalFrom);
+      }
+      if (refreshedTimeRange?.to !== undefined) {
+        setDraftTo(finalTo);
+      }
+      if (refreshedTimeRange?.timeSelection !== undefined) {
+        setDraftTimeSelection(finalTimeSelection);
+      }
+
+      // Auto-calculate merge parameters for delta profiles
+      const finalQuery = Query.parse(finalExpression);
+      const isDelta = finalQuery.profileType().delta;
+
+      const sumByValue = isDelta ? sumByToParam(draftSumBy) : sumByToParam(DEFAULT_EMPTY_SUM_BY);
+      let mergeFromValue: string | null = null;
+      let mergeToValue: string | null = null;
+      let selectionValue: string | null = null;
+
+      if (isDelta && finalFrom !== '' && finalTo !== '') {
+        const fromMs = parseInt(finalFrom);
+        const toMs = parseInt(finalTo);
+        mergeFromValue = (BigInt(fromMs) * 1_000_000n).toString();
+        mergeToValue = (BigInt(toMs) * 1_000_000n).toString();
+
+        if (!comparing) {
+          selectionValue = finalExpression;
         }
+      }
 
-        // Calculate the actual from/to values from draftSelection if not provided
-        const calculatedFrom = draftSelection.from.toString();
-        const calculatedTo = draftSelection.to.toString();
-
-        const finalFrom =
-          refreshedTimeRange?.from?.toString() ?? (draftFrom !== '' ? draftFrom : calculatedFrom);
-        const finalTo =
-          refreshedTimeRange?.to?.toString() ?? (draftTo !== '' ? draftTo : calculatedTo);
-        const finalTimeSelection = refreshedTimeRange?.timeSelection ?? draftTimeSelection;
-
-        // Update draft state with refreshed time range if provided
-        if (refreshedTimeRange?.from !== undefined) {
-          setDraftFrom(finalFrom);
-        }
-        if (refreshedTimeRange?.to !== undefined) {
-          setDraftTo(finalTo);
-        }
-        if (refreshedTimeRange?.timeSelection !== undefined) {
-          setDraftTimeSelection(finalTimeSelection);
-        }
-
-        setExpressionState(finalExpression);
-        setFromState(finalFrom);
-        setToState(finalTo);
-        setTimeSelectionState(finalTimeSelection);
-
-        // Auto-calculate merge parameters for delta profiles
-        // Parse the final expression to check if it's a delta profile
-        const finalQuery = Query.parse(finalExpression);
-        const isDelta = finalQuery.profileType().delta;
-        if (isDelta) {
-          setSumByParam(sumByToParam(draftSumBy));
-        } else {
-          setSumByParam(DEFAULT_EMPTY_SUM_BY);
-        }
-
-        if (isDelta && finalFrom !== '' && finalTo !== '') {
-          const fromMs = parseInt(finalFrom);
-          const toMs = parseInt(finalTo);
-          setMergeFromState((BigInt(fromMs) * 1_000_000n).toString());
-          setMergeToState((BigInt(toMs) * 1_000_000n).toString());
-
-          // Auto-select the time range for delta profiles (but not in compare mode)
-          // This applies both on initial load AND when Search is clicked
-          // The selection will use the final expression and the updated time range
-          if (!comparing) {
-            setSelectionParam(finalExpression);
-          } else {
-            setSelectionParam(undefined);
-          }
-        } else {
-          setMergeFromState(undefined);
-          setMergeToState(undefined);
-          // Clear ProfileSelection for non-delta profiles
-          setSelectionParam(undefined);
-        }
-        resetFlameGraphState();
-        if (
-          draftProfileType.toString() !==
-          Query.parse(querySelection.expression).profileType().toString()
-        ) {
-          resetStateOnProfileTypeChange();
-          onProfileTypeChange?.();
-        }
+      // Atomic URL update with all params at once
+      void setQueryParams({
+        expression: finalExpression,
+        from: finalFrom,
+        to: finalTo,
+        time_selection: finalTimeSelection,
+        sum_by: sumByValue,
+        merge_from: mergeFromValue,
+        merge_to: mergeToValue,
+        selection: selectionValue,
       });
+
+      resetFlameGraphState();
+      if (
+        draftProfileType.toString() !==
+        Query.parse(querySelection.expression).profileType().toString()
+      ) {
+        resetStateOnProfileTypeChange();
+        onProfileTypeChange?.();
+      }
     },
     [
-      batchUpdates,
       draftExpression,
       draftFrom,
       draftTo,
@@ -378,14 +418,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
       draftSelection.from,
       draftSelection.to,
       comparing,
-      setExpressionState,
-      setFromState,
-      setToState,
-      setTimeSelectionState,
-      setSumByParam,
-      setMergeFromState,
-      setMergeToState,
-      setSelectionParam,
+      setQueryParams,
       resetFlameGraphState,
       resetStateOnProfileTypeChange,
       onProfileTypeChange,
@@ -434,13 +467,13 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
   // Set ProfileSelection (auto-commits to URL immediately)
   const setProfileSelection = useCallback(
     (mergeFrom: bigint, mergeTo: bigint, query: Query) => {
-      batchUpdates(() => {
-        setSelectionParam(query.toString());
-        setMergeFromState(mergeFrom.toString());
-        setMergeToState(mergeTo.toString());
+      void setQueryParams({
+        selection: query.toString(),
+        merge_from: mergeFrom.toString(),
+        merge_to: mergeTo.toString(),
       });
     },
-    [batchUpdates, setSelectionParam, setMergeFromState, setMergeToState]
+    [setQueryParams]
   );
 
   const draftParsedQuery = useMemo(() => {

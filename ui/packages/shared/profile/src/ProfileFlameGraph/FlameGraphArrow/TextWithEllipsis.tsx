@@ -15,7 +15,9 @@
 
 import {useEffect, useRef, useState} from 'react';
 
-import {useURLState} from '@parca/components';
+import {useQueryState} from 'nuqs';
+
+import {stringParam} from '../../hooks/urlParsers';
 
 interface Props {
   text: string;
@@ -69,9 +71,9 @@ function TextWithEllipsis({text, x, y, width}: Props): JSX.Element {
   'use no memo';
   const textRef = useRef<SVGTextElement>(null);
   const [displayText, setDisplayText] = useState(text);
-  const [alignFunctionName] = useURLState('align_function_name');
+  const [alignFunctionName] = useQueryState('align_function_name', stringParam.withDefault('left'));
 
-  const showFunctionNameFromLeft = alignFunctionName === 'left' || alignFunctionName === undefined;
+  const showFunctionNameFromLeft = alignFunctionName === 'left';
 
   useEffect(() => {
     const textElement = textRef.current;
