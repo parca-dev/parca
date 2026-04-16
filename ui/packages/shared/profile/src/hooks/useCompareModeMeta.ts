@@ -11,7 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useURLState, useURLStateBatch} from '@parca/components';
+import {useCallback} from 'react';
+
+import {useQueryStates} from 'nuqs';
+
+import {boolParam, stringParam} from './urlParsers';
 
 /**
  * Hook to manage compare mode state and operations
@@ -22,68 +26,72 @@ export const useCompareModeMeta = (): {
   isCompareAbsolute: boolean;
   closeCompareMode: (card: 'A' | 'B') => void;
 } => {
-  const batchUpdates = useURLStateBatch();
+  const [state, setState] = useQueryStates(
+    {
+      // Side A
+      expression_a: stringParam,
+      from_a: stringParam,
+      to_a: stringParam,
+      time_selection_a: stringParam,
+      sum_by_a: stringParam,
+      merge_from_a: stringParam,
+      merge_to_a: stringParam,
+      selection_a: stringParam,
+      // Side B
+      expression_b: stringParam,
+      from_b: stringParam,
+      to_b: stringParam,
+      time_selection_b: stringParam,
+      sum_by_b: stringParam,
+      merge_from_b: stringParam,
+      merge_to_b: stringParam,
+      selection_b: stringParam,
+      // Compare flags
+      compare_a: boolParam,
+      compare_b: boolParam,
+      compare_absolute: boolParam,
+    },
+    {history: 'replace'}
+  );
 
-  // Side A URL state (only setters needed)
-  const [, setExpressionA] = useURLState<string>('expression_a');
-  const [, setFromA] = useURLState<string>('from_a');
-  const [, setToA] = useURLState<string>('to_a');
-  const [, setTimeSelectionA] = useURLState<string>('time_selection_a');
-  const [, setSumByA] = useURLState<string>('sum_by_a');
-  const [, setMergeFromA] = useURLState<string>('merge_from_a');
-  const [, setMergeToA] = useURLState<string>('merge_to_a');
-  const [, setSelectionA] = useURLState<string>('selection_a');
+  const closeCompareMode = useCallback(
+    (side: 'A' | 'B') => {
+      // If closing side A, swap B → A first (keep B's data as the single view)
+      const swapAFromB =
+        side === 'A'
+          ? {
+              expression_a: state.expression_b,
+              from_a: state.from_b,
+              to_a: state.to_b,
+              time_selection_a: state.time_selection_b,
+              sum_by_a: state.sum_by_b,
+              merge_from_a: state.merge_from_b,
+              merge_to_a: state.merge_to_b,
+              selection_a: state.selection_b,
+            }
+          : {};
 
-  // Side B URL state
-  const [expressionB, setExpressionB] = useURLState<string>('expression_b');
-  const [fromB, setFromB] = useURLState<string>('from_b');
-  const [toB, setToB] = useURLState<string>('to_b');
-  const [timeSelectionB, setTimeSelectionB] = useURLState<string>('time_selection_b');
-  const [sumByB, setSumByB] = useURLState<string>('sum_by_b');
-  const [mergeFromB, setMergeFromB] = useURLState<string>('merge_from_b');
-  const [mergeToB, setMergeToB] = useURLState<string>('merge_to_b');
-  const [selectionB, setSelectionB] = useURLState<string>('selection_b');
+      // Atomic update: swap A (if needed), clear all B params and compare flags
+      void setState({
+        ...swapAFromB,
+        expression_b: null,
+        from_b: null,
+        to_b: null,
+        time_selection_b: null,
+        sum_by_b: null,
+        merge_from_b: null,
+        merge_to_b: null,
+        selection_b: null,
+        compare_a: null,
+        compare_b: null,
+        compare_absolute: null,
+      });
+    },
+    [state, setState]
+  );
 
-  // Compare mode flags (expose values for routing decisions)
-  const [compareA, setCompareA] = useURLState<string>('compare_a');
-  const [compareB, setCompareB] = useURLState<string>('compare_b');
-  const [compareAbsolute, setCompareAbsolute] = useURLState<string>('compare_absolute');
-
-  const closeCompareMode = (side: 'A' | 'B'): void => {
-    batchUpdates(() => {
-      // If closing side A, swap A and B params first (keep B's data as the single view)
-      if (side === 'A') {
-        // Copy B to A
-        setExpressionA(expressionB);
-        setFromA(fromB);
-        setToA(toB);
-        setTimeSelectionA(timeSelectionB);
-        setSumByA(sumByB);
-        setMergeFromA(mergeFromB);
-        setMergeToA(mergeToB);
-        setSelectionA(selectionB);
-      }
-
-      // Clear all B params
-      setExpressionB(undefined);
-      setFromB(undefined);
-      setToB(undefined);
-      setTimeSelectionB(undefined);
-      setSumByB(undefined);
-      setMergeFromB(undefined);
-      setMergeToB(undefined);
-      setSelectionB(undefined);
-
-      // Clear compare mode flags
-      setCompareA(undefined);
-      setCompareB(undefined);
-      setCompareAbsolute(undefined);
-    });
-  };
-
-  // Derive isCompareMode from flags
-  const isCompareMode = compareA === 'true' || compareB === 'true';
-  const isCompareAbsolute = compareAbsolute === 'true';
+  const isCompareMode = state.compare_a === true || state.compare_b === true;
+  const isCompareAbsolute = state.compare_absolute === true;
 
   return {
     isCompareMode,

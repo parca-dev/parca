@@ -14,10 +14,11 @@
 import {Icon} from '@iconify/react';
 import {Table} from '@uwdata/flechette';
 import cx from 'classnames';
+import {useQueryState} from 'nuqs';
 import {Item, Menu, Separator, Submenu} from 'react-contexify';
 import {Tooltip} from 'react-tooltip';
 
-import {useParcaContext, useURLState} from '@parca/components';
+import {useParcaContext} from '@parca/components';
 import {USER_PREFERENCES, useUserPreference} from '@parca/hooks';
 import {ProfileType} from '@parca/parser';
 import {TEST_IDS} from '@parca/test-utils';
@@ -25,6 +26,8 @@ import {getLastItem} from '@parca/utilities';
 
 import {useGraphTooltip} from '../../GraphTooltipArrow/useGraphTooltip';
 import {useGraphTooltipMetaInfo} from '../../GraphTooltipArrow/useGraphTooltipMetaInfo';
+import {stringParam} from '../../hooks/urlParsers';
+import {useDashboardItems} from '../../hooks/useDashboardItems';
 import {hexifyAddress, truncateString} from '../../utils';
 
 interface ContextMenuProps {
@@ -83,12 +86,10 @@ const ContextMenu = ({
     inlined,
   } = useGraphTooltipMetaInfo({table, row});
 
-  const [dashboardItems, setDashboardItems] = useURLState<string[]>('dashboard_items', {
-    alwaysReturnArray: true,
-  });
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [sandwichFunctionName, setSandwichFunctionName] = useURLState<string | undefined>(
-    'sandwich_function_name'
+  const {dashboardItems, setDashboardItems} = useDashboardItems();
+  const [_sandwichFunctionName, setSandwichFunctionName] = useQueryState(
+    'sandwich_function_name',
+    stringParam
   );
 
   if (contextMenuData === null) {
@@ -195,12 +196,12 @@ const ContextMenu = ({
             }
 
             if (dashboardItems.includes('sandwich')) {
-              setSandwichFunctionName(functionName);
+              void setSandwichFunctionName(functionName);
               hideMenu();
               return;
             }
 
-            setSandwichFunctionName(functionName);
+            void setSandwichFunctionName(functionName);
             setDashboardItems([...dashboardItems, 'sandwich']);
             hideMenu();
           }}

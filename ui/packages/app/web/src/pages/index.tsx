@@ -17,8 +17,8 @@ import {GrpcWebFetchTransport} from '@protobuf-ts/grpcweb-transport';
 import {useLocation, useNavigate} from 'react-router-dom';
 
 import {QueryServiceClient} from '@parca/client';
-import {ParcaContextProvider, Spinner, URLStateProvider} from '@parca/components';
-import {DEFAULT_PROFILE_EXPLORER_PARAM_VALUES, ProfileExplorer} from '@parca/profile';
+import {ParcaContextProvider, Spinner} from '@parca/components';
+import {ProfileExplorer} from '@parca/profile';
 import {selectDarkMode, useAppSelector} from '@parca/store';
 import {convertToQueryParams} from '@parca/utilities';
 
@@ -52,24 +52,19 @@ const Profiles = () => {
   );
 
   return (
-    <URLStateProvider
-      navigateTo={navigateTo}
-      paramPreferences={DEFAULT_PROFILE_EXPLORER_PARAM_VALUES}
+    <ParcaContextProvider
+      value={{
+        Spinner,
+        queryServiceClient: queryClient,
+        navigateTo,
+        isDarkMode,
+        enableSandwichView: true,
+      }}
     >
-      <ParcaContextProvider
-        value={{
-          Spinner,
-          queryServiceClient: queryClient,
-          navigateTo,
-          isDarkMode,
-          enableSandwichView: true,
-        }}
-      >
-        <div className="bg-white dark:bg-gray-900 p-3">
-          <ProfileExplorer queryClient={queryClient} navigateTo={navigateTo} />
-        </div>
-      </ParcaContextProvider>
-    </URLStateProvider>
+      <div className="bg-white dark:bg-gray-900 p-3">
+        <ProfileExplorer queryClient={queryClient} navigateTo={navigateTo} />
+      </div>
+    </ParcaContextProvider>
   );
 };
 

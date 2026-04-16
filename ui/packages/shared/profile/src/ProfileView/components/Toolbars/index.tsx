@@ -50,7 +50,7 @@ export interface VisualisationToolbarProps {
   flamechartDimension: string[];
   setFlamechartDimension: (labels: string[]) => void;
   showVisualizationSelector?: boolean;
-  sandwichFunctionName?: string;
+  sandwichFunctionName: string | null;
   alignFunctionName: string;
   setAlignFunctionName: (align: string) => void;
   colorBy: string;
@@ -75,7 +75,7 @@ export interface FlameGraphToolbarProps {
 
 export interface SandwichFlameGraphToolbarProps {
   resetSandwichFunctionName: () => void;
-  sandwichFunctionName?: string;
+  sandwichFunctionName: string | null;
 }
 
 export const TableToolbar: FC<TableToolbarProps> = ({profileType, total, filtered}) => {
@@ -120,7 +120,7 @@ export const SandwichFlameGraphToolbar: FC<SandwichFlameGraphToolbarProps> = ({
           onClick={() => resetSandwichFunctionName()}
           className="w-auto"
           variant="neutral"
-          disabled={sandwichFunctionName === undefined || sandwichFunctionName.length === 0}
+          disabled={sandwichFunctionName == null || sandwichFunctionName.length === 0}
         >
           Reset view
         </Button>
