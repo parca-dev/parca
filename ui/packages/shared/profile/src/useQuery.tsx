@@ -53,7 +53,7 @@ export const useQuery = (
   const {data, isLoading, error, refetch} = useGrpcQuery<QueryResponse | undefined>({
     key: [
       'query',
-      profileSource.toKey(),
+      profileSource?.toKey() ?? '',
       reportType,
       options?.nodeTrimThreshold,
       options?.groupBy,
