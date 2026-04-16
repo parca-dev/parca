@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useState} from 'react';
+import {useMemo, useState} from 'react';
 
 import {QueryServiceClient} from '@parca/client';
 import {DateTimeRange} from '@parca/components';
@@ -162,7 +162,7 @@ const getSumByFromParam = (param: string | string[] | undefined): string[] | und
 };
 
 export const useSumByFromParams = (param: string | string[] | undefined): string[] | undefined => {
-  return getSumByFromParam(param);
+  return useMemo(() => getSumByFromParam(param), [param]);
 };
 
 export const sumByToParam = (sumBy: string[] | undefined): string | null => {
