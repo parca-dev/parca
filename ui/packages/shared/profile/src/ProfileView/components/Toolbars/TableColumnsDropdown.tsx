@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useMemo, useState} from 'react';
+import {useEffect, useState} from 'react';
 
 import {createColumnHelper, type ColumnDef} from '@tanstack/table-core';
 import {useQueryState} from 'nuqs';
@@ -37,121 +37,118 @@ const TableColumnsDropdown = ({profileType, total, filtered}: Props): JSX.Elemen
 
   const columnHelper = createColumnHelper<Row>();
 
-  const unit: string = useMemo(() => profileType?.sampleUnit ?? '', [profileType?.sampleUnit]);
+  const unit: string = profileType?.sampleUnit ?? '';
 
-  const columns = useMemo<Array<ColumnDef<Row>>>(() => {
-    return [
-      columnHelper.accessor('flat', {
-        id: 'flat',
-        header: 'Flat',
-        cell: info => valueFormatter(info.getValue(), unit, 2),
-        size: 80,
-        meta: {
-          align: 'right',
-        },
-        invertSorting: true,
-      }),
-      columnHelper.accessor('flat', {
-        id: 'flatPercentage',
-        header: 'Flat (%)',
-        cell: info => {
-          return getRatioString(info.getValue(), total, filtered);
-        },
-        size: 120,
-        meta: {
-          align: 'right',
-        },
-        invertSorting: true,
-      }),
-      columnHelper.accessor('flatDiff', {
-        id: 'flatDiff',
-        header: 'Flat Diff',
-        cell: info => addPlusSign(valueFormatter(info.getValue(), unit, 2)),
-        size: 120,
-        meta: {
-          align: 'right',
-        },
-        invertSorting: true,
-      }),
-      columnHelper.accessor('flatDiff', {
-        id: 'flatDiffPercentage',
-        header: 'Flat Diff (%)',
-        cell: info => {
-          return getRatioString(info.getValue(), total, filtered);
-        },
-        size: 120,
-        meta: {
-          align: 'right',
-        },
-        invertSorting: true,
-      }),
-      columnHelper.accessor('cumulative', {
-        id: 'cumulative',
-        header: 'Cumulative',
-        cell: info => valueFormatter(info.getValue(), unit, 2),
-        size: 150,
-        meta: {
-          align: 'right',
-        },
-        invertSorting: true,
-      }),
-      columnHelper.accessor('cumulative', {
-        id: 'cumulativePercentage',
-        header: 'Cumulative (%)',
-        cell: info => {
-          return getRatioString(info.getValue(), total, filtered);
-        },
-        size: 150,
-        meta: {
-          align: 'right',
-        },
-        invertSorting: true,
-      }),
-      columnHelper.accessor('cumulativeDiff', {
-        id: 'cumulativeDiff',
-        header: 'Cumulative Diff',
-        cell: info => addPlusSign(valueFormatter(info.getValue(), unit, 2)),
-        size: 170,
-        meta: {
-          align: 'right',
-        },
-        invertSorting: true,
-      }),
-      columnHelper.accessor('cumulativeDiff', {
-        id: 'cumulativeDiffPercentage',
-        header: 'Cumulative Diff (%)',
-        cell: info => {
-          return getRatioString(info.getValue(), total, filtered);
-        },
-        size: 170,
-        meta: {
-          align: 'right',
-        },
-        invertSorting: true,
-      }),
-      columnHelper.accessor('name', {
-        id: 'name',
-        header: 'Name',
-        cell: info => info.getValue(),
-      }),
-      columnHelper.accessor('functionSystemName', {
-        id: 'functionSystemName',
-        header: 'Function System Name',
-        cell: info => info.getValue(),
-      }),
-      columnHelper.accessor('functionFileName', {
-        id: 'functionFileName',
-        header: 'Function File Name',
-        cell: info => info.getValue(),
-      }),
-      columnHelper.accessor('mappingFile', {
-        id: 'mappingFile',
-        header: 'Mapping File',
-        cell: info => info.getValue(),
-      }),
-    ];
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profileType, unit]);
+  const columns: Array<ColumnDef<Row>> = [
+    columnHelper.accessor('flat', {
+      id: 'flat',
+      header: 'Flat',
+      cell: info => valueFormatter(info.getValue(), unit, 2),
+      size: 80,
+      meta: {
+        align: 'right',
+      },
+      invertSorting: true,
+    }),
+    columnHelper.accessor('flat', {
+      id: 'flatPercentage',
+      header: 'Flat (%)',
+      cell: info => {
+        return getRatioString(info.getValue(), total, filtered);
+      },
+      size: 120,
+      meta: {
+        align: 'right',
+      },
+      invertSorting: true,
+    }),
+    columnHelper.accessor('flatDiff', {
+      id: 'flatDiff',
+      header: 'Flat Diff',
+      cell: info => addPlusSign(valueFormatter(info.getValue(), unit, 2)),
+      size: 120,
+      meta: {
+        align: 'right',
+      },
+      invertSorting: true,
+    }),
+    columnHelper.accessor('flatDiff', {
+      id: 'flatDiffPercentage',
+      header: 'Flat Diff (%)',
+      cell: info => {
+        return getRatioString(info.getValue(), total, filtered);
+      },
+      size: 120,
+      meta: {
+        align: 'right',
+      },
+      invertSorting: true,
+    }),
+    columnHelper.accessor('cumulative', {
+      id: 'cumulative',
+      header: 'Cumulative',
+      cell: info => valueFormatter(info.getValue(), unit, 2),
+      size: 150,
+      meta: {
+        align: 'right',
+      },
+      invertSorting: true,
+    }),
+    columnHelper.accessor('cumulative', {
+      id: 'cumulativePercentage',
+      header: 'Cumulative (%)',
+      cell: info => {
+        return getRatioString(info.getValue(), total, filtered);
+      },
+      size: 150,
+      meta: {
+        align: 'right',
+      },
+      invertSorting: true,
+    }),
+    columnHelper.accessor('cumulativeDiff', {
+      id: 'cumulativeDiff',
+      header: 'Cumulative Diff',
+      cell: info => addPlusSign(valueFormatter(info.getValue(), unit, 2)),
+      size: 170,
+      meta: {
+        align: 'right',
+      },
+      invertSorting: true,
+    }),
+    columnHelper.accessor('cumulativeDiff', {
+      id: 'cumulativeDiffPercentage',
+      header: 'Cumulative Diff (%)',
+      cell: info => {
+        return getRatioString(info.getValue(), total, filtered);
+      },
+      size: 170,
+      meta: {
+        align: 'right',
+      },
+      invertSorting: true,
+    }),
+    columnHelper.accessor('name', {
+      id: 'name',
+      header: 'Name',
+      cell: info => info.getValue(),
+    }),
+    columnHelper.accessor('functionSystemName', {
+      id: 'functionSystemName',
+      header: 'Function System Name',
+      cell: info => info.getValue(),
+    }),
+    columnHelper.accessor('functionFileName', {
+      id: 'functionFileName',
+      header: 'Function File Name',
+      cell: info => info.getValue(),
+    }),
+    columnHelper.accessor('mappingFile', {
+      id: 'mappingFile',
+      header: 'Mapping File',
+      cell: info => info.getValue(),
+    }),
+  ];
 
   const [columnVisibility, setColumnVisibility] = useState(() => {
     return {
