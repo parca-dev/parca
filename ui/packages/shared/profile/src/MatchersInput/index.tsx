@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useMemo, useRef, useState} from 'react';
+import React, {useRef, useState} from 'react';
 
 import cx from 'classnames';
 import TextareaAutosize from 'react-textarea-autosize';
@@ -48,91 +48,78 @@ const MatchersInput = ({setDraftMatchers, draftParsedQuery, commitDraft}: Props)
 
   const value = draftParsedQuery != null ? draftParsedQuery.matchersString() : '';
 
-  const suggestionSections = useMemo(() => {
-    const suggestionSections = new Suggestions();
-    Query.suggest(`${draftParsedQuery?.profileName() as string}{${value}`).forEach(function (s) {
-      // Skip suggestions that we just completed. This really only works,
-      // because we know the language is not repetitive. For a language that
-      // has a repeating word, this would not work.
-      if (lastCompleted !== null && lastCompleted.type === s.type) {
+  const suggestionSections = new Suggestions();
+  Query.suggest(`${draftParsedQuery?.profileName() as string}{${value}`).forEach(function (s) {
+    // Skip suggestions that we just completed. This really only works,
+    // because we know the language is not repetitive. For a language that
+    // has a repeating word, this would not work.
+    if (lastCompleted !== null && lastCompleted.type === s.type) {
+      return;
+    }
+
+    // Need to figure out if any literal suggestions make sense, but a
+    // closing bracket doesn't in the guided query experience because all
+    // we have the user do is type the matchers.
+    if (s.type === 'literal' && s.value !== '}') {
+      suggestionSections.literals.push({
+        type: s.type,
+        typeahead: s.typeahead,
+        value: s.value,
+      });
+    }
+    if (s.type === 'labelName') {
+      const inputValue = s.typeahead.trim().toLowerCase();
+      const inputLength = inputValue.length;
+      const matches = labelNames.filter(function (label) {
+        return label.toLowerCase().slice(0, inputLength) === inputValue;
+      });
+
+      matches.forEach(m => {
+        const suggestion = {
+          type: s.type,
+          typeahead: s.typeahead,
+          value: m,
+        };
+
+        if (shouldHandlePrefixes) {
+          const mapping = labelNameMappings.find(l => l.displayName === m);
+          if (mapping != null) {
+            (suggestion as any).fullName = mapping.fullName;
+          }
+        }
+
+        suggestionSections.labelNames.push(suggestion);
+      });
+    }
+
+    if (s.type === 'labelValue') {
+      let labelNameForQuery = s.labelName;
+
+      if (shouldHandlePrefixes) {
+        const mapping = labelNameMappings.find(l => l.displayName === s.labelName);
+        if (mapping != null) {
+          labelNameForQuery = mapping.fullName;
+        }
+      }
+
+      if (currentLabelName === null || labelNameForQuery !== currentLabelName) {
+        setCurrentLabelName(labelNameForQuery);
         return;
       }
 
-      // Need to figure out if any literal suggestions make sense, but a
-      // closing bracket doesn't in the guided query experience because all
-      // we have the user do is type the matchers.
-      if (s.type === 'literal' && s.value !== '}') {
-        suggestionSections.literals.push({
-          type: s.type,
-          typeahead: s.typeahead,
-          value: s.value,
-        });
+      if (labelValues !== null) {
+        labelValues
+          .filter(v => v.slice(0, s.typeahead.length) === s.typeahead)
+          .forEach(v =>
+            suggestionSections.labelValues.push({
+              type: s.type,
+              typeahead: s.typeahead,
+              value: v,
+            })
+          );
       }
-      if (s.type === 'labelName') {
-        const inputValue = s.typeahead.trim().toLowerCase();
-        const inputLength = inputValue.length;
-        const matches = labelNames.filter(function (label) {
-          return label.toLowerCase().slice(0, inputLength) === inputValue;
-        });
-
-        matches.forEach(m => {
-          const suggestion = {
-            type: s.type,
-            typeahead: s.typeahead,
-            value: m,
-          };
-
-          if (shouldHandlePrefixes) {
-            const mapping = labelNameMappings.find(l => l.displayName === m);
-            if (mapping != null) {
-              (suggestion as any).fullName = mapping.fullName;
-            }
-          }
-
-          suggestionSections.labelNames.push(suggestion);
-        });
-      }
-
-      if (s.type === 'labelValue') {
-        let labelNameForQuery = s.labelName;
-
-        if (shouldHandlePrefixes) {
-          const mapping = labelNameMappings.find(l => l.displayName === s.labelName);
-          if (mapping != null) {
-            labelNameForQuery = mapping.fullName;
-          }
-        }
-
-        if (currentLabelName === null || labelNameForQuery !== currentLabelName) {
-          setCurrentLabelName(labelNameForQuery);
-          return;
-        }
-
-        if (labelValues !== null) {
-          labelValues
-            .filter(v => v.slice(0, s.typeahead.length) === s.typeahead)
-            .forEach(v =>
-              suggestionSections.labelValues.push({
-                type: s.type,
-                typeahead: s.typeahead,
-                value: v,
-              })
-            );
-        }
-      }
-    });
-    return suggestionSections;
-  }, [
-    draftParsedQuery,
-    lastCompleted,
-    labelNames,
-    labelValues,
-    currentLabelName,
-    value,
-    shouldHandlePrefixes,
-    labelNameMappings,
-    setCurrentLabelName,
-  ]);
+    }
+  });
 
   const resetLastCompleted = (): void => setLastCompleted(new Suggestion('', '', ''));
 

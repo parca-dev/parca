@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback, useState} from 'react';
+import {useState} from 'react';
 
 import ReactSelect, {type MenuListProps, type Props as ReactSelectProps} from 'react-select';
 
@@ -39,7 +39,7 @@ export function SelectWithRefresh<Option, IsMulti extends boolean = false>(
 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const handleRefetch = useCallback(async () => {
+  const handleRefetch = async (): Promise<void> => {
     if (onRefresh == null || isRefreshing) return;
 
     setIsRefreshing(true);
@@ -50,35 +50,35 @@ export function SelectWithRefresh<Option, IsMulti extends boolean = false>(
     } finally {
       setIsRefreshing(false);
     }
-  }, [onRefresh, isRefreshing]);
+  };
 
-  const MenuListWithRefresh = useCallback(
-    ({children, innerProps}: MenuListProps<Option, IsMulti>) => {
-      const testIdProps = menuTestId != null ? {'data-testid': menuTestId} : {};
+  const MenuListWithRefresh = ({
+    children,
+    innerProps,
+  }: MenuListProps<Option, IsMulti>): JSX.Element => {
+    const testIdProps = menuTestId != null ? {'data-testid': menuTestId} : {};
 
-      return (
-        <div className="flex flex-col" style={{maxHeight: '332px'}}>
-          <div
-            className="overflow-y-auto flex-1"
-            {...innerProps}
-            {...testIdProps}
-            style={{...innerProps?.style, fontSize: '14px'}}
-          >
-            {children}
-          </div>
-          {onRefresh != null && (
-            <RefreshButton
-              onClick={() => void handleRefetch()}
-              disabled={isRefreshing}
-              title={refreshTitle}
-              testId={refreshTestId}
-            />
-          )}
+    return (
+      <div className="flex flex-col" style={{maxHeight: '332px'}}>
+        <div
+          className="overflow-y-auto flex-1"
+          {...innerProps}
+          {...testIdProps}
+          style={{...innerProps?.style, fontSize: '14px'}}
+        >
+          {children}
         </div>
-      );
-    },
-    [onRefresh, isRefreshing, handleRefetch, refreshTitle, refreshTestId, menuTestId]
-  );
+        {onRefresh != null && (
+          <RefreshButton
+            onClick={() => void handleRefetch()}
+            disabled={isRefreshing}
+            title={refreshTitle}
+            testId={refreshTestId}
+          />
+        )}
+      </div>
+    );
+  };
 
   const combinedLoadingState = isRefreshing || (selectProps.isLoading ?? false);
 

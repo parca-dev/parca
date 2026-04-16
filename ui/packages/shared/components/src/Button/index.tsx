@@ -11,8 +11,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useMemo} from 'react';
-
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
 import {Tooltip} from 'react-tooltip';
@@ -73,31 +71,26 @@ export const Button = ({
   id = '',
   ...props
 }: Props): JSX.Element => {
-  const classes = useMemo<string>(() => {
-    const variantConfig = BUTTON_VARIANT_CONFIG[variant];
+  const variantConfig = BUTTON_VARIANT_CONFIG[variant];
+  const rawClasses = cx(
+    'flex text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 dark:ring-offset-gray-900 items-center relative',
+    ...Object.values(variantConfig),
+    {'opacity-50 pointer-events-none': disabled},
+    {[className]: className}
+  );
+  const classes = twMerge(rawClasses);
 
-    const classes = cx(
-      'flex text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 dark:ring-offset-gray-900 items-center relative',
-      ...Object.values(variantConfig),
-      {'opacity-50 pointer-events-none': disabled},
-      {[className]: className}
-    );
-    const classesMerged = twMerge(classes);
-
-    if (classes.length > classesMerged.length) {
-      const classesTokens = classes.split(' ');
-      const classesMergedTokens = classesMerged.split(' ');
-      const diff = classesTokens.filter(token => !classesMergedTokens.includes(token));
-      if (diff.length > 0) {
-        console.warn(
-          'Button: Conflicting classes found in `className` prop, please use/create an appropriate variant instead. Conflicting classes:',
-          diff
-        );
-      }
+  if (rawClasses.length > classes.length) {
+    const rawTokens = rawClasses.split(' ');
+    const mergedTokens = classes.split(' ');
+    const diff = rawTokens.filter(token => !mergedTokens.includes(token));
+    if (diff.length > 0) {
+      console.warn(
+        'Button: Conflicting classes found in `className` prop, please use/create an appropriate variant instead. Conflicting classes:',
+        diff
+      );
     }
-
-    return classesMerged;
-  }, [className, disabled, variant]);
+  }
 
   return <button {...props} disabled={disabled} className={classes} id={id} />;
 };

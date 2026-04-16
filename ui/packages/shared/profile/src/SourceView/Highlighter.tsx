@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {MouseEventHandler, useId, useMemo} from 'react';
+import {MouseEventHandler, useId} from 'react';
 
 import cx from 'classnames';
 import {scaleLinear} from 'd3-scale';
@@ -193,7 +193,7 @@ export const profileAwareRenderer = (
 
 export const Highlighter = ({file, content, renderer}: HighlighterProps): JSX.Element => {
   const {isDarkMode} = useParcaContext();
-  const language = useMemo(() => langaugeFromFile(file), [file]);
+  const language = langaugeFromFile(file);
 
   return (
     <div className="relative">
