@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useMemo, useState} from 'react';
+import {useEffect, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 
@@ -70,9 +70,8 @@ export const RelativeDatePickerForPanel = ({
       : (range.to as AbsoluteDate)
   );
 
-  const {unit, value} = useMemo(
-    () => getRelativeTimeRangeBetweenDates(to.getTime().getTime() - from.getTime().getTime()),
-    [from, to]
+  const {unit, value} = getRelativeTimeRangeBetweenDates(
+    to.getTime().getTime() - from.getTime().getTime()
   );
 
   // When the list of presets is shown in the popover panel, we use this effect here to ensure that the

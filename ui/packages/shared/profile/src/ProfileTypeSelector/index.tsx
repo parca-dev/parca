@@ -11,8 +11,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useMemo} from 'react';
-
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 
 import {ProfileType, ProfileTypesResponse} from '@parca/client';
@@ -180,13 +178,12 @@ const ProfileTypeSelector = ({
   flexibleKnownProfilesDetection = false,
   disabled,
 }: Props): JSX.Element => {
-  const profileNames = useMemo(() => {
-    return (error === undefined || error == null) &&
-      profileTypesData !== undefined &&
-      profileTypesData != null
+  const profileNames =
+    (error === undefined || error == null) &&
+    profileTypesData !== undefined &&
+    profileTypesData != null
       ? normalizeProfileTypesData(profileTypesData.types)
       : [];
-  }, [profileTypesData, error]);
 
   const profileLabels = (
     profileNames.length > 0 ? profileNames : selectedKey != null ? [selectedKey] : []

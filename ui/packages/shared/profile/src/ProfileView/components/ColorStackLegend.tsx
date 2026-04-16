@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useMemo} from 'react';
+import React from 'react';
 
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
@@ -41,31 +41,23 @@ const ColorStackLegend = ({mappings, compareMode = false, loading}: Props): Reac
 
   const {appliedFilters, removeExcludeBinary, excludeBinary} = useProfileFilters();
 
-  // Get current binary filters from the new ProfileFilters system
-  const currentBinaryFilters = useMemo(() => {
-    return (appliedFilters ?? [])
-      .filter(f => f.type === 'frame' && f.field === 'binary')
-      .map(f => f.value);
-  }, [appliedFilters]);
+  const currentBinaryFilters = (appliedFilters ?? [])
+    .filter(f => f.type === 'frame' && f.field === 'binary')
+    .map(f => f.value);
 
   const mappingsList = useMappingList(mappings);
 
-  const mappingColors = useMemo(() => {
-    const colors = getMappingColors(mappingsList, isDarkMode, currentColorProfile);
-    return colors;
-  }, [isDarkMode, mappingsList, currentColorProfile]);
+  const mappingColors = getMappingColors(mappingsList, isDarkMode, currentColorProfile);
 
-  const stackColorArray = useMemo(() => {
-    return Object.entries(mappingColors).sort(([featureA], [featureB]) => {
-      if (featureA === EVERYTHING_ELSE) {
-        return 1;
-      }
-      if (featureB === EVERYTHING_ELSE) {
-        return -1;
-      }
-      return featureA?.localeCompare(featureB ?? '') ?? 0;
-    });
-  }, [mappingColors]);
+  const stackColorArray = Object.entries(mappingColors).sort(([featureA], [featureB]) => {
+    if (featureA === EVERYTHING_ELSE) {
+      return 1;
+    }
+    if (featureB === EVERYTHING_ELSE) {
+      return -1;
+    }
+    return featureA?.localeCompare(featureB ?? '') ?? 0;
+  });
 
   if (stackColorArray.length === 0 && loading === false) {
     return <></>;

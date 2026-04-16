@@ -11,8 +11,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback} from 'react';
-
 import {Icon} from '@iconify/react';
 import cx from 'classnames';
 
@@ -203,18 +201,15 @@ const ProfileFilters = ({readOnly = false}: ProfileFiltersProps = {}): JSX.Eleme
     resetFilters,
   } = useProfileFilters();
 
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        if (e.currentTarget.value.trim() === '') {
-          return;
-        }
-        onApplyFilters();
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (e.currentTarget.value.trim() === '') {
+        return;
       }
-    },
-    [onApplyFilters]
-  );
+      onApplyFilters();
+    }
+  };
 
   const filtersToRender = localFilters.length > 0 ? localFilters : appliedFilters ?? [];
 

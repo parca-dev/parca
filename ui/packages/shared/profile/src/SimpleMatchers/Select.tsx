@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 import {useVirtualizer} from '@tanstack/react-virtual';
@@ -91,7 +91,7 @@ const CustomSelect: React.FC<CustomSelectProps & Record<string, any>> = ({
   const optionsRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
 
-  const handleRefetch = useCallback(async () => {
+  const handleRefetch = async (): Promise<void> => {
     if (refetchValues == null || isRefetching) return;
 
     setIsRefetching(true);
@@ -100,23 +100,21 @@ const CustomSelect: React.FC<CustomSelectProps & Record<string, any>> = ({
     } finally {
       setIsRefetching(false);
     }
-  }, [refetchValues, isRefetching]);
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 150);
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  const items = useMemo<TypedSelectItem[]>(() => {
-    if (itemsProp[0] != null && 'type' in itemsProp[0]) {
-      return (itemsProp as GroupedSelectItem[]).flatMap(item =>
-        item.values.map(v => ({...v, type: item.type}))
-      );
-    }
-    return (itemsProp as SelectItem[]).map(item => ({...item, type: ''}));
-  }, [itemsProp]);
+  const items: TypedSelectItem[] =
+    itemsProp[0] != null && 'type' in itemsProp[0]
+      ? (itemsProp as GroupedSelectItem[]).flatMap(item =>
+          item.values.map(v => ({...v, type: item.type}))
+        )
+      : (itemsProp as SelectItem[]).map(item => ({...item, type: ''}));
 
-  const filteredItems = useMemo(() => {
+  const computeFilteredItems = (): TypedSelectItem[] => {
     if (!searchable) return items;
     const lowerSearch = debouncedSearchTerm.toLowerCase();
     const filtered = items.filter(item =>
@@ -129,7 +127,8 @@ const CustomSelect: React.FC<CustomSelectProps & Record<string, any>> = ({
       (a, b) =>
         levenshtein.get(a.key, debouncedSearchTerm) - levenshtein.get(b.key, debouncedSearchTerm)
     );
-  }, [items, debouncedSearchTerm, searchable]);
+  };
+  const filteredItems = computeFilteredItems();
 
   const selection = editable ? selectedKey : items.find(v => v.key === selectedKey);
 
@@ -228,24 +227,20 @@ const CustomSelect: React.FC<CustomSelectProps & Record<string, any>> = ({
     e.target.value = value;
   };
 
-  const groupedFilteredItems = useMemo(() => {
-    return filteredItems
-      .reduce((acc: GroupedSelectItem[], item) => {
-        const group = acc.find(g => g.type === item.type);
-        if (group != null) {
-          group.values.push(item);
-        } else {
-          acc.push({type: item.type, values: [item]});
-        }
-        return acc;
-      }, [])
-      .sort((a, b) => a.values.length - b.values.length);
-  }, [filteredItems]);
+  const groupedFilteredItems = filteredItems
+    .reduce((acc: GroupedSelectItem[], item) => {
+      const group = acc.find(g => g.type === item.type);
+      if (group != null) {
+        group.values.push(item);
+      } else {
+        acc.push({type: item.type, values: [item]});
+      }
+      return acc;
+    }, [])
+    .sort((a, b) => a.values.length - b.values.length);
 
-  const showHeaders = useMemo(
-    () => groupedFilteredItems.length > 1 && groupedFilteredItems.every(g => g.type !== ''),
-    [groupedFilteredItems]
-  );
+  const showHeaders =
+    groupedFilteredItems.length > 1 && groupedFilteredItems.every(g => g.type !== '');
 
   const flatList = useMemo(() => {
     const list: Array<
@@ -264,12 +259,9 @@ const CustomSelect: React.FC<CustomSelectProps & Record<string, any>> = ({
     return list;
   }, [groupedFilteredItems, showHeaders]);
 
-  const longestKey = useMemo(
-    () =>
-      filteredItems.reduce((a, b) => (a.key.length > b.key.length ? a : b), filteredItems[0])
-        ?.key ?? '',
-    [filteredItems]
-  );
+  const longestKey =
+    filteredItems.reduce((a, b) => (a.key.length > b.key.length ? a : b), filteredItems[0])?.key ??
+    '';
 
   const rowVirtualizer = useVirtualizer({
     count: flatList.length,
