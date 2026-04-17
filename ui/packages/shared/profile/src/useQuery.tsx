@@ -11,8 +11,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useMemo} from 'react';
-
 import {RpcError} from '@protobuf-ts/runtime-rpc';
 
 import {QueryRequest_ReportType, QueryResponse, QueryServiceClient} from '@parca/client';
@@ -50,9 +48,7 @@ export const useQuery = (
   const {skip = false} = options ?? {};
   const metadata = useGrpcMetadata();
 
-  const protoFiltersKey = useMemo(() => {
-    return JSON.stringify(options?.protoFilters ?? []);
-  }, [options?.protoFilters]);
+  const protoFiltersKey = JSON.stringify(options?.protoFilters ?? []);
 
   const {data, isLoading, error, refetch} = useGrpcQuery<QueryResponse | undefined>({
     key: [

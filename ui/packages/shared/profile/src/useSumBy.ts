@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useCallback, useMemo, useState} from 'react';
+import {useMemo, useState} from 'react';
 
 import {QueryServiceClient} from '@parca/client';
 import {DateTimeRange} from '@parca/components';
@@ -84,46 +84,40 @@ export const useSumBySelection = (
     }
   }
 
-  const setSumBy = useCallback(
-    (sumBy: string[]) => {
-      setUserSelectedSumBy(prev => {
-        if (profileType == null) {
-          return prev;
-        }
+  const setSumBy = (sumBy: string[]): void => {
+    setUserSelectedSumBy(prev => {
+      if (profileType == null) {
+        return prev;
+      }
 
-        return {
-          ...prev,
-          [profileType.toString()]: sumBy,
-        };
-      });
-    },
-    [setUserSelectedSumBy, profileType]
-  );
+      return {
+        ...prev,
+        [profileType.toString()]: sumBy,
+      };
+    });
+  };
 
   const {defaultSumBy} = useDefaultSumBy(profileType, labelNamesLoading, labels);
 
-  const sumBy = useMemo(() => {
-    // For smoother UX, return draftSumBy first if available during loading
-    // as this must be recently computed with the draft time range labels.
-    if (labelNamesLoading && draftSumBy !== undefined) {
-      return draftSumBy;
-    }
-
+  // For smoother UX, return draftSumBy first if available during loading
+  // as this must be recently computed with the draft time range labels.
+  let sumBy: string[] | undefined;
+  if (labelNamesLoading && draftSumBy !== undefined) {
+    sumBy = draftSumBy;
+  } else {
     // Prefer non-empty URL default over auto-computed default to avoid a
     // one-render race where defaultSumBy overwrites the default value from upstream.
     const hasExplicitDefault = defaultValue != null && defaultValue.length > 0;
-    let result =
+    sumBy =
       userSelectedSumBy[profileType?.toString() ?? ''] ??
       (hasExplicitDefault ? defaultValue : undefined) ??
       defaultSumBy ??
       DEFAULT_EMPTY_SUM_BY;
 
     if (profileType?.delta !== true) {
-      result = DEFAULT_EMPTY_SUM_BY;
+      sumBy = DEFAULT_EMPTY_SUM_BY;
     }
-
-    return result;
-  }, [userSelectedSumBy, profileType, defaultSumBy, labelNamesLoading, draftSumBy, defaultValue]);
+  }
 
   return [
     sumBy,
@@ -139,9 +133,7 @@ export const useDefaultSumBy = (
   labelNamesLoading: boolean,
   labels: string[] | undefined
 ): {defaultSumBy: string[] | undefined; isLoading: boolean} => {
-  const defaultSumBy = useMemo(() => {
-    return getDefaultSumBy(profileType, labels);
-  }, [profileType, labels]);
+  const defaultSumBy = getDefaultSumBy(profileType, labels);
 
   return {defaultSumBy, isLoading: labelNamesLoading};
 };
@@ -170,11 +162,7 @@ const getSumByFromParam = (param: string | string[] | undefined): string[] | und
 };
 
 export const useSumByFromParams = (param: string | string[] | undefined): string[] | undefined => {
-  const sumBy = useMemo(() => {
-    return getSumByFromParam(param);
-  }, [param]);
-
-  return sumBy;
+  return useMemo(() => getSumByFromParam(param), [param]);
 };
 
 export const sumByToParam = (sumBy: string[] | undefined): string | null => {
@@ -219,9 +207,7 @@ export const useSumBy = (
     defaultValue
   );
 
-  const labels = useMemo(() => {
-    return result.response?.labelNames === undefined ? [] : result.response.labelNames;
-  }, [result]);
+  const labels = result.response?.labelNames === undefined ? [] : result.response.labelNames;
 
   const [sumBySelection, setSumByInternal, {isLoading}] = useSumBySelection(
     profileType,
@@ -259,9 +245,7 @@ export const useDraftSumBy = (
     timeRange.getToMs()
   );
 
-  const labels = useMemo(() => {
-    return result.response?.labelNames === undefined ? [] : result.response.labelNames;
-  }, [result]);
+  const labels = result.response?.labelNames === undefined ? [] : result.response.labelNames;
 
   const {defaultSumBy, isLoading} = useDefaultSumBy(profileType, labelNamesLoading, labels);
 
