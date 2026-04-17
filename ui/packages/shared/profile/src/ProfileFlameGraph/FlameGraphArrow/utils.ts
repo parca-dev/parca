@@ -22,7 +22,7 @@ import {
 } from '@parca/store';
 import {divide, getLastItem, valueFormatter} from '@parca/utilities';
 
-import {MergedProfileSource, ProfileSource} from '../../ProfileSource';
+import {ProfileSource, isMergedProfileSource} from '../../ProfileSource';
 import {BigIntDuo, hexifyAddress} from '../../utils';
 import {
   FIELD_DEPTH,
@@ -115,7 +115,7 @@ export const boundsFromProfileSource = (profileSource?: ProfileSource): BigIntDu
     return [0n, 1n];
   }
 
-  if (!(profileSource instanceof MergedProfileSource)) {
+  if (!isMergedProfileSource(profileSource)) {
     return [0n, 1n];
   }
 

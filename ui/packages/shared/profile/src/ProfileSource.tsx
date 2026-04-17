@@ -120,7 +120,32 @@ export class MergedProfileSelection implements ProfileSelection {
   }
 }
 
+// Type tag carried on instances so we can identify them reliably even when the
+// class gets duplicated across bundle chunks (prod builds sometimes end up with
+// two copies of the same class, making `instanceof` unreliable).
+export const PROFILE_SOURCE_TYPE_MERGED = 'merged' as const;
+export const PROFILE_SOURCE_TYPE_DIFF = 'diff' as const;
+
+const getProfileSourceType = (source: ProfileSource | null | undefined): string | undefined => {
+  if (source == null) return undefined;
+  const tag = (source as {profileSourceType?: unknown}).profileSourceType;
+  return typeof tag === 'string' ? tag : undefined;
+};
+
+export const isMergedProfileSource = (
+  source: ProfileSource | null | undefined
+): source is MergedProfileSource => {
+  return getProfileSourceType(source) === PROFILE_SOURCE_TYPE_MERGED;
+};
+
+export const isProfileDiffSource = (
+  source: ProfileSource | null | undefined
+): source is ProfileDiffSource => {
+  return getProfileSourceType(source) === PROFILE_SOURCE_TYPE_DIFF;
+};
+
 export class ProfileDiffSource implements ProfileSource {
+  readonly profileSourceType = PROFILE_SOURCE_TYPE_DIFF;
   a: ProfileSource;
   b: ProfileSource;
   profileType: ProfileType;
@@ -194,6 +219,7 @@ function nanosToTimestamp(nanos: bigint): Timestamp {
 }
 
 export class MergedProfileSource implements ProfileSource {
+  readonly profileSourceType = PROFILE_SOURCE_TYPE_MERGED;
   mergeFrom: bigint;
   mergeTo: bigint;
   query: Query;
