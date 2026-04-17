@@ -55,9 +55,8 @@ export const scaleLinear = (
     console.log('domainRange', domainRange, rangeRange, divide(rangeRange, domainRange));
   }
 
-  // guard 0n to avoid BigInt(Infinity).
-  const rate =
-    domainRange === 0n ? 0n : BigInt(Math.round(divide(rangeRange, domainRange) * MULTIPLE));
+  // rate * MULTIPLE to retain the decimal places in BigInt format, then divide by MULTIPLE to get the final result
+  const rate = BigInt(Math.round(divide(rangeRange, domainRange) * MULTIPLE));
 
   const func = (x: bigint): number => {
     if (debugLog) {
@@ -75,9 +74,6 @@ export const scaleLinear = (
   };
 
   func.ticks = (count = 5): bigint[] => {
-    if (count <= 1 || domainRange === 0n) {
-      return [domainMin];
-    }
     const step = domainRange / BigInt(count - 1);
     const ticks: bigint[] = [];
     for (let i = 0; i < count; i++) {
