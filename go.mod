@@ -39,7 +39,7 @@ require (
 	github.com/polarsignals/iceberg-go v0.0.0-20240502213135-2ee70b71e76b
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/common v0.67.5
-	github.com/prometheus/prometheus v0.305.0
+	github.com/prometheus/prometheus v0.311.2
 	github.com/stretchr/testify v1.11.1
 	github.com/thanos-io/objstore v0.0.0-20241028145108-31c0873d5266
 	github.com/zeebo/xxh3 v1.1.0
