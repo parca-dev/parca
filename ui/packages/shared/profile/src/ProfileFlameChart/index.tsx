@@ -22,7 +22,12 @@ import {TimeUnits, formatDate, formatDuration} from '@parca/utilities';
 
 import ProfileFlameGraph, {validateFlameChartQuery} from '../ProfileFlameGraph';
 import {boundsFromProfileSource} from '../ProfileFlameGraph/FlameGraphArrow/utils';
-import {MergedProfileSource, ProfileSource, timeFormat} from '../ProfileSource';
+import {
+  MergedProfileSource,
+  ProfileSource,
+  isMergedProfileSource,
+  timeFormat,
+} from '../ProfileSource';
 import {useProfileFilters} from '../ProfileView/components/ProfileFilters/useProfileFilters';
 import type {SamplesData} from '../ProfileView/types/visualization';
 import {flamechartDimensionParser} from '../hooks/urlParsers';
@@ -83,7 +88,7 @@ const createFilteredProfileSource = (
   profileSource: ProfileSource,
   selectedTimeframe: {labels: LabelSet; bounds: NumberDuo}
 ): ProfileSource | null => {
-  if (!(profileSource instanceof MergedProfileSource)) {
+  if (!isMergedProfileSource(profileSource)) {
     return null;
   }
 
