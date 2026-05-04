@@ -104,6 +104,14 @@ test('Partial Parsing ProfileName and rest', () => {
   });
 });
 
+test('QueryParseBareMatchers', () => {
+  const input = '{namespace=~"environment-afc16806", pod=~".*"}';
+  expect(() => Query.parse(input)).not.toThrow();
+  const q = Query.parse(input);
+  expect(q.profileName()).toBe('');
+  expect(q.matchersString()).toBe('namespace=~"environment-afc16806", pod=~".*"');
+});
+
 test('Parse Multiline query', () => {
   expect(
     Query.parse(`memory:alloc_objects:count:space:bytes:delta{

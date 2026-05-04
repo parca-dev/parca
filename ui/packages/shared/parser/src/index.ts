@@ -185,7 +185,11 @@ export class Query {
       (e: any) =>
         new Matcher(e.key.value, matcherTypeFromString(e.matcherType.value), e.value.value)
     );
-    return new Query(ProfileType.fromString(ast.profileName.value), matchers, '');
+    const profileType =
+      ast.profileName?.value !== undefined
+        ? ProfileType.fromString(ast.profileName.value)
+        : new ProfileType('', '', '', '', '', false);
+    return new Query(profileType, matchers, '');
   }
 
   static parse(input: string): Query {
@@ -219,7 +223,7 @@ export class Query {
         (s: any) =>
           s.data !== undefined && Object.prototype.hasOwnProperty.call(s.data, 'profileName')
       ).data;
-      const rest = input.slice(column.lexerState.col - 2);
+      const rest = column.lexerState !== undefined ? input.slice(column.lexerState.col - 2) : input;
       return new Query(
         ProfileType.fromString(data.profileName),
         [],
