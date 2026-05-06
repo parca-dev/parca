@@ -276,15 +276,76 @@ func (s *ProfileColumnStore) WriteArrow(ctx context.Context, req *profilestorepb
 	}
 	defer r.Release()
 
+	c := normalizer.NewArrowToInternalConverter(
+		s.mem,
+		s.schema,
+		s.converterMetrics,
+	)
+	defer c.Release()
+
 	for r.Next() {
 		rec := r.RecordBatch()
 		level.Debug(s.logger).Log("msg", "received arrow record", "rows", rec.NumRows())
+
+		switch classifyRecord(rec) {
+		case recordKindSample:
+			if err := c.AddSampleRecord(ctx, rec); err != nil {
+				return nil, status.Errorf(codes.InvalidArgument, "failed to add sample record: %v", err)
+			}
+		case recordKindLocations:
+			if err := c.AddLocationsRecord(ctx, rec); err != nil {
+				return nil, status.Errorf(codes.InvalidArgument, "failed to add locations record: %v", err)
+			}
+		default:
+			return nil, status.Errorf(codes.InvalidArgument, "unrecognized arrow record schema")
+		}
 	}
 	if r.Err() != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "failed to read arrow IPC record: %v", r.Err())
 	}
 
-	return nil, status.Error(codes.Unimplemented, "WriteArrow is not yet implemented")
+	if err := c.Validate(); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "validate record: %v", err)
+	}
+
+	ir, err := c.NewRecord(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "build internal record: %v", err)
+	}
+	defer ir.Release()
+
+	if ir.NumRows() == 0 {
+		return &profilestorepb.WriteArrowResponse{}, nil
+	}
+
+	if err := s.ingester.Ingest(ctx, ir); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to ingest record: %v", err)
+	}
+
+	return &profilestorepb.WriteArrowResponse{}, nil
+}
+
+type recordKind int
+
+const (
+	recordKindUnknown recordKind = iota
+	recordKindSample
+	recordKindLocations
+)
+
+// classifyRecord classifies an incoming arrow record by inspecting its schema.
+// v2 only ever sends sample records (locations are inlined); v1 may send a
+// separate locations record.
+func classifyRecord(rec arrow.RecordBatch) recordKind {
+	for _, f := range rec.Schema().Fields() {
+		switch f.Name {
+		case profile.ColumnValue:
+			return recordKindSample
+		case "locations":
+			return recordKindLocations
+		}
+	}
+	return recordKindUnknown
 }
 
 func (s *ProfileColumnStore) Write(server profilestorepb.ProfileStoreService_WriteServer) error {

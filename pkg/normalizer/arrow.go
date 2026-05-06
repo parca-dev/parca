@@ -39,6 +39,7 @@ const (
 
 const (
 	MetadataSchemaVersionV1 = "v1"
+	MetadataSchemaVersionV2 = "v2"
 )
 
 func NewMetrics(reg prometheus.Registerer) *Metrics {
@@ -145,6 +146,8 @@ func (c *arrowToInternalConverter) AddSampleRecord(
 	switch value {
 	case MetadataSchemaVersionV1:
 		return c.AddSampleRecordV1(ctx, rec)
+	case MetadataSchemaVersionV2:
+		return c.AddSampleRecordV2(ctx, rec)
 	default:
 		return fmt.Errorf("unsupported schema version %q", value)
 	}
