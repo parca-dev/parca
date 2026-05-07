@@ -144,11 +144,16 @@ export const FlameNode = React.memo(
 
     // Memoize hovering name lookup
     const hoveringName = useMemo(() => {
-      return hoveringRow !== undefined ? arrowToString(columns.functionName?.get(hoveringRow)) : '';
+      return hoveringRow !== undefined
+        ? arrowToString(columns.functionName?.get(hoveringRow))
+        : null;
     }, [columns.functionName, hoveringRow]);
 
     const shouldBeHighlighted =
-      functionName != null && hoveringName != null && functionName === hoveringName;
+      hoveringRow !== undefined &&
+      functionName != null &&
+      hoveringName != null &&
+      functionName === hoveringName;
 
     const colorResult = useNodeColor({
       isDarkMode: darkMode,
