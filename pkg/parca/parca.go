@@ -63,7 +63,6 @@ import (
 	"github.com/parca-dev/parca/pkg/clickhouse"
 	"github.com/parca-dev/parca/pkg/config"
 	"github.com/parca-dev/parca/pkg/debuginfo"
-	"github.com/parca-dev/parca/pkg/ingester"
 	"github.com/parca-dev/parca/pkg/kv"
 	"github.com/parca-dev/parca/pkg/parcacol"
 	"github.com/parca-dev/parca/pkg/profilestore"
@@ -332,7 +331,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return fmt.Errorf("failed to ensure ClickHouse schema: %w", err)
 	}
 
-	var profileIngester ingester.Ingester = clickhouse.NewIngester(logger, chClient)
+	var profileIngester profilestore.Ingester = clickhouse.NewIngester(logger, chClient)
 	var querier queryservice.Querier = clickhouse.NewQuerier(
 		chClient,
 		logger,

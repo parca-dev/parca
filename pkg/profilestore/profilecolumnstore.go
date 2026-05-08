@@ -38,10 +38,15 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
-	"github.com/parca-dev/parca/pkg/ingester"
 	"github.com/parca-dev/parca/pkg/normalizer"
 	"github.com/parca-dev/parca/pkg/profile"
 )
+
+// Ingester accepts an Arrow record of profile rows and writes them to the
+// underlying storage backend.
+type Ingester interface {
+	Ingest(ctx context.Context, record arrow.RecordBatch) error
+}
 
 type agent struct {
 	nodeName         string
@@ -59,7 +64,7 @@ type ProfileColumnStore struct {
 	logger log.Logger
 	tracer trace.Tracer
 
-	ingester ingester.Ingester
+	ingester Ingester
 
 	mtx sync.Mutex
 	// ip as the key
@@ -76,7 +81,7 @@ func NewProfileColumnStore(
 	reg prometheus.Registerer,
 	logger log.Logger,
 	tracer trace.Tracer,
-	ingester ingester.Ingester,
+	ingester Ingester,
 	mem memory.Allocator,
 ) *ProfileColumnStore {
 	normalizerMetrics := normalizer.NewMetrics(reg)

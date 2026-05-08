@@ -17,8 +17,6 @@ import (
 	"fmt"
 
 	"github.com/apache/arrow-go/v18/arrow"
-	"github.com/polarsignals/frostdb/dynparquet"
-	schemapb "github.com/polarsignals/frostdb/gen/proto/go/frostdb/schema/v1alpha1"
 )
 
 const (
@@ -38,142 +36,67 @@ const (
 	ColumnValue      = "value"
 )
 
-func SchemaDefinition() *schemapb.Schema {
-	return &schemapb.Schema{
+// SchemaColumnType describes the storage type of a profile column.
+type SchemaColumnType int
+
+const (
+	SchemaColumnTypeUnknown SchemaColumnType = iota
+	SchemaColumnTypeInt64
+	SchemaColumnTypeString
+)
+
+// SchemaColumn is the static definition of a column in the parca write
+// schema. Repeated columns become Arrow Lists; Dynamic columns (currently
+// only ColumnLabels) get expanded at write time into one field per dynamic
+// name.
+type SchemaColumn struct {
+	Name     string
+	Type     SchemaColumnType
+	Repeated bool
+	Nullable bool
+	Dynamic  bool
+}
+
+// SchemaDef holds the static column layout used by the parca write/ingest
+// path. The struct is intentionally minimal — encoding and compression
+// hints from the previous frostdb-driven definition are dropped because
+// they were only consumed by the parquet writer.
+type SchemaDef struct {
+	Name    string
+	Columns []SchemaColumn
+}
+
+// SchemaDefinition returns the static column layout of the parca write
+// schema. Column order is alphabetical (matches the historical FrostDB
+// layout).
+func SchemaDefinition() SchemaDef {
+	return SchemaDef{
 		Name: SchemaName,
-		Columns: []*schemapb.Column{
-			{
-				Name: ColumnDuration,
-				StorageLayout: &schemapb.StorageLayout{
-					Type:     schemapb.StorageLayout_TYPE_INT64,
-					Encoding: schemapb.StorageLayout_ENCODING_RLE_DICTIONARY,
-				},
-				Dynamic: false,
-			}, {
-				Name: ColumnLabels,
-				StorageLayout: &schemapb.StorageLayout{
-					Type:     schemapb.StorageLayout_TYPE_STRING,
-					Encoding: schemapb.StorageLayout_ENCODING_RLE_DICTIONARY,
-					Nullable: true,
-				},
-				Dynamic: true,
-			}, {
-				Name: ColumnName,
-				StorageLayout: &schemapb.StorageLayout{
-					Type:     schemapb.StorageLayout_TYPE_STRING,
-					Encoding: schemapb.StorageLayout_ENCODING_RLE_DICTIONARY,
-				},
-				Dynamic: false,
-			}, {
-				Name: ColumnPeriod,
-				StorageLayout: &schemapb.StorageLayout{
-					Type:     schemapb.StorageLayout_TYPE_INT64,
-					Encoding: schemapb.StorageLayout_ENCODING_RLE_DICTIONARY,
-				},
-				Dynamic: false,
-			}, {
-				Name: ColumnPeriodType,
-				StorageLayout: &schemapb.StorageLayout{
-					Type:     schemapb.StorageLayout_TYPE_STRING,
-					Encoding: schemapb.StorageLayout_ENCODING_RLE_DICTIONARY,
-				},
-				Dynamic: false,
-			}, {
-				Name: ColumnPeriodUnit,
-				StorageLayout: &schemapb.StorageLayout{
-					Type:     schemapb.StorageLayout_TYPE_STRING,
-					Encoding: schemapb.StorageLayout_ENCODING_RLE_DICTIONARY,
-				},
-				Dynamic: false,
-			}, {
-				Name: ColumnSampleType,
-				StorageLayout: &schemapb.StorageLayout{
-					Type:     schemapb.StorageLayout_TYPE_STRING,
-					Encoding: schemapb.StorageLayout_ENCODING_RLE_DICTIONARY,
-				},
-				Dynamic: false,
-			}, {
-				Name: ColumnSampleUnit,
-				StorageLayout: &schemapb.StorageLayout{
-					Type:     schemapb.StorageLayout_TYPE_STRING,
-					Encoding: schemapb.StorageLayout_ENCODING_RLE_DICTIONARY,
-				},
-				Dynamic: false,
-			}, {
-				Name: ColumnStacktrace,
-				StorageLayout: &schemapb.StorageLayout{
-					Type:        schemapb.StorageLayout_TYPE_STRING,
-					Encoding:    schemapb.StorageLayout_ENCODING_RLE_DICTIONARY,
-					Compression: schemapb.StorageLayout_COMPRESSION_LZ4_RAW,
-					Repeated:    true,
-					Nullable:    true,
-				},
-				Dynamic: false,
-			}, {
-				Name: ColumnTimestamp,
-				StorageLayout: &schemapb.StorageLayout{
-					Type:        schemapb.StorageLayout_TYPE_INT64,
-					Encoding:    schemapb.StorageLayout_ENCODING_DELTA_BINARY_PACKED,
-					Compression: schemapb.StorageLayout_COMPRESSION_LZ4_RAW,
-				},
-				Dynamic: false,
-			}, {
-				Name: ColumnTimeNanos,
-				StorageLayout: &schemapb.StorageLayout{
-					Type:        schemapb.StorageLayout_TYPE_INT64,
-					Encoding:    schemapb.StorageLayout_ENCODING_DELTA_BINARY_PACKED,
-					Compression: schemapb.StorageLayout_COMPRESSION_LZ4_RAW,
-				},
-				Dynamic: false,
-			}, {
-				Name: ColumnValue,
-				StorageLayout: &schemapb.StorageLayout{
-					Type:        schemapb.StorageLayout_TYPE_INT64,
-					Encoding:    schemapb.StorageLayout_ENCODING_DELTA_BINARY_PACKED,
-					Compression: schemapb.StorageLayout_COMPRESSION_LZ4_RAW,
-				},
-				Dynamic: false,
-			},
-		},
-		SortingColumns: []*schemapb.SortingColumn{
-			{
-				Name:      ColumnName,
-				Direction: schemapb.SortingColumn_DIRECTION_ASCENDING,
-			}, {
-				Name:      ColumnSampleType,
-				Direction: schemapb.SortingColumn_DIRECTION_ASCENDING,
-			}, {
-				Name:      ColumnSampleUnit,
-				Direction: schemapb.SortingColumn_DIRECTION_ASCENDING,
-			}, {
-				Name:      ColumnPeriodType,
-				Direction: schemapb.SortingColumn_DIRECTION_ASCENDING,
-			}, {
-				Name:      ColumnPeriodUnit,
-				Direction: schemapb.SortingColumn_DIRECTION_ASCENDING,
-			}, {
-				Name:      ColumnTimestamp,
-				Direction: schemapb.SortingColumn_DIRECTION_ASCENDING,
-			}, {
-				Name:      ColumnTimeNanos,
-				Direction: schemapb.SortingColumn_DIRECTION_ASCENDING,
-			},
+		Columns: []SchemaColumn{
+			{Name: ColumnDuration, Type: SchemaColumnTypeInt64},
+			{Name: ColumnLabels, Type: SchemaColumnTypeString, Nullable: true, Dynamic: true},
+			{Name: ColumnName, Type: SchemaColumnTypeString},
+			{Name: ColumnPeriod, Type: SchemaColumnTypeInt64},
+			{Name: ColumnPeriodType, Type: SchemaColumnTypeString},
+			{Name: ColumnPeriodUnit, Type: SchemaColumnTypeString},
+			{Name: ColumnSampleType, Type: SchemaColumnTypeString},
+			{Name: ColumnSampleUnit, Type: SchemaColumnTypeString},
+			{Name: ColumnStacktrace, Type: SchemaColumnTypeString, Repeated: true, Nullable: true},
+			{Name: ColumnTimestamp, Type: SchemaColumnTypeInt64},
+			{Name: ColumnTimeNanos, Type: SchemaColumnTypeInt64},
+			{Name: ColumnValue, Type: SchemaColumnTypeInt64},
 		},
 	}
 }
 
-func Schema() (*dynparquet.Schema, error) {
-	return dynparquet.SchemaFromDefinition(SchemaDefinition())
-}
-
 // BuildArrowSchema returns the Arrow schema for the parca write/ingest
 // profile data, expanding the dynamic ColumnLabels column into one
-// "labels.<name>" field per labelName. The column order matches the proto
-// definition order, with dynamic labels emitted in place of the labels
-// column. Static columns map to:
-//   - TYPE_INT64 → arrow.PrimitiveTypes.Int64
-//   - TYPE_STRING (non-repeated) → dictionary-encoded binary
-//   - TYPE_STRING (repeated) → list of dictionary-encoded binary
+// "labels.<name>" field per labelName. The column order matches
+// SchemaDefinition's column order, with dynamic labels emitted in place
+// of the labels column. Static columns map to:
+//   - SchemaColumnTypeInt64  → arrow.PrimitiveTypes.Int64
+//   - SchemaColumnTypeString (non-repeated) → dictionary-encoded binary
+//   - SchemaColumnTypeString (repeated) → list of dictionary-encoded binary
 func BuildArrowSchema(labelNames []string) *arrow.Schema {
 	def := SchemaDefinition()
 	fields := make([]arrow.Field, 0, len(def.Columns)+len(labelNames))
@@ -193,18 +116,17 @@ func BuildArrowSchema(labelNames []string) *arrow.Schema {
 	return arrow.NewSchema(fields, nil)
 }
 
-func columnToArrowField(col *schemapb.Column) arrow.Field {
-	layout := col.StorageLayout
-	field := arrow.Field{Name: col.Name, Nullable: layout.Nullable}
-	switch layout.Type {
-	case schemapb.StorageLayout_TYPE_INT64:
+func columnToArrowField(col SchemaColumn) arrow.Field {
+	field := arrow.Field{Name: col.Name, Nullable: col.Nullable}
+	switch col.Type {
+	case SchemaColumnTypeInt64:
 		field.Type = arrow.PrimitiveTypes.Int64
-	case schemapb.StorageLayout_TYPE_STRING:
+	case SchemaColumnTypeString:
 		field.Type = dictBinary()
 	default:
-		panic(fmt.Sprintf("profile: unsupported column %q storage type %v", col.Name, layout.Type))
+		panic(fmt.Sprintf("profile: unsupported column %q storage type %v", col.Name, col.Type))
 	}
-	if layout.Repeated {
+	if col.Repeated {
 		field.Type = arrow.ListOf(field.Type)
 	}
 	return field
