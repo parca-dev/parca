@@ -22,19 +22,12 @@ import (
 	"io"
 	"slices"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/apache/arrow-go/v18/arrow"
 	"github.com/apache/arrow-go/v18/arrow/array"
-	"github.com/apache/arrow-go/v18/arrow/compute"
 	"github.com/apache/arrow-go/v18/arrow/memory"
 	"github.com/gogo/status"
-	"github.com/parquet-go/parquet-go"
-	"github.com/polarsignals/frostdb/dynparquet"
-	"github.com/polarsignals/frostdb/pqarrow"
-	"github.com/polarsignals/frostdb/pqarrow/arrowutils"
-	"github.com/polarsignals/frostdb/query/logicalplan"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/util/strutil"
 	pprofextended "go.opentelemetry.io/proto/otlp/profiles/v1development"
@@ -119,7 +112,6 @@ func WriteRawRequestToArrowRecord(
 	ctx context.Context,
 	mem memory.Allocator,
 	req *profilestorepb.WriteRawRequest,
-	schema *dynparquet.Schema,
 ) (arrow.RecordBatch, error) {
 	normalizedRequest, err := NormalizeWriteRawRequest(
 		ctx,
@@ -129,18 +121,7 @@ func WriteRawRequestToArrowRecord(
 		return nil, err
 	}
 
-	ps, err := schema.GetDynamicParquetSchema(map[string][]string{
-		profile.ColumnLabels: normalizedRequest.AllLabelNames,
-	})
-	if err != nil {
-		return nil, err
-	}
-	defer schema.PutPooledParquetSchema(ps)
-
-	arrowSchema, err := pqarrow.ParquetSchemaToArrowSchema(ctx, ps.Schema, schema, logicalplan.IterOptions{})
-	if err != nil {
-		return nil, err
-	}
+	arrowSchema := profile.BuildArrowSchema(normalizedRequest.AllLabelNames)
 
 	b := array.NewRecordBuilder(mem, arrowSchema)
 	numRows := 0
@@ -154,7 +135,7 @@ func WriteRawRequestToArrowRecord(
 	b.Reserve(numRows)
 	defer b.Release()
 
-	for _, col := range schema.Columns() {
+	for _, col := range profile.SchemaDefinition().Columns {
 		switch col.Name {
 		case profile.ColumnDuration:
 			cBuilder := b.Field(b.Schema().FieldIndices(col.Name)[0]).(*array.Int64Builder)
@@ -332,61 +313,7 @@ func WriteRawRequestToArrowRecord(
 		return nil, nil
 	}
 
-	sortingColDefs := schema.ColumnDefinitionsForSortingColumns()
-	sortingColumns := make([]arrowutils.SortingColumn, 0, len(sortingColDefs))
-	arrowFields := arrowSchema.Fields()
-	for _, col := range schema.SortingColumns() {
-		direction := arrowutils.Ascending
-		if col.Descending() {
-			direction = arrowutils.Descending
-		}
-
-		colDef, found := schema.ColumnByName(col.ColumnName())
-		if !found {
-			return nil, fmt.Errorf("sorting column %v not found in schema", col.ColumnName())
-		}
-
-		if colDef.Dynamic {
-			for i, c := range arrowFields {
-				if strings.HasPrefix(c.Name, colDef.Name) {
-					sortingColumns = append(sortingColumns, arrowutils.SortingColumn{
-						Index:      i,
-						Direction:  direction,
-						NullsFirst: col.NullsFirst(),
-					})
-				}
-			}
-		} else {
-			indices := arrowSchema.FieldIndices(colDef.Name)
-			for _, i := range indices {
-				sortingColumns = append(sortingColumns, arrowutils.SortingColumn{
-					Index:      i,
-					Direction:  direction,
-					NullsFirst: col.NullsFirst(),
-				})
-			}
-		}
-	}
-
-	sortedIdxs, err := arrowutils.SortRecord(record, sortingColumns)
-	if err != nil {
-		return nil, fmt.Errorf("failed to sort record: %w", err)
-	}
-	isSorted := true
-	for i := 0; i < sortedIdxs.Len(); i++ {
-		if sortedIdxs.Value(i) != int32(i) {
-			isSorted = false
-			break
-		}
-	}
-
-	if isSorted {
-		return record, nil
-	}
-
-	// Release the record, since Take will allocate a new, sorted, record.
-	defer record.Release()
-	return arrowutils.Take(compute.WithAllocator(ctx, mem), record, sortedIdxs)
+	return record, nil
 }
 
 func NormalizePprof(
@@ -623,80 +550,3 @@ func LabelNamesFromSamples(
 	}
 }
 
-// SampleToParquetRow converts a sample to a Parquet row. The passed labels
-// must be sorted.
-func SampleToParquetRow(
-	schema *dynparquet.Schema,
-	row parquet.Row,
-	labelNames, profileLabelNames, profileNumLabelNames []string,
-	lset map[string]string,
-	meta profile.Meta,
-	s *NormalizedSample,
-) parquet.Row {
-	// schema.Columns() returns a sorted list of all columns.
-	// We match on the column's name to insert the correct values.
-	// We track the columnIndex to insert each column at the correct index.
-	columnIndex := 0
-	for _, column := range schema.Columns() {
-		switch column.Name {
-		case profile.ColumnDuration:
-			row = append(row, parquet.ValueOf(meta.Duration).Level(0, 0, columnIndex))
-			columnIndex++
-		case profile.ColumnName:
-			row = append(row, parquet.ValueOf(meta.Name).Level(0, 0, columnIndex))
-			columnIndex++
-		case profile.ColumnPeriod:
-			row = append(row, parquet.ValueOf(meta.Period).Level(0, 0, columnIndex))
-			columnIndex++
-		case profile.ColumnPeriodType:
-			row = append(row, parquet.ValueOf(meta.PeriodType.Type).Level(0, 0, columnIndex))
-			columnIndex++
-		case profile.ColumnPeriodUnit:
-			row = append(row, parquet.ValueOf(meta.PeriodType.Unit).Level(0, 0, columnIndex))
-			columnIndex++
-		case profile.ColumnSampleType:
-			row = append(row, parquet.ValueOf(meta.SampleType.Type).Level(0, 0, columnIndex))
-			columnIndex++
-		case profile.ColumnSampleUnit:
-			row = append(row, parquet.ValueOf(meta.SampleType.Unit).Level(0, 0, columnIndex))
-			columnIndex++
-		case profile.ColumnStacktrace:
-			if len(s.Locations) == 0 {
-				row = append(row, parquet.ValueOf(nil).Level(0, 0, columnIndex))
-			}
-			for i, s := range s.Locations {
-				switch i {
-				case 0:
-					row = append(row, parquet.ValueOf(s).Level(0, 1, columnIndex))
-				default:
-					row = append(row, parquet.ValueOf(s).Level(1, 1, columnIndex))
-				}
-			}
-			columnIndex++
-		case profile.ColumnTimestamp:
-			row = append(row, parquet.ValueOf(meta.Timestamp).Level(0, 0, columnIndex))
-			columnIndex++
-		case profile.ColumnTimeNanos:
-			row = append(row, parquet.ValueOf(meta.TimeNanos).Level(0, 0, columnIndex))
-			columnIndex++
-		case profile.ColumnValue:
-			row = append(row, parquet.ValueOf(s.Value).Level(0, 0, columnIndex))
-			columnIndex++
-
-		// All remaining cases take care of dynamic columns
-		case profile.ColumnLabels:
-			for _, name := range labelNames {
-				if value, ok := lset[name]; ok {
-					row = append(row, parquet.ValueOf(value).Level(0, 1, columnIndex))
-				} else {
-					row = append(row, parquet.ValueOf(nil).Level(0, 0, columnIndex))
-				}
-				columnIndex++
-			}
-		default:
-			panic(fmt.Errorf("conversion not implement for column: %s", column.Name))
-		}
-	}
-
-	return row
-}

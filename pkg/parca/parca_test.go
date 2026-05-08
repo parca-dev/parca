@@ -183,9 +183,6 @@ func TestConsistency(t *testing.T) {
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
-	schema, err := parcaprofile.Schema()
-	require.NoError(t, err)
-
 	table, err := colDB.Table(
 		"stacktraces",
 		frostdb.NewTableConfig(parcaprofile.SchemaDefinition()),
@@ -211,7 +208,6 @@ func TestConsistency(t *testing.T) {
 		logger,
 		tracer,
 		ingester,
-		schema,
 		memory.DefaultAllocator,
 	)
 
@@ -301,9 +297,6 @@ func TestPGOE2e(t *testing.T) {
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
-	schema, err := parcaprofile.Schema()
-	require.NoError(t, err)
-
 	table, err := colDB.Table(
 		"stacktraces",
 		frostdb.NewTableConfig(parcaprofile.SchemaDefinition()),
@@ -322,7 +315,6 @@ func TestPGOE2e(t *testing.T) {
 		logger,
 		tracer,
 		ingester,
-		schema,
 		memory.DefaultAllocator,
 	)
 
@@ -402,9 +394,6 @@ func TestLabels(t *testing.T) {
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
-	schema, err := parcaprofile.Schema()
-	require.NoError(t, err)
-
 	table, err := colDB.Table(
 		"labels",
 		frostdb.NewTableConfig(parcaprofile.SchemaDefinition()),
@@ -423,7 +412,6 @@ func TestLabels(t *testing.T) {
 		logger,
 		tracer,
 		ingester,
-		schema,
 		memory.DefaultAllocator,
 	)
 	_, err = store.WriteRaw(ctx, &profilestorepb.WriteRawRequest{

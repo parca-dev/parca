@@ -104,7 +104,7 @@ func TestPprofToArrow(t *testing.T) {
 		}},
 	}
 
-	r, err := normalizer.WriteRawRequestToArrowRecord(ctx, mem, req, schema)
+	r, err := normalizer.WriteRawRequestToArrowRecord(ctx, mem, req)
 	require.NoError(t, err)
 	defer r.Release()
 	ingester := NewIngester(logger, table)
@@ -164,7 +164,7 @@ func TestUncompressedPprofToArrow(t *testing.T) {
 		}},
 	}
 
-	rec, err := normalizer.WriteRawRequestToArrowRecord(ctx, mem, req, schema)
+	rec, err := normalizer.WriteRawRequestToArrowRecord(ctx, mem, req)
 	require.NoError(t, err)
 	defer rec.Release()
 	ingester := NewIngester(logger, table)
@@ -182,9 +182,6 @@ func TestUncompressedPprofToArrow(t *testing.T) {
 
 func BenchmarkNormalizeWriteRawRequest(b *testing.B) {
 	ctx := context.Background()
-
-	schema, err := profile.Schema()
-	require.NoError(b, err)
 
 	fileContent, err := os.ReadFile("../query/testdata/alloc_objects.pb.gz")
 	require.NoError(b, err)
@@ -214,7 +211,7 @@ func BenchmarkNormalizeWriteRawRequest(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		r, err := normalizer.WriteRawRequestToArrowRecord(ctx, mem, req, schema)
+		r, err := normalizer.WriteRawRequestToArrowRecord(ctx, mem, req)
 		if err != nil {
 			b.Fatal(err)
 		}

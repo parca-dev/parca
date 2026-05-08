@@ -37,10 +37,7 @@ func TestAddSampleRecordV2(t *testing.T) {
 	rec := buildV2SampleRecord(t, mem)
 	defer rec.Release()
 
-	dynSchema, err := profile.Schema()
-	require.NoError(t, err)
-
-	c := NewArrowToInternalConverter(mem, dynSchema, NewMetrics(prometheus.NewRegistry()))
+	c := NewArrowToInternalConverter(mem, NewMetrics(prometheus.NewRegistry()))
 	defer c.Release()
 
 	require.NoError(t, c.AddSampleRecord(context.Background(), rec))

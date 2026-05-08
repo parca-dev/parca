@@ -35,7 +35,6 @@ import (
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/oklog/run"
-	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/prometheus/client_golang/prometheus"
 	promconfig "github.com/prometheus/common/config"
 	"github.com/prometheus/prometheus/discovery"
@@ -67,7 +66,6 @@ import (
 	"github.com/parca-dev/parca/pkg/ingester"
 	"github.com/parca-dev/parca/pkg/kv"
 	"github.com/parca-dev/parca/pkg/parcacol"
-	"github.com/parca-dev/parca/pkg/profile"
 	"github.com/parca-dev/parca/pkg/profilestore"
 	queryservice "github.com/parca-dev/parca/pkg/query"
 	"github.com/parca-dev/parca/pkg/scrape"
@@ -351,18 +349,11 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		),
 	)
 
-	schema, err := dynparquet.SchemaFromDefinition(profile.SchemaDefinition())
-	if err != nil {
-		level.Error(logger).Log("msg", "schema from definition", "err", err)
-		return err
-	}
-
 	s := profilestore.NewProfileColumnStore(
 		reg,
 		logger,
 		tracerProvider.Tracer("profilestore"),
 		profileIngester,
-		schema,
 		memory.DefaultAllocator,
 	)
 

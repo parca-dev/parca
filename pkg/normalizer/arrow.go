@@ -23,10 +23,7 @@ import (
 
 	"github.com/apache/arrow-go/v18/arrow"
 	"github.com/apache/arrow-go/v18/arrow/array"
-	"github.com/apache/arrow-go/v18/arrow/compute"
 	"github.com/apache/arrow-go/v18/arrow/memory"
-	"github.com/polarsignals/frostdb/dynparquet"
-	"github.com/polarsignals/frostdb/pqarrow/arrowutils"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -58,22 +55,19 @@ type Metrics struct {
 type arrowToInternalConverter struct {
 	metrics *Metrics
 
-	mem    memory.Allocator
-	schema *dynparquet.Schema
+	mem memory.Allocator
 
 	b *InternalRecordBuilderV1
 }
 
 func NewArrowToInternalConverter(
 	mem memory.Allocator,
-	schema *dynparquet.Schema,
 	metrics *Metrics,
 ) *arrowToInternalConverter {
 	return &arrowToInternalConverter{
 		metrics: metrics,
 
-		mem:    mem,
-		schema: schema,
+		mem: mem,
 
 		b: &InternalRecordBuilderV1{},
 	}
@@ -379,7 +373,7 @@ func (r *InternalRecordBuilderV1) validate() error {
 }
 
 func (c *arrowToInternalConverter) NewRecord(ctx context.Context) (arrow.RecordBatch, error) {
-	newRecord := array.NewRecordBatch(
+	return array.NewRecordBatch(
 		arrow.NewSchema(append(c.b.LabelFields, []arrow.Field{{
 			Name: profile.ColumnName,
 			Type: &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Uint32, ValueType: arrow.BinaryTypes.Binary},
@@ -429,64 +423,7 @@ func (c *arrowToInternalConverter) NewRecord(ctx context.Context) (arrow.RecordB
 				c.b.Value,
 			}...),
 		int64(c.b.Value.Len()),
-	)
-
-	sortingColDefs := c.schema.ColumnDefinitionsForSortingColumns()
-	sortingColumns := make([]arrowutils.SortingColumn, 0, len(sortingColDefs))
-	arrowSchema := newRecord.Schema()
-	arrowFields := arrowSchema.Fields()
-	for _, col := range c.schema.SortingColumns() {
-		direction := arrowutils.Ascending
-		if col.Descending() {
-			direction = arrowutils.Descending
-		}
-
-		colDef, found := c.schema.ColumnByName(col.ColumnName())
-		if !found {
-			return nil, fmt.Errorf("sorting column %v not found in schema", col.ColumnName())
-		}
-
-		if colDef.Dynamic {
-			for i, c := range arrowFields {
-				if strings.HasPrefix(c.Name, colDef.Name) {
-					sortingColumns = append(sortingColumns, arrowutils.SortingColumn{
-						Index:      i,
-						Direction:  direction,
-						NullsFirst: col.NullsFirst(),
-					})
-				}
-			}
-		} else {
-			indices := arrowSchema.FieldIndices(colDef.Name)
-			for _, i := range indices {
-				sortingColumns = append(sortingColumns, arrowutils.SortingColumn{
-					Index:      i,
-					Direction:  direction,
-					NullsFirst: col.NullsFirst(),
-				})
-			}
-		}
-	}
-
-	sortedIdxs, err := arrowutils.SortRecord(newRecord, sortingColumns)
-	if err != nil {
-		return nil, fmt.Errorf("failed to sort record: %w", err)
-	}
-	isSorted := true
-	for i := 0; i < sortedIdxs.Len(); i++ {
-		if sortedIdxs.Value(i) != int32(i) {
-			isSorted = false
-			break
-		}
-	}
-
-	if isSorted {
-		return newRecord, nil
-	}
-
-	// Release the record, since Take will allocate a new, sorted, record.
-	defer newRecord.Release()
-	return arrowutils.Take(compute.WithAllocator(ctx, c.mem), newRecord, sortedIdxs)
+	), nil
 }
 
 func (c *arrowToInternalConverter) AddLocationsRecordV1(
