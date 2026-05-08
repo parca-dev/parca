@@ -31,7 +31,39 @@ import (
 	"github.com/parca-dev/parca/pkg/debuginfo"
 	"github.com/parca-dev/parca/pkg/kv"
 	"github.com/parca-dev/parca/pkg/parcacol"
+	"github.com/parca-dev/parca/pkg/profile"
 )
+
+// nopQuerier satisfies the query.Querier interface without touching any
+// storage backend. Source-only requests don't call any of these methods, so
+// the tests below only exercise the source lookup path.
+type nopQuerier struct{}
+
+func (nopQuerier) Labels(context.Context, []string, time.Time, time.Time, string) ([]string, error) {
+	return nil, nil
+}
+func (nopQuerier) Values(context.Context, string, []string, time.Time, time.Time, string) ([]string, error) {
+	return nil, nil
+}
+func (nopQuerier) QueryRange(context.Context, string, time.Time, time.Time, time.Duration, uint32, []string) ([]*pb.MetricsSeries, error) {
+	return nil, nil
+}
+func (nopQuerier) ProfileTypes(context.Context, time.Time, time.Time) ([]*pb.ProfileType, error) {
+	return nil, nil
+}
+func (nopQuerier) QuerySingle(context.Context, string, time.Time, bool) (profile.Profile, error) {
+	return profile.Profile{}, nil
+}
+func (nopQuerier) QueryMerge(context.Context, string, time.Time, time.Time, []string, bool, string) (profile.Profile, error) {
+	return profile.Profile{}, nil
+}
+func (nopQuerier) GetProfileMetadataMappings(context.Context, string, time.Time, time.Time) ([]string, error) {
+	return nil, nil
+}
+func (nopQuerier) GetProfileMetadataLabels(context.Context, string, time.Time, time.Time) ([]string, error) {
+	return nil, nil
+}
+func (nopQuerier) HasProfileData(context.Context) (bool, error) { return false, nil }
 
 func TestSourcesOnlyRequest(t *testing.T) {
 	ctx := context.Background()
@@ -51,15 +83,7 @@ func TestSourcesOnlyRequest(t *testing.T) {
 		logger,
 		tracer,
 		nil,
-		parcacol.NewQuerier(
-			logger,
-			tracer,
-			nil,
-			"stacktraces",
-			nil,
-			nil,
-			allocator,
-		),
+		nopQuerier{},
 		allocator,
 		parcacol.NewArrowToProfileConverter(tracer, kv.NewKeyMaker()),
 		NewBucketSourceFinder(bucket, &debuginfo.NopDebuginfodClients{}),
