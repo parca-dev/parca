@@ -44,9 +44,6 @@ func Test_LabelName_Error(t *testing.T) {
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
-	schema, err := profile.Schema()
-	require.NoError(t, err)
-
 	table, err := colDB.Table(
 		"stacktraces",
 		frostdb.NewTableConfig(profile.SchemaDefinition()),
@@ -63,7 +60,6 @@ func Test_LabelName_Error(t *testing.T) {
 		logger,
 		tracer,
 		ingester,
-		schema,
 		memory.DefaultAllocator,
 	)
 
@@ -123,9 +119,6 @@ func BenchmarkProfileColumnStoreWriteSeries(b *testing.B) {
 	colDB, err := col.DB(ctx, "parca")
 	require.NoError(b, err)
 
-	schema, err := profile.Schema()
-	require.NoError(b, err)
-
 	table, err := colDB.Table(
 		"stacktraces",
 		frostdb.NewTableConfig(profile.SchemaDefinition()),
@@ -142,7 +135,6 @@ func BenchmarkProfileColumnStoreWriteSeries(b *testing.B) {
 		logger,
 		tracer,
 		ingester,
-		schema,
 		memory.DefaultAllocator,
 	)
 

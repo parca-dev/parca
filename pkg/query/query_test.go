@@ -52,9 +52,6 @@ func Benchmark_Query_Merge(b *testing.B) {
 			colDB, err := col.DB(context.Background(), "parca")
 			require.NoError(b, err)
 
-			schema, err := profile.Schema()
-			require.NoError(b, err)
-
 			table, err := colDB.Table(
 				"stacktraces",
 				columnstore.NewTableConfig(profile.SchemaDefinition()),
@@ -74,7 +71,6 @@ func Benchmark_Query_Merge(b *testing.B) {
 				logger,
 				tracer,
 				ingester,
-				schema,
 				memory.DefaultAllocator,
 			)
 

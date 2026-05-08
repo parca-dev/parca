@@ -148,8 +148,6 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
-	schema, err := profile.Schema()
-	require.NoError(t, err)
 
 	table, err := colDB.Table(
 		"stacktraces",
@@ -170,7 +168,6 @@ func TestColumnQueryAPIQueryRange(t *testing.T) {
 		logger,
 		tracer,
 		ingester,
-		schema,
 		memory.DefaultAllocator,
 	)
 
@@ -245,8 +242,6 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
-	schema, err := profile.Schema()
-	require.NoError(t, err)
 
 	table, err := colDB.Table(
 		"stacktraces",
@@ -262,7 +257,6 @@ func TestColumnQueryAPIQuerySingle(t *testing.T) {
 		logger,
 		tracer,
 		ingester,
-		schema,
 		memory.DefaultAllocator,
 	)
 
@@ -395,8 +389,6 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
-	schema, err := profile.Schema()
-	require.NoError(t, err)
 
 	table, err := colDB.Table(
 		"stacktraces",
@@ -417,7 +409,6 @@ func TestColumnQueryAPIQueryFgprof(t *testing.T) {
 		logger,
 		tracer,
 		ingester,
-		schema,
 		memory.DefaultAllocator,
 	)
 
@@ -489,8 +480,6 @@ func TestColumnQueryAPIQueryCumulative(t *testing.T) {
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
-	schema, err := profile.Schema()
-	require.NoError(t, err)
 
 	table, err := colDB.Table(
 		"stacktraces",
@@ -508,7 +497,6 @@ func TestColumnQueryAPIQueryCumulative(t *testing.T) {
 		logger,
 		tracer,
 		ingester,
-		schema,
 		memory.DefaultAllocator,
 	)
 
@@ -647,8 +635,6 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
-	schema, err := profile.Schema()
-	require.NoError(t, err)
 
 	table, err := colDB.Table(
 		"stacktraces",
@@ -724,7 +710,7 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 				RawProfile: MustCompressGzip(t, p),
 			}},
 		}},
-	}, schema)
+	})
 	require.NoError(t, err)
 	require.NoError(t, ingester.Ingest(ctx, r1))
 	r1.Release()
@@ -752,7 +738,7 @@ func TestColumnQueryAPIQueryDiff(t *testing.T) {
 				RawProfile: MustCompressGzip(t, p),
 			}},
 		}},
-	}, schema)
+	})
 	require.NoError(t, err)
 	require.NoError(t, ingester.Ingest(ctx, r2))
 	r2.Release()
@@ -933,8 +919,6 @@ func TestColumnQueryAPITypes(t *testing.T) {
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
-	schema, err := profile.Schema()
-	require.NoError(t, err)
 
 	table, err := colDB.Table(
 		"stacktraces",
@@ -954,7 +938,6 @@ func TestColumnQueryAPITypes(t *testing.T) {
 		logger,
 		tracer,
 		ingester,
-		schema,
 		memory.DefaultAllocator,
 	)
 
@@ -1031,8 +1014,6 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
-	schema, err := profile.Schema()
-	require.NoError(t, err)
 
 	table, err := colDB.Table(
 		"stacktraces",
@@ -1052,7 +1033,6 @@ func TestColumnQueryAPILabelNames(t *testing.T) {
 		logger,
 		tracer,
 		ingester,
-		schema,
 		memory.DefaultAllocator,
 	)
 
@@ -1119,8 +1099,6 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 	colDB, err := col.DB(context.Background(), "parca")
 	require.NoError(t, err)
 
-	schema, err := profile.Schema()
-	require.NoError(t, err)
 
 	table, err := colDB.Table(
 		"stacktraces",
@@ -1140,7 +1118,6 @@ func TestColumnQueryAPILabelValues(t *testing.T) {
 		logger,
 		tracer,
 		ingester,
-		schema,
 		memory.DefaultAllocator,
 	)
 

@@ -28,7 +28,6 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/gogo/status"
-	"github.com/polarsignals/frostdb/dynparquet"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/promql/parser"
 	"go.opentelemetry.io/otel/trace"
@@ -66,8 +65,7 @@ type ProfileColumnStore struct {
 	// ip as the key
 	agents map[string]agent
 
-	mem    memory.Allocator
-	schema *dynparquet.Schema
+	mem memory.Allocator
 
 	converterMetrics *normalizer.Metrics
 }
@@ -79,7 +77,6 @@ func NewProfileColumnStore(
 	logger log.Logger,
 	tracer trace.Tracer,
 	ingester ingester.Ingester,
-	schema *dynparquet.Schema,
 	mem memory.Allocator,
 ) *ProfileColumnStore {
 	normalizerMetrics := normalizer.NewMetrics(reg)
@@ -87,7 +84,6 @@ func NewProfileColumnStore(
 		logger:   logger,
 		tracer:   tracer,
 		ingester: ingester,
-		schema:   schema,
 		mem:      mem,
 		agents:   make(map[string]agent),
 
@@ -100,7 +96,6 @@ func (s *ProfileColumnStore) writeSeries(ctx context.Context, req *profilestorep
 		ctx,
 		s.mem,
 		req,
-		s.schema,
 	)
 	if err != nil {
 		return err
@@ -278,7 +273,6 @@ func (s *ProfileColumnStore) WriteArrow(ctx context.Context, req *profilestorepb
 
 	c := normalizer.NewArrowToInternalConverter(
 		s.mem,
-		s.schema,
 		s.converterMetrics,
 	)
 	defer c.Release()
@@ -388,7 +382,6 @@ func (s *ProfileColumnStore) write(ctx context.Context, server profilestorepb.Pr
 
 	c := normalizer.NewArrowToInternalConverter(
 		s.mem,
-		s.schema,
 		s.converterMetrics,
 	)
 	defer c.Release()
@@ -473,7 +466,6 @@ func (s *ProfileColumnStore) Export(ctx context.Context, req *otelgrpcprofilingp
 	r, err := normalizer.OtlpRequestToArrowRecord(
 		ctx,
 		req,
-		s.schema,
 		s.mem,
 	)
 	if err != nil {

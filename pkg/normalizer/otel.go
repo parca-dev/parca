@@ -21,11 +21,8 @@ import (
 	"time"
 
 	"github.com/apache/arrow-go/v18/arrow"
+	"github.com/apache/arrow-go/v18/arrow/array"
 	"github.com/apache/arrow-go/v18/arrow/memory"
-	"github.com/parquet-go/parquet-go"
-	"github.com/polarsignals/frostdb/dynparquet"
-	"github.com/polarsignals/frostdb/pqarrow"
-	"github.com/polarsignals/frostdb/query/logicalplan"
 	"github.com/prometheus/prometheus/util/strutil"
 	otelgrpcprofilingpb "go.opentelemetry.io/proto/otlp/collector/profiles/v1development"
 	v1 "go.opentelemetry.io/proto/otlp/common/v1"
@@ -38,27 +35,25 @@ import (
 func OtlpRequestToArrowRecord(
 	ctx context.Context,
 	req *otelgrpcprofilingpb.ExportProfilesServiceRequest,
-	schema *dynparquet.Schema,
 	mem memory.Allocator,
 ) (arrow.RecordBatch, error) {
 	if err := ValidateOtelExportProfilesServiceRequest(req); err != nil {
 		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
-	w, err := newProfileWriter(
-		mem,
-		schema,
-		getAllLabelNames(req),
-	)
-	if err != nil {
-		return nil, err
-	}
+	w := newProfileWriter(mem, getAllLabelNames(req))
+	defer w.Release()
 
 	if err := w.writeResourceProfiles(req); err != nil {
 		return nil, err
 	}
 
-	return w.ArrowRecord(ctx)
+	rec := w.NewRecordBatch()
+	if rec.NumRows() == 0 {
+		rec.Release()
+		return nil, nil
+	}
+	return rec, nil
 }
 
 type labelNames struct {
@@ -154,42 +149,127 @@ func getAllLabelNames(req *otelgrpcprofilingpb.ExportProfilesServiceRequest) []s
 }
 
 type profileWriter struct {
-	mem memory.Allocator
-
 	labelNames []string
-	schema     *dynparquet.Schema
-	buffer     *dynparquet.Buffer
 
-	row parquet.Row
+	rb *array.RecordBuilder
+
+	duration   *array.Int64Builder
+	name       *array.BinaryDictionaryBuilder
+	period     *array.Int64Builder
+	periodType *array.BinaryDictionaryBuilder
+	periodUnit *array.BinaryDictionaryBuilder
+	sampleType *array.BinaryDictionaryBuilder
+	sampleUnit *array.BinaryDictionaryBuilder
+	stacktrace *array.ListBuilder
+	stacktraceVal *array.BinaryDictionaryBuilder
+	timestamp  *array.Int64Builder
+	timeNanos  *array.Int64Builder
+	value      *array.Int64Builder
+
+	// labelBuilders are aligned with labelNames.
+	labelBuilders []*array.BinaryDictionaryBuilder
 }
 
-func newProfileWriter(
-	mem memory.Allocator,
-	schema *dynparquet.Schema,
-	labelNames []string,
-) (*profileWriter, error) {
-	// Create a buffer with all possible labels, pprof labels and pprof num labels as dynamic columns.
-	// We use NewBuffer instead of GetBuffer here since analysis showed a very
-	// low hit rate, meaning buffers were GCed faster than they could be reused.
-	// The downside of using a pool is that buffers are held around for longer.
-	// Using NewBuffer means that we pay the price of reallocating a buffer,
-	// but they get GCed a lot sooner.
-	buffer, err := schema.NewBuffer(map[string][]string{
-		profile.ColumnLabels: labelNames,
-	})
-	if err != nil {
-		return nil, err
+func newProfileWriter(mem memory.Allocator, labelNames []string) *profileWriter {
+	schema := profile.BuildArrowSchema(labelNames)
+	rb := array.NewRecordBuilder(mem, schema)
+
+	w := &profileWriter{
+		labelNames:    labelNames,
+		rb:            rb,
+		labelBuilders: make([]*array.BinaryDictionaryBuilder, len(labelNames)),
 	}
 
-	return &profileWriter{
-		mem: mem,
+	for i, field := range schema.Fields() {
+		switch field.Name {
+		case profile.ColumnDuration:
+			w.duration = rb.Field(i).(*array.Int64Builder)
+		case profile.ColumnName:
+			w.name = rb.Field(i).(*array.BinaryDictionaryBuilder)
+		case profile.ColumnPeriod:
+			w.period = rb.Field(i).(*array.Int64Builder)
+		case profile.ColumnPeriodType:
+			w.periodType = rb.Field(i).(*array.BinaryDictionaryBuilder)
+		case profile.ColumnPeriodUnit:
+			w.periodUnit = rb.Field(i).(*array.BinaryDictionaryBuilder)
+		case profile.ColumnSampleType:
+			w.sampleType = rb.Field(i).(*array.BinaryDictionaryBuilder)
+		case profile.ColumnSampleUnit:
+			w.sampleUnit = rb.Field(i).(*array.BinaryDictionaryBuilder)
+		case profile.ColumnStacktrace:
+			w.stacktrace = rb.Field(i).(*array.ListBuilder)
+			w.stacktraceVal = w.stacktrace.ValueBuilder().(*array.BinaryDictionaryBuilder)
+		case profile.ColumnTimestamp:
+			w.timestamp = rb.Field(i).(*array.Int64Builder)
+		case profile.ColumnTimeNanos:
+			w.timeNanos = rb.Field(i).(*array.Int64Builder)
+		case profile.ColumnValue:
+			w.value = rb.Field(i).(*array.Int64Builder)
+		default:
+			if strings.HasPrefix(field.Name, profile.ColumnLabelsPrefix) {
+				ln := strings.TrimPrefix(field.Name, profile.ColumnLabelsPrefix)
+				for j, name := range labelNames {
+					if name == ln {
+						w.labelBuilders[j] = rb.Field(i).(*array.BinaryDictionaryBuilder)
+						break
+					}
+				}
+			}
+		}
+	}
 
-		labelNames: labelNames,
-		schema:     schema,
-		buffer:     buffer,
+	return w
+}
 
-		row: make(parquet.Row, 0, len(schema.ParquetSchema().Fields())),
-	}, nil
+func (w *profileWriter) Release() {
+	w.rb.Release()
+}
+
+func (w *profileWriter) NewRecordBatch() arrow.RecordBatch {
+	return w.rb.NewRecordBatch()
+}
+
+func (w *profileWriter) appendSample(meta profile.Meta, value int64, locations [][]byte, ls map[string]string) error {
+	w.duration.Append(meta.Duration)
+	if err := w.name.AppendString(meta.Name); err != nil {
+		return err
+	}
+	w.period.Append(meta.Period)
+	if err := w.periodType.AppendString(meta.PeriodType.Type); err != nil {
+		return err
+	}
+	if err := w.periodUnit.AppendString(meta.PeriodType.Unit); err != nil {
+		return err
+	}
+	if err := w.sampleType.AppendString(meta.SampleType.Type); err != nil {
+		return err
+	}
+	if err := w.sampleUnit.AppendString(meta.SampleType.Unit); err != nil {
+		return err
+	}
+	w.stacktrace.Append(len(locations) != 0)
+	for _, loc := range locations {
+		if len(loc) == 0 {
+			w.stacktraceVal.AppendNull()
+			continue
+		}
+		if err := w.stacktraceVal.Append(loc); err != nil {
+			return err
+		}
+	}
+	w.timestamp.Append(meta.Timestamp)
+	w.timeNanos.Append(meta.TimeNanos)
+	w.value.Append(value)
+	for i, name := range w.labelNames {
+		if val, ok := ls[name]; ok {
+			if err := w.labelBuilders[i].AppendString(val); err != nil {
+				return err
+			}
+			continue
+		}
+		w.labelBuilders[i].AppendNull()
+	}
+	return nil
 }
 
 func (w *profileWriter) writeResourceProfiles(
@@ -212,6 +292,17 @@ func (w *profileWriter) writeResourceProfiles(
 					ls.addOtelAttributes(sp.Scope.Attributes)
 					ls.addOtelAttributes(rp.Resource.Attributes)
 
+					locations := serializeOtelStacktrace(
+						p,
+						sample,
+						req.Dictionary.FunctionTable,
+						req.Dictionary.MappingTable,
+						req.Dictionary.LocationTable,
+						req.Dictionary.AttributeTable,
+						req.Dictionary.StackTable,
+						req.Dictionary.StringTable,
+					)
+
 					// see https://github.com/open-telemetry/opentelemetry-proto/blob/30fc16100aa513254a71ef83ae2de321fb1bdfeb/opentelemetry/proto/profiles/v1development/profiles.proto#L345
 					// for more information on the TimestampsUnixNano and Values relationship.
 					if len(sample.TimestampsUnixNano) > 0 {
@@ -220,36 +311,17 @@ func (w *profileWriter) writeResourceProfiles(
 							if len(sample.Values) > 0 {
 								value = sample.Values[i]
 							}
-							row := SampleToParquetRow(
-								w.schema,
-								w.row[:0],
-								w.labelNames, nil, nil,
-								ls.labels,
-								profile.Meta{
-									Name:       metas[0].Name,
-									PeriodType: metas[0].PeriodType,
-									SampleType: metas[0].SampleType,
-									Timestamp:  int64(ts) / time.Millisecond.Nanoseconds(),
-									TimeNanos:  int64(ts),
-									Duration:   metas[0].Duration,
-									Period:     metas[0].Period,
-								},
-								&NormalizedSample{
-									Locations: serializeOtelStacktrace(
-										p,
-										sample,
-										req.Dictionary.FunctionTable,
-										req.Dictionary.MappingTable,
-										req.Dictionary.LocationTable,
-										req.Dictionary.AttributeTable,
-										req.Dictionary.StackTable,
-										req.Dictionary.StringTable,
-									),
-									Value: value,
-								},
-							)
-							if _, err := w.buffer.WriteRows([]parquet.Row{row}); err != nil {
-								return fmt.Errorf("failed to write row to buffer: %w", err)
+							meta := profile.Meta{
+								Name:       metas[0].Name,
+								PeriodType: metas[0].PeriodType,
+								SampleType: metas[0].SampleType,
+								Timestamp:  int64(ts) / time.Millisecond.Nanoseconds(),
+								TimeNanos:  int64(ts),
+								Duration:   metas[0].Duration,
+								Period:     metas[0].Period,
+							}
+							if err := w.appendSample(meta, value, locations, ls.labels); err != nil {
+								return err
 							}
 						}
 					} else {
@@ -257,29 +329,8 @@ func (w *profileWriter) writeResourceProfiles(
 							if value == 0 {
 								continue
 							}
-
-							row := SampleToParquetRow(
-								w.schema,
-								w.row[:0],
-								w.labelNames, nil, nil,
-								ls.labels,
-								metas[j],
-								&NormalizedSample{
-									Locations: serializeOtelStacktrace(
-										p,
-										sample,
-										req.Dictionary.FunctionTable,
-										req.Dictionary.MappingTable,
-										req.Dictionary.LocationTable,
-										req.Dictionary.AttributeTable,
-										req.Dictionary.StackTable,
-										req.Dictionary.StringTable,
-									),
-									Value: value,
-								},
-							)
-							if _, err := w.buffer.WriteRows([]parquet.Row{row}); err != nil {
-								return fmt.Errorf("failed to write row to buffer: %w", err)
+							if err := w.appendSample(metas[j], value, locations, ls.labels); err != nil {
+								return err
 							}
 						}
 					}
@@ -289,27 +340,6 @@ func (w *profileWriter) writeResourceProfiles(
 	}
 
 	return nil
-}
-
-func (w *profileWriter) ArrowRecord(ctx context.Context) (arrow.RecordBatch, error) {
-	if w.buffer.NumRows() == 0 {
-		// If there are no rows in the buffer we simply return early
-		return nil, nil
-	}
-
-	// We need to sort the buffer so the rows are inserted in sorted order later
-	// on the storage nodes.
-	w.buffer.Sort()
-
-	// Convert the sorted buffer to an arrow record.
-	converter := pqarrow.NewParquetConverter(w.mem, logicalplan.IterOptions{})
-	defer converter.Close()
-
-	if err := converter.Convert(ctx, w.buffer, w.schema); err != nil {
-		return nil, fmt.Errorf("failed to convert parquet to arrow: %w", err)
-	}
-
-	return converter.NewRecord(), nil
 }
 
 func ValidateOtelExportProfilesServiceRequest(req *otelgrpcprofilingpb.ExportProfilesServiceRequest) error {

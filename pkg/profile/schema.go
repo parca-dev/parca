@@ -14,6 +14,9 @@
 package profile
 
 import (
+	"fmt"
+
+	"github.com/apache/arrow-go/v18/arrow"
 	"github.com/polarsignals/frostdb/dynparquet"
 	schemapb "github.com/polarsignals/frostdb/gen/proto/go/frostdb/schema/v1alpha1"
 )
@@ -161,4 +164,55 @@ func SchemaDefinition() *schemapb.Schema {
 
 func Schema() (*dynparquet.Schema, error) {
 	return dynparquet.SchemaFromDefinition(SchemaDefinition())
+}
+
+// BuildArrowSchema returns the Arrow schema for the parca write/ingest
+// profile data, expanding the dynamic ColumnLabels column into one
+// "labels.<name>" field per labelName. The column order matches the proto
+// definition order, with dynamic labels emitted in place of the labels
+// column. Static columns map to:
+//   - TYPE_INT64 → arrow.PrimitiveTypes.Int64
+//   - TYPE_STRING (non-repeated) → dictionary-encoded binary
+//   - TYPE_STRING (repeated) → list of dictionary-encoded binary
+func BuildArrowSchema(labelNames []string) *arrow.Schema {
+	def := SchemaDefinition()
+	fields := make([]arrow.Field, 0, len(def.Columns)+len(labelNames))
+	for _, col := range def.Columns {
+		if col.Dynamic && col.Name == ColumnLabels {
+			for _, name := range labelNames {
+				fields = append(fields, arrow.Field{
+					Name:     ColumnLabelsPrefix + name,
+					Type:     dictBinary(),
+					Nullable: true,
+				})
+			}
+			continue
+		}
+		fields = append(fields, columnToArrowField(col))
+	}
+	return arrow.NewSchema(fields, nil)
+}
+
+func columnToArrowField(col *schemapb.Column) arrow.Field {
+	layout := col.StorageLayout
+	field := arrow.Field{Name: col.Name, Nullable: layout.Nullable}
+	switch layout.Type {
+	case schemapb.StorageLayout_TYPE_INT64:
+		field.Type = arrow.PrimitiveTypes.Int64
+	case schemapb.StorageLayout_TYPE_STRING:
+		field.Type = dictBinary()
+	default:
+		panic(fmt.Sprintf("profile: unsupported column %q storage type %v", col.Name, layout.Type))
+	}
+	if layout.Repeated {
+		field.Type = arrow.ListOf(field.Type)
+	}
+	return field
+}
+
+func dictBinary() arrow.DataType {
+	return &arrow.DictionaryType{
+		IndexType: arrow.PrimitiveTypes.Uint32,
+		ValueType: arrow.BinaryTypes.Binary,
+	}
 }
