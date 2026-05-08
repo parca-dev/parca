@@ -859,4 +859,3 @@ func getDiscoveryConfigs(cfgs []*config.ScrapeConfig) map[string]discovery.Confi
 	}
 	return c
 }
-

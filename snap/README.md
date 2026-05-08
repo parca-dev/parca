@@ -36,10 +36,10 @@ $ snap start parca
 
 There are a small number of config options:
 
-| Name                 | Valid Options                    | Default | Description                                                                  |
-| :------------------- | :------------------------------- | :------ | :--------------------------------------------------------------------------- |
+| Name                 | Valid Options                    | Default | Description                                                                   |
+| :------------------- | :------------------------------- | :------ | :---------------------------------------------------------------------------- |
 | `enable-persistence` | `true`, `false`                  | `false` | Persist the local metastore to disk under `/var/snap/parca/current/profiles/` |
-| `log-level`          | `error`, `warn`, `info`, `debug` | `info`  | Log level for Parca                                                          |
-| `port`               | 1024 > `int` > 65534             | `7070`  | Port for Parca server to listen on                                           |
+| `log-level`          | `error`, `warn`, `info`, `debug` | `info`  | Log level for Parca                                                           |
+| `port`               | 1024 > `int` > 65534             | `7070`  | Port for Parca server to listen on                                            |
 
 Config options can be set with `sudo snap set parca <option>=<value>`
