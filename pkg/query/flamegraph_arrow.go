@@ -30,7 +30,7 @@ import (
 	"github.com/apache/arrow-go/v18/arrow/math"
 	"github.com/apache/arrow-go/v18/arrow/memory"
 	"github.com/olekukonko/tablewriter"
-	"github.com/polarsignals/frostdb/pqarrow/builder"
+	"github.com/parca-dev/parca/pkg/query/internal/builder"
 	"github.com/zeebo/xxh3"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"

@@ -34,7 +34,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/polarsignals/frostdb/pqarrow/arrowutils"
+	"github.com/parca-dev/parca/pkg/query/internal/arrowutils"
 
 	metastorev1alpha1 "github.com/parca-dev/parca/gen/proto/go/parca/metastore/v1alpha1"
 	pb "github.com/parca-dev/parca/gen/proto/go/parca/query/v1alpha1"
