@@ -63,6 +63,7 @@ import (
 	"github.com/parca-dev/parca/pkg/clickhouse"
 	"github.com/parca-dev/parca/pkg/config"
 	"github.com/parca-dev/parca/pkg/debuginfo"
+	"github.com/parca-dev/parca/pkg/duckdb"
 	"github.com/parca-dev/parca/pkg/kv"
 	"github.com/parca-dev/parca/pkg/parcacol"
 	"github.com/parca-dev/parca/pkg/profilestore"
@@ -120,7 +121,10 @@ type Flags struct {
 	ExternalLabel      map[string]string `kong:"help='Label(s) to attach to all profiles in scraper-only mode.'"`
 	GRPCHeaders        map[string]string `kong:"help='Additional gRPC headers to send with each request to the remote store (key=value pairs).'"`
 
+	StorageBackend string `enum:"clickhouse,duckdb" default:"clickhouse" help:"Storage backend for profile data."`
+
 	ClickHouse FlagsClickHouse `embed:"" prefix:"clickhouse-"`
+	DuckDB     FlagsDuckDB     `embed:"" prefix:"duckdb-"`
 
 	Hidden FlagsHidden `embed:"" prefix:""`
 }
@@ -169,6 +173,12 @@ type FlagsClickHouse struct {
 	Password string `kong:"help='ClickHouse password.',default='',env='PARCA_CLICKHOUSE_PASSWORD'"`
 	Table    string `kong:"help='ClickHouse table name for profile data.',default='stacktraces'"`
 	Secure   bool   `kong:"help='Use TLS for ClickHouse connection.',default='false'"`
+}
+
+// FlagsDuckDB configures the embedded DuckDB storage backend.
+type FlagsDuckDB struct {
+	Path  string `kong:"help='Filesystem path for the DuckDB database file. Empty means an in-memory database (volatile).',default=''"`
+	Table string `kong:"help='DuckDB table name for profile data.',default='stacktraces'"`
 }
 
 // FlagsHidden contains hidden flags intended only for debugging or experimental features.
@@ -310,43 +320,85 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	// Initialize the ClickHouse storage backend.
-	level.Info(logger).Log("msg", "initializing ClickHouse storage backend", "address", flags.ClickHouse.Address)
-
-	chClient, err := clickhouse.NewClient(ctx, clickhouse.Config{
-		Address:  flags.ClickHouse.Address,
-		Database: flags.ClickHouse.Database,
-		Username: flags.ClickHouse.Username,
-		Password: flags.ClickHouse.Password,
-		Table:    flags.ClickHouse.Table,
-		Secure:   flags.ClickHouse.Secure,
-	})
-	if err != nil {
-		level.Error(logger).Log("msg", "failed to connect to ClickHouse", "err", err)
-		return fmt.Errorf("failed to connect to ClickHouse: %w", err)
-	}
-
-	if err := chClient.EnsureSchema(ctx); err != nil {
-		level.Error(logger).Log("msg", "failed to ensure ClickHouse schema", "err", err)
-		return fmt.Errorf("failed to ensure ClickHouse schema: %w", err)
-	}
-
-	var profileIngester profilestore.Ingester = clickhouse.NewIngester(logger, chClient)
-	var querier queryservice.Querier = clickhouse.NewQuerier(
-		chClient,
+	// Initialize the configured storage backend.
+	sharedSymbolizer := symbolizer.New(
 		logger,
-		tracerProvider.Tracer("clickhouse-querier"),
-		memory.DefaultAllocator,
-		symbolizer.New(
-			logger,
-			debuginfoMetadata,
-			symbolizer.NewBadgerCache(db),
-			debuginfo.NewFetcher(debuginfodClients, debuginfoBucket),
-			flags.Debuginfo.CacheDir,
-			flags.Symbolizer.ExternalAddr2linePath,
-			symbolizer.WithDemangleMode(flags.Symbolizer.DemangleMode),
-		),
+		debuginfoMetadata,
+		symbolizer.NewBadgerCache(db),
+		debuginfo.NewFetcher(debuginfodClients, debuginfoBucket),
+		flags.Debuginfo.CacheDir,
+		flags.Symbolizer.ExternalAddr2linePath,
+		symbolizer.WithDemangleMode(flags.Symbolizer.DemangleMode),
 	)
+
+	var (
+		profileIngester profilestore.Ingester
+		querier         queryservice.Querier
+		closeBackend    func() error
+	)
+
+	switch flags.StorageBackend {
+	case "duckdb":
+		level.Info(logger).Log("msg", "initializing DuckDB storage backend", "path", duckdbPathDescription(flags.DuckDB.Path))
+
+		ddClient, err := duckdb.NewClient(ctx, duckdb.Config{
+			Path:  flags.DuckDB.Path,
+			Table: flags.DuckDB.Table,
+		})
+		if err != nil {
+			level.Error(logger).Log("msg", "failed to open DuckDB", "err", err)
+			return fmt.Errorf("failed to open DuckDB: %w", err)
+		}
+		if err := ddClient.EnsureSchema(ctx); err != nil {
+			ddClient.Close()
+			level.Error(logger).Log("msg", "failed to ensure DuckDB schema", "err", err)
+			return fmt.Errorf("failed to ensure DuckDB schema: %w", err)
+		}
+
+		profileIngester = duckdb.NewIngester(logger, ddClient)
+		querier = duckdb.NewQuerier(
+			ddClient,
+			logger,
+			tracerProvider.Tracer("duckdb-querier"),
+			memory.DefaultAllocator,
+			sharedSymbolizer,
+		)
+		closeBackend = ddClient.Close
+
+	case "clickhouse", "":
+		level.Info(logger).Log("msg", "initializing ClickHouse storage backend", "address", flags.ClickHouse.Address)
+
+		chClient, err := clickhouse.NewClient(ctx, clickhouse.Config{
+			Address:  flags.ClickHouse.Address,
+			Database: flags.ClickHouse.Database,
+			Username: flags.ClickHouse.Username,
+			Password: flags.ClickHouse.Password,
+			Table:    flags.ClickHouse.Table,
+			Secure:   flags.ClickHouse.Secure,
+		})
+		if err != nil {
+			level.Error(logger).Log("msg", "failed to connect to ClickHouse", "err", err)
+			return fmt.Errorf("failed to connect to ClickHouse: %w", err)
+		}
+		if err := chClient.EnsureSchema(ctx); err != nil {
+			chClient.Close()
+			level.Error(logger).Log("msg", "failed to ensure ClickHouse schema", "err", err)
+			return fmt.Errorf("failed to ensure ClickHouse schema: %w", err)
+		}
+
+		profileIngester = clickhouse.NewIngester(logger, chClient)
+		querier = clickhouse.NewQuerier(
+			chClient,
+			logger,
+			tracerProvider.Tracer("clickhouse-querier"),
+			memory.DefaultAllocator,
+			sharedSymbolizer,
+		)
+		closeBackend = chClient.Close
+
+	default:
+		return fmt.Errorf("unknown storage backend %q", flags.StorageBackend)
+	}
 
 	s := profilestore.NewProfileColumnStore(
 		reg,
@@ -567,8 +619,10 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			}
 
 			// Close the storage backend after the parcaserver has shutdown to ensure no more writes occur against it.
-			if err := chClient.Close(); err != nil {
-				level.Error(logger).Log("msg", "error closing ClickHouse client", "err", err)
+			if closeBackend != nil {
+				if err := closeBackend(); err != nil {
+					level.Error(logger).Log("msg", "error closing storage backend", "err", err)
+				}
 			}
 		},
 	)
@@ -840,6 +894,13 @@ func (t *perRequestBearerToken) GetRequestMetadata(ctx context.Context, uri ...s
 
 func (t *perRequestBearerToken) RequireTransportSecurity() bool {
 	return !t.insecure
+}
+
+func duckdbPathDescription(path string) string {
+	if path == "" {
+		return "in-memory (volatile)"
+	}
+	return path
 }
 
 func getDiscoveryConfigs(cfgs []*config.ScrapeConfig) map[string]discovery.Configs {
