@@ -157,6 +157,8 @@ Flags:
       --grpc-headers=KEY=VALUE;...
                                   Additional gRPC headers to send with each
                                   request to the remote store (key=value pairs).
+      --storage-backend="clickhouse"
+                                  Storage backend for profile data.
       --clickhouse-address="localhost:9000"
                                   ClickHouse server address.
       --clickhouse-database="parca"
@@ -167,6 +169,10 @@ Flags:
       --clickhouse-table="stacktraces"
                                   ClickHouse table name for profile data.
       --clickhouse-secure         Use TLS for ClickHouse connection.
+      --duckdb-path=""            Filesystem path for the DuckDB database file.
+                                  Empty means an in-memory database (volatile).
+      --duckdb-table="stacktraces"
+                                  DuckDB table name for profile data.
 ```
 <!-- prettier-ignore-end -->
 
