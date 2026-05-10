@@ -119,7 +119,7 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Publish Netlify
-        uses: netlify/actions/build@master
+        uses: netlify/actions/build@3185065f4ab2f6df6f2ef41ee013626e1c02a426 # master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
