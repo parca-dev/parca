@@ -13,7 +13,7 @@
 
 import {describe, expect, test} from 'vitest';
 
-import {gpuFrameInfo, SASS_SOURCE_URL, STALL_SOURCE_URL} from './gpuFrameDescriptions';
+import {SASS_SOURCE_URL, STALL_SOURCE_URL, gpuFrameInfo} from './gpuFrameDescriptions';
 
 describe('gpuFrameInfo', () => {
   test.each([
