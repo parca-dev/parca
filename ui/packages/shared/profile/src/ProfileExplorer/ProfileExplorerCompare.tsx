@@ -16,7 +16,6 @@ import {useCallback, useEffect, useMemo, useState} from 'react';
 import {QueryServiceClient} from '@parca/client';
 import {Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
-import type {NavigateFunction} from '@parca/utilities';
 
 import {ProfileDiffSource, ProfileViewWithData} from '..';
 import ProfileSelector from '../ProfileSelector';
@@ -25,13 +24,9 @@ import {useQueryState} from '../hooks/useQueryState';
 
 interface ProfileExplorerCompareProps {
   queryClient: QueryServiceClient;
-  navigateTo: NavigateFunction;
 }
 
-const ProfileExplorerCompare = ({
-  queryClient,
-  navigateTo,
-}: ProfileExplorerCompareProps): JSX.Element => {
+const ProfileExplorerCompare = ({queryClient}: ProfileExplorerCompareProps): JSX.Element => {
   const [showMetricsGraph, setShowMetricsGraph] = useState(true);
   const {closeCompareMode, isCompareMode, isCompareAbsolute} = useCompareModeMeta();
 
@@ -107,7 +102,6 @@ const ProfileExplorerCompare = ({
             closeProfile={closeProfileA}
             enforcedProfileName={''}
             comparing={true}
-            navigateTo={navigateTo}
             suffix="_a"
             showMetricsGraph={showMetricsGraph}
             setDisplayHideMetricsGraphButton={setShowMetricsGraph}
@@ -122,7 +116,6 @@ const ProfileExplorerCompare = ({
             closeProfile={closeProfileB}
             enforcedProfileName={enforcedProfileNameA}
             comparing={true}
-            navigateTo={navigateTo}
             suffix="_b"
             showMetricsGraph={showMetricsGraph}
             setDisplayHideMetricsGraphButton={setShowMetricsGraph}

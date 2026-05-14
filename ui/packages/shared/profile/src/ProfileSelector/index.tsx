@@ -21,7 +21,7 @@ import {DateTimeRange, IconButton, useGrpcMetadata, useParcaContext} from '@parc
 import {CloseIcon} from '@parca/icons';
 import {Query} from '@parca/parser';
 import {TEST_IDS, testId} from '@parca/test-utils';
-import {millisToProtoTimestamp, type NavigateFunction} from '@parca/utilities';
+import {millisToProtoTimestamp} from '@parca/utilities';
 
 import {
   ProfileFilter,
@@ -59,7 +59,6 @@ interface ProfileSelectorProps extends ProfileSelectorFeatures {
   closeProfile: () => void;
   enforcedProfileName: string;
   comparing: boolean;
-  navigateTo: NavigateFunction;
   setDisplayHideMetricsGraphButton?: Dispatch<SetStateAction<boolean>>;
   suffix?: '_a' | '_b'; // For comparison mode
   onSearchHook?: () => void;
@@ -104,7 +103,6 @@ const ProfileSelector = ({
   closeProfile,
   enforcedProfileName,
   comparing,
-  navigateTo: _navigateTo,
   showMetricsGraph = true,
   showSumBySelector = true,
   showProfileTypeSelector = true,

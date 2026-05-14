@@ -18,7 +18,7 @@ import {Provider} from 'react-redux';
 import {QueryServiceClient} from '@parca/client';
 import {KeyDownProvider, useParcaContext} from '@parca/components';
 import {createStore} from '@parca/store';
-import {capitalizeOnlyFirstLetter, type NavigateFunction} from '@parca/utilities';
+import {capitalizeOnlyFirstLetter} from '@parca/utilities';
 
 import {useCompareModeMeta} from '../hooks/useCompareModeMeta';
 import {useHasProfileData} from '../useHasProfileData';
@@ -27,7 +27,6 @@ import ProfileExplorerSingle from './ProfileExplorerSingle';
 
 interface ProfileExplorerProps {
   queryClient: QueryServiceClient;
-  navigateTo: NavigateFunction;
 }
 
 const ErrorContent = ({errorMessage}: {errorMessage: string}): JSX.Element => {
@@ -41,7 +40,7 @@ const ErrorContent = ({errorMessage}: {errorMessage: string}): JSX.Element => {
   );
 };
 
-const ProfileExplorerApp = ({queryClient, navigateTo}: ProfileExplorerProps): JSX.Element => {
+const ProfileExplorerApp = ({queryClient}: ProfileExplorerProps): JSX.Element => {
   const {
     loading: hasProfileDataLoading,
     data: hasProfileData,
@@ -77,13 +76,13 @@ const ProfileExplorerApp = ({queryClient, navigateTo}: ProfileExplorerProps): JS
   }
 
   if (isCompareMode) {
-    return <ProfileExplorerCompare queryClient={queryClient} navigateTo={navigateTo} />;
+    return <ProfileExplorerCompare queryClient={queryClient} />;
   }
 
-  return <ProfileExplorerSingle queryClient={queryClient} navigateTo={navigateTo} />;
+  return <ProfileExplorerSingle queryClient={queryClient} />;
 };
 
-const ProfileExplorer = ({queryClient, navigateTo}: ProfileExplorerProps): JSX.Element => {
+const ProfileExplorer = ({queryClient}: ProfileExplorerProps): JSX.Element => {
   const {additionalFlamegraphColorProfiles} = useParcaContext();
 
   const {store: reduxStore} = useMemo(() => {
@@ -93,7 +92,7 @@ const ProfileExplorer = ({queryClient, navigateTo}: ProfileExplorerProps): JSX.E
   return (
     <Provider store={reduxStore}>
       <KeyDownProvider>
-        <ProfileExplorerApp queryClient={queryClient} navigateTo={navigateTo} />
+        <ProfileExplorerApp queryClient={queryClient} />
       </KeyDownProvider>
     </Provider>
   );
