@@ -22,6 +22,7 @@ import {formatDateTimeDownToMS, getLastItem} from '@parca/utilities';
 
 import {hexifyAddress, truncateString, truncateStringReverse} from '../utils';
 import {ExpandOnHover} from './ExpandOnHoverValue';
+import {gpuFrameDescription} from './gpuFrameDescriptions';
 import {useGraphTooltip} from './useGraphTooltip';
 import {useGraphTooltipMetaInfo} from './useGraphTooltipMetaInfo';
 
@@ -74,6 +75,8 @@ const GraphTooltipArrowContent = ({
     row: rowNumber,
   } = graphTooltipData;
 
+  const description = gpuFrameDescription(name);
+
   return (
     <div className={`flex text-sm ${isFixed ? 'w-full' : ''}`}>
       <div className={`m-auto w-full ${isFixed ? 'w-full' : ''}`}>
@@ -84,13 +87,20 @@ const GraphTooltipArrowContent = ({
                 {row === 0 ? (
                   <p>root</p>
                 ) : (
-                  <p>
-                    {name !== ''
-                      ? name
-                      : locationAddress !== 0n
-                      ? hexifyAddress(locationAddress)
-                      : 'unknown'}
-                  </p>
+                  <div>
+                    <p>
+                      {name !== ''
+                        ? name
+                        : locationAddress !== 0n
+                        ? hexifyAddress(locationAddress)
+                        : 'unknown'}
+                    </p>
+                    {description !== undefined && (
+                      <p className="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
+                        {description}
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
               <table className="my-2 w-full table-fixed pr-0 text-gray-700 dark:text-gray-300">
