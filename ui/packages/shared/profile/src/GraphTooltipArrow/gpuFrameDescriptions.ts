@@ -25,7 +25,7 @@
 //      (https://docs.nvidia.com/nsight-compute/ProfilingGuide/index.html).
 //
 // Both lookups are exact-match — there is no risk of colliding with user
-// function names. 
+// function names.
 // To add a new entry, just append a row.
 
 export const SASS_INSTRUCTION_DESCRIPTIONS: Record<string, string> = {
@@ -219,34 +219,27 @@ export const STALL_REASON_DESCRIPTIONS: Record<string, string> = {
     'Math pipeline is saturated — too many in-flight instructions of the same type.',
   smsp__pcsamp_warps_issue_stalled_mio_throttle:
     'MIO instruction queue full — shared / special-function / load-store ops backed up.',
-  smsp__pcsamp_warps_issue_stalled_lg_throttle:
-    'Local / global memory instruction queue full.',
-  smsp__pcsamp_warps_issue_stalled_tex_throttle:
-    'Texture unit instruction queue full.',
+  smsp__pcsamp_warps_issue_stalled_lg_throttle: 'Local / global memory instruction queue full.',
+  smsp__pcsamp_warps_issue_stalled_tex_throttle: 'Texture unit instruction queue full.',
 
   // --- Synchronization ---
   smsp__pcsamp_warps_issue_stalled_barrier:
     'Waiting at a __syncthreads() barrier for other warps in the block.',
   smsp__pcsamp_warps_issue_stalled_membar:
     'Waiting on a memory barrier (__threadfence) for outstanding memory ops to commit.',
-  smsp__pcsamp_warps_issue_stalled_sync:
-    'Waiting on warp-level sync (e.g. __syncwarp).',
+  smsp__pcsamp_warps_issue_stalled_sync: 'Waiting on warp-level sync (e.g. __syncwarp).',
 
   // --- Front-end / dispatch ---
-  smsp__pcsamp_warps_issue_stalled_branch_resolving:
-    'Waiting for a branch target to resolve.',
+  smsp__pcsamp_warps_issue_stalled_branch_resolving: 'Waiting for a branch target to resolve.',
   smsp__pcsamp_warps_issue_stalled_dispatch_stall:
     'Dispatcher could not issue this cycle due to resource contention.',
   smsp__pcsamp_warps_issue_stalled_no_instruction:
     'No instruction available to issue — typically an instruction-cache miss.',
-  smsp__pcsamp_warps_issue_stalled_imc_miss:
-    'Waiting on an instruction-cache miss.',
+  smsp__pcsamp_warps_issue_stalled_imc_miss: 'Waiting on an instruction-cache miss.',
 
   // --- Lifecycle ---
-  smsp__pcsamp_warps_issue_stalled_drain:
-    'Warp draining instructions before exit. Not actionable.',
-  smsp__pcsamp_warps_issue_stalled_sleeping:
-    'Warp is executing __nanosleep().',
+  smsp__pcsamp_warps_issue_stalled_drain: 'Warp draining instructions before exit. Not actionable.',
+  smsp__pcsamp_warps_issue_stalled_sleeping: 'Warp is executing __nanosleep().',
   smsp__pcsamp_warps_issue_stalled_selected:
     'Selected and issued this cycle (counts running warps; this is "good").',
   smsp__pcsamp_warps_issue_stalled_not_selected:
@@ -258,19 +251,16 @@ export const STALL_REASON_DESCRIPTIONS: Record<string, string> = {
   smsp__pcsamp_warps_issue_stalled_limit:
     'Hit a hardware-imposed in-flight limit (e.g. outstanding memory transactions).',
   smsp__pcsamp_warps_issue_stalled_sb_full:
-    'Scoreboard tracking structure is full — can\'t track more outstanding ops.',
-  smsp__pcsamp_warps_issue_stalled_idx_throttle:
-    'Indexed-constant load queue full.',
+    "Scoreboard tracking structure is full — can't track more outstanding ops.",
+  smsp__pcsamp_warps_issue_stalled_idx_throttle: 'Indexed-constant load queue full.',
   smsp__pcsamp_warps_issue_stalled_misc:
-    'Catch-all for stalls that don\'t fall into a specific category.',
+    "Catch-all for stalls that don't fall into a specific category.",
 
   // --- Uniform datapath specific (Turing+) ---
-  smsp__pcsamp_warps_issue_stalled_udp_throttle:
-    'Uniform datapath instruction queue full.',
+  smsp__pcsamp_warps_issue_stalled_udp_throttle: 'Uniform datapath instruction queue full.',
 
   // --- Hopper / async copy specific ---
-  smsp__pcsamp_warps_issue_stalled_tma_throttle:
-    'Tensor Memory Accelerator queue full (Hopper+).',
+  smsp__pcsamp_warps_issue_stalled_tma_throttle: 'Tensor Memory Accelerator queue full (Hopper+).',
   smsp__pcsamp_warps_issue_stalled_cga_barrier:
     'Waiting at a cluster (CGA) barrier for cooperating blocks (Hopper+).',
 };

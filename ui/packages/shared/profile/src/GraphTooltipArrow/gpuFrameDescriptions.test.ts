@@ -16,18 +16,14 @@ import {describe, expect, test} from 'vitest';
 import {gpuFrameDescription} from './gpuFrameDescriptions';
 
 describe('gpuFrameDescription', () => {
-  test.each([
-    ['ISETP'],
-    ['IMAD'],
-    ['MOV'],
-    ['FFMA'],
-    ['LDG'],
-    ['BRA'],
-  ])('returns a description for SASS mnemonic %s', mnemonic => {
-    const desc = gpuFrameDescription(mnemonic);
-    expect(desc).toBeDefined();
-    expect(desc?.length).toBeGreaterThan(0);
-  });
+  test.each([['ISETP'], ['IMAD'], ['MOV'], ['FFMA'], ['LDG'], ['BRA']])(
+    'returns a description for SASS mnemonic %s',
+    mnemonic => {
+      const desc = gpuFrameDescription(mnemonic);
+      expect(desc).toBeDefined();
+      expect(desc?.length).toBeGreaterThan(0);
+    }
+  );
 
   test.each([
     ['smsp__pcsamp_warps_issue_stalled_long_scoreboard'],
