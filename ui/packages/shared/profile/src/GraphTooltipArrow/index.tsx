@@ -21,6 +21,7 @@ import {pointer} from 'd3-selection';
 interface GraphTooltipProps {
   children: React.ReactNode;
   contextElement: Element | null;
+  frozen?: boolean;
 }
 
 function createPositionedVirtualElement(contextElement: Element, x = 0, y = 0): VirtualElement {
@@ -40,7 +41,11 @@ function createPositionedVirtualElement(contextElement: Element, x = 0, y = 0): 
   };
 }
 
-const GraphTooltip = ({children, contextElement}: GraphTooltipProps): React.JSX.Element => {
+const GraphTooltip = ({
+  children,
+  contextElement,
+  frozen = false,
+}: GraphTooltipProps): React.JSX.Element => {
   'use no memo';
   const [isPositioned, setIsPositioned] = useState(false);
 
@@ -60,10 +65,16 @@ const GraphTooltip = ({children, contextElement}: GraphTooltipProps): React.JSX.
     whileElementsMounted: undefined,
   });
 
+  // Read the latest `frozen` value from inside the mousemove handler without
+  // re-binding the listener every time it toggles.
+  const frozenRef = React.useRef(frozen);
+  frozenRef.current = frozen;
+
   useEffect(() => {
     if (contextElement === null) return;
 
     const onMouseMove: EventListenerOrEventListenerObject = (e: Event) => {
+      if (frozenRef.current) return; // Hold position while ⇧ Shift is held.
       const rel = pointer(e);
       const tooltipX = rel[0];
       const tooltipY = rel[1];
@@ -85,6 +96,7 @@ const GraphTooltip = ({children, contextElement}: GraphTooltipProps): React.JSX.
       style={{
         ...floatingStyles,
         visibility: !isPositioned ? 'hidden' : 'visible',
+        pointerEvents: frozen ? 'auto' : 'none',
       }}
       className="z-50 w-max"
     >

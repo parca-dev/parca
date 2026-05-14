@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, {memo, useEffect, useState} from 'react';
+import React, {memo, useEffect, useRef, useState} from 'react';
 
 import GraphTooltipArrow from '../../GraphTooltipArrow';
 import GraphTooltipArrowContent from '../../GraphTooltipArrow/Content';
@@ -28,13 +28,45 @@ export const MemoizedTooltip = memo(function MemoizedTooltip({
   dockedMetainfo,
 }: MemoizedTooltipProps): React.JSX.Element | null {
   const [tooltipRow, setTooltipRow] = useState<number | null>(null);
+  const [shiftHeld, setShiftHeld] = useState(false);
+  const shiftHeldRef = useRef(false);
+
+  useEffect(() => {
+    shiftHeldRef.current = shiftHeld;
+  }, [shiftHeld]);
+
   const {table, total, totalUnfiltered, profileType, unit, compareAbsolute, tooltipId} =
     useTooltipContext();
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent): void => {
+      if (e.key === 'Shift') setShiftHeld(true);
+    };
+    const onKeyUp = (e: KeyboardEvent): void => {
+      if (e.key === 'Shift') setShiftHeld(false);
+    };
+    // If the user opens the attribution link, releases Shift in the new tab,
+    // and comes back — our window never saw the keyup, so the frozen state
+    // would stick. Clear it whenever focus leaves the tab.
+    const onBlurOrHide = (): void => setShiftHeld(false);
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', onBlurOrHide);
+    document.addEventListener('visibilitychange', onBlurOrHide);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', onBlurOrHide);
+      document.removeEventListener('visibilitychange', onBlurOrHide);
+    };
+  }, []);
 
   // This component subscribes to tooltip updates through a callback
   // passed to the TooltipProvider, avoiding the need to lift state
   useEffect(() => {
     const handleTooltipUpdate = (event: CustomEvent<{row: number | null}>): void => {
+      // While Shift is held, lock the tooltip to its original frame.
+      if (shiftHeldRef.current) return;
       setTooltipRow(event.detail.row);
     };
 
@@ -82,7 +114,7 @@ export const MemoizedTooltip = memo(function MemoizedTooltip({
     return null;
   }
   return (
-    <GraphTooltipArrow contextElement={contextElement}>
+    <GraphTooltipArrow contextElement={contextElement} frozen={shiftHeld}>
       <GraphTooltipArrowContent
         table={table}
         row={tooltipRow}
@@ -92,6 +124,7 @@ export const MemoizedTooltip = memo(function MemoizedTooltip({
         profileType={profileType}
         unit={unit}
         compareAbsolute={compareAbsolute}
+        frozen={shiftHeld}
       />
     </GraphTooltipArrow>
   );

@@ -13,40 +13,41 @@
 
 import {describe, expect, test} from 'vitest';
 
-import {gpuFrameDescription} from './gpuFrameDescriptions';
+import {gpuFrameInfo, SASS_SOURCE_URL, STALL_SOURCE_URL} from './gpuFrameDescriptions';
 
-describe('gpuFrameDescription', () => {
+describe('gpuFrameInfo', () => {
   test.each([
-    ['ISETP'],
-    ['IMAD'],
-    ['MOV'],
-    ['FFMA'],
-    ['LDG'],
-    ['BRA'],
-  ])('returns a description for SASS mnemonic %s', mnemonic => {
-    const desc = gpuFrameDescription(mnemonic);
-    expect(desc).toBeDefined();
-    expect(desc?.length).toBeGreaterThan(0);
+    ['STS', 'Store to Shared Memory'],
+    ['ISETP', 'Integer Compare And Set Predicate'],
+    ['IMAD', 'Integer Multiply And Add'],
+    ['MOV', 'Move'],
+    ['FFMA', 'FP32 Fused Multiply and Add'],
+    ['LDG', 'Load from Global Memory'],
+  ])('returns SASS info for %s with verbatim description %j', (mnemonic, description) => {
+    const info = gpuFrameInfo(mnemonic);
+    expect(info?.kind).toBe('sass');
+    expect(info?.entry.description).toBe(description);
+    expect(info?.entry.reasonLabel.length).toBeGreaterThan(0);
+    expect(info?.sourceUrl).toBe(SASS_SOURCE_URL);
   });
 
   test.each([
-    ['smsp__pcsamp_warps_issue_stalled_long_scoreboard'],
-    ['smsp__pcsamp_warps_issue_stalled_short_scoreboard'],
-    ['smsp__pcsamp_warps_issue_stalled_barrier'],
-    ['smsp__pcsamp_warps_issue_stalled_drain'],
-  ])('returns a description for stall reason %s', reason => {
-    const desc = gpuFrameDescription(reason);
-    expect(desc).toBeDefined();
-    expect(desc?.length).toBeGreaterThan(0);
+    ['smsp__pcsamp_warps_issue_stalled_long_scoreboard', 'Long Scoreboard'],
+    ['smsp__pcsamp_warps_issue_stalled_short_scoreboard', 'Short Scoreboard'],
+    ['smsp__pcsamp_warps_issue_stalled_barrier', 'Barrier'],
+    ['smsp__pcsamp_warps_issue_stalled_drain', 'Drain'],
+  ])('returns stall info for %s with reasonLabel %j and per-frame deep link', (reason, label) => {
+    const info = gpuFrameInfo(reason);
+    expect(info?.kind).toBe('stall');
+    expect(info?.entry.description.length).toBeGreaterThan(0);
+    expect(info?.entry.reasonLabel).toBe(label);
+    expect(info?.sourceUrl).toBe(`${STALL_SOURCE_URL}:~:text=${reason}`);
   });
 
-  test.each([
-    ['main'],
-    ['at::native::add'],
-    ['c10::impl::wrap_kernel_functor_unboxed_'],
-    ['<unknown>'],
-    [''],
-  ])('returns undefined for non-GPU frame name %j', name => {
-    expect(gpuFrameDescription(name)).toBeUndefined();
-  });
+  test.each([['main'], ['at::native::add'], ['<unknown>'], ['']])(
+    'returns undefined for non-GPU frame name %j',
+    name => {
+      expect(gpuFrameInfo(name)).toBeUndefined();
+    }
+  );
 });
