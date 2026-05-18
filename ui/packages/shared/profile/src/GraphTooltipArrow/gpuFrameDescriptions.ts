@@ -231,66 +231,66 @@ export const STALL_REASON_DESCRIPTIONS: Record<string, StallEntry> = {
   smsp__pcsamp_warps_issue_stalled_barrier: {
     reasonLabel: 'Barrier',
     description:
-      'Warp was stalled waiting for sibling warps at a CTA barrier. A high number of warps waiting at a barrier is commonly caused by diverging code paths before a barrier. This causes some warps to wait a long time until other warps reach the synchronization point. Whenever possible, try to divide up the work into blocks of uniform workloads. If the block size is 512 threads or greater, consider splitting it into smaller groups. This can increase eligible warps without affecting occupancy, unless shared memory becomes a new occupancy limiter. Also, try to identify which barrier instruction causes the most stalls, and optimize the code executed before that synchronization point first.',
+      'Warp stalled waiting for sibling warps to reach a CTA barrier. This is usually caused by divergent code paths before the barrier, which make some warps wait a long time while others catch up to the synchronization point. Where possible, split work into uniform-sized blocks; for blocks of 512 threads or more, consider breaking them into smaller groups. That raises the number of eligible warps without changing occupancy, unless shared memory then becomes the occupancy limiter. It also helps to identify which barrier instruction stalls the most and optimize the code that runs before that synchronization point first.',
   },
   smsp__pcsamp_warps_issue_stalled_branch_resolving: {
     reasonLabel: 'Branch Resolving',
     description:
-      'Warp was stalled waiting for a branch target to be computed, and the warp program counter to be updated. To reduce the number of stalled cycles, consider using fewer jump/branch operations and reduce control flow divergence, e.g. by reducing or coalescing conditionals in your code. See also the related No Instructions state.',
+      'Warp stalled waiting for a branch target to be computed and the warp program counter to be updated. Cut stalled cycles by using fewer jump/branch operations and reducing control-flow divergence, e.g. by reducing or coalescing conditionals in the code. See also the related No Instructions state.',
   },
   smsp__pcsamp_warps_issue_stalled_dispatch_stall: {
     reasonLabel: 'Dispatch Stall',
     description:
-      'Warp was stalled waiting on a dispatch stall. A warp stalled during dispatch has an instruction ready to issue, but the dispatcher holds back issuing the warp due to other conflicts or events.',
+      'Warp stalled on a dispatch stall: the warp has an instruction ready to issue, but the dispatcher withholds it because of other conflicts or events.',
   },
   smsp__pcsamp_warps_issue_stalled_drain: {
     reasonLabel: 'Drain',
     description:
-      'Warp was stalled after EXIT waiting for all outstanding memory operations to complete so that warp’s resources can be freed. A high number of stalls due to draining warps typically occurs when a lot of data is written to memory towards the end of a kernel. Make sure the memory access patterns of these store operations are optimal for the target architecture and consider parallelized data reduction, if applicable.',
+      'Warp stalled after EXIT, waiting for all outstanding memory operations to complete so the warp’s resources can be freed. A high number of draining warps typically happens when a lot of data is written to memory towards the end of a kernel. Make sure those store operations use memory access patterns optimal for the target architecture, and consider a parallelized data reduction where applicable.',
   },
   smsp__pcsamp_warps_issue_stalled_imc_miss: {
     reasonLabel: 'IMC Miss',
     description:
-      'Warp was stalled waiting for an immediate constant cache (IMC) miss. A read from constant memory costs one memory read from device memory only on a cache miss; otherwise, it just costs one read from the constant cache. Immediate constants are encoded into the SASS instruction as ‘c[bank][offset]’. Accesses to different addresses by threads within a warp are serialized, thus the cost scales linearly with the number of unique addresses read by all threads within a warp. As such, the constant cache is best when threads in the same warp access only a few distinct locations. If all threads of a warp access the same location, then constant memory can be as fast as a register access.',
+      'Warp stalled on an immediate constant cache (IMC) miss. A read from constant memory costs one device-memory read only on a cache miss; otherwise it costs just one read from the constant cache. Immediate constants are encoded into the SASS instruction as ‘c[bank][offset]’. Accesses to different addresses by threads within a warp are serialized, so the cost scales linearly with the number of unique addresses the warp reads. The constant cache is therefore best when threads in the same warp access only a few distinct locations; if all threads of a warp access the same location, constant memory can be as fast as a register access.',
   },
   smsp__pcsamp_warps_issue_stalled_lg_throttle: {
     reasonLabel: 'LG Throttle',
     description:
-      'Warp was stalled waiting for the L1 instruction queue for local and global (LG) memory operations to be not full. Typically, this stall occurs only when executing local or global memory instructions extremely frequently. Avoid redundant global memory accesses. Try to avoid using thread-local memory by checking if dynamically indexed arrays are declared in local scope, or if the kernel has excessive register pressure causing spills. If applicable, consider combining multiple lower-width memory operations into fewer wider memory operations and try interleaving memory operations and math instructions.',
+      'Warp stalled waiting for the L1 instruction queue for local and global (LG) memory operations to be not full. This typically occurs only when local or global memory instructions execute extremely frequently. Avoid redundant global memory accesses. Try to avoid thread-local memory by checking whether dynamically indexed arrays are declared in local scope, or whether excessive register pressure is causing spills. Where applicable, combine multiple lower-width memory operations into fewer wider ones and interleave memory operations with math instructions.',
   },
   smsp__pcsamp_warps_issue_stalled_long_scoreboard: {
     reasonLabel: 'Long Scoreboard',
     description:
-      'Warp was stalled waiting for a scoreboard dependency on a L1TEX (local, global, surface, texture) operation. Find the instruction producing the data being waited upon to identify the culprit. To reduce the number of cycles waiting on L1TEX data accesses verify the memory access patterns are optimal for the target architecture, attempt to increase cache hit rates by increasing data locality (coalescing), or by changing the cache configuration. Consider moving frequently used data to shared memory.',
+      'Warp stalled on a scoreboard dependency for an L1TEX (local, global, surface, texture) operation. Find the instruction producing the awaited data to identify the cause. To reduce cycles spent waiting on L1TEX accesses, verify that memory access patterns are optimal for the target architecture, raise cache hit rates by improving data locality (coalescing) or by changing the cache configuration, and consider moving frequently used data into shared memory.',
   },
   smsp__pcsamp_warps_issue_stalled_math_pipe_throttle: {
     reasonLabel: 'Math Pipe Throttle',
     description:
-      'Warp was stalled waiting for the execution pipe to be available. This stall occurs when all active warps execute their next instruction on a specific, oversubscribed math pipeline. Try to increase the number of active warps to hide the existent latency or try changing the instruction mix to utilize all available pipelines in a more balanced way.',
+      'Warp stalled waiting for an execution pipe to become available. This happens when every active warp’s next instruction targets the same oversubscribed math pipeline. Increase the number of active warps to hide the latency, or change the instruction mix to use all available pipelines more evenly.',
   },
   smsp__pcsamp_warps_issue_stalled_membar: {
     reasonLabel: 'Membar',
     description:
-      'Warp was stalled waiting on a memory barrier. Avoid executing any unnecessary memory barriers and assure that any outstanding memory operations are fully optimized for the target architecture.',
+      'Warp stalled on a memory barrier. Avoid any unnecessary memory barriers and make sure outstanding memory operations are fully optimized for the target architecture.',
   },
   smsp__pcsamp_warps_issue_stalled_mio_throttle: {
     reasonLabel: 'MIO Throttle',
     description:
-      'Warp was stalled waiting for the MIO (memory input/output) instruction queue to be not full. This stall reason is high in cases of extreme utilization of the MIO pipelines, which include special math instructions, dynamic branches, as well as shared memory instructions. When caused by shared memory accesses, trying to use fewer but wider loads can reduce pipeline pressure.',
+      'Warp stalled waiting for the MIO (memory input/output) instruction queue to be not full. This is high under extreme utilization of the MIO pipelines, which include special math instructions, dynamic branches, and shared memory instructions. When the cause is shared memory accesses, using fewer but wider loads can reduce the pipeline pressure.',
   },
   smsp__pcsamp_warps_issue_stalled_misc: {
     reasonLabel: 'Misc',
-    description: 'Warp was stalled for a miscellaneous hardware reason.',
+    description: 'Warp stalled for a miscellaneous hardware reason.',
   },
   smsp__pcsamp_warps_issue_stalled_no_instructions: {
     reasonLabel: 'No Instructions',
     description:
-      'Warp was stalled waiting to be selected to fetch an instruction or waiting on an instruction cache miss. A high number of warps not having an instruction fetched is typical for very short kernels with less than one full wave of work in the grid. Excessively jumping across large blocks of assembly code can also lead to more warps stalled for this reason, if this causes misses in the instruction cache. See also the related Branch Resolving state.',
+      'Warp stalled waiting to be selected to fetch an instruction, or on an instruction cache miss. Many warps in this state is typical for very short kernels with less than one full wave of work in the grid. Excessively jumping across large blocks of assembly code can also cause it, if that misses in the instruction cache. See also the related Branch Resolving state.',
   },
   smsp__pcsamp_warps_issue_stalled_not_selected: {
     reasonLabel: 'Not Selected',
     description:
-      'Warp was stalled waiting for the micro scheduler to select the warp to issue. Not selected warps are eligible warps that were not picked by the scheduler to issue that cycle as another warp was selected. A high number of not selected warps typically means you have sufficient warps to cover warp latencies and you may consider reducing the number of active warps to possibly increase cache coherence and data locality.',
+      'Warp stalled waiting for the micro scheduler to select it to issue. Not-selected warps are eligible warps that were not picked that cycle because another warp was selected instead. A high number typically means you have enough warps to cover warp latencies, and you may be able to reduce the number of active warps to improve cache coherence and data locality.',
   },
   smsp__pcsamp_warps_issue_stalled_selected: {
     reasonLabel: 'Selected',
@@ -299,93 +299,92 @@ export const STALL_REASON_DESCRIPTIONS: Record<string, StallEntry> = {
   smsp__pcsamp_warps_issue_stalled_short_scoreboard: {
     reasonLabel: 'Short Scoreboard',
     description:
-      'Warp was stalled waiting for a scoreboard dependency on a MIO (memory input/output) operation (not to L1TEX). The primary reason for a high number of stalls due to short scoreboards is typically memory operations to shared memory. Other reasons include frequent execution of special math instructions (e.g. MUFU) or dynamic branching (e.g. BRX, JMX). Consult the Memory Workload Analysis section to verify if there are shared memory operations and reduce bank conflicts, if reported. Assigning frequently accessed values to variables can assist the compiler in using low-latency registers instead of direct memory accesses.',
+      'Warp stalled on a scoreboard dependency for a MIO (memory input/output) operation that is not to L1TEX. The primary cause is usually shared memory operations; other causes include frequent special math instructions (e.g. MUFU) or dynamic branching (e.g. BRX, JMX). Check the Memory Workload Analysis section for shared memory operations and reduce any reported bank conflicts. Assigning frequently accessed values to variables can help the compiler use low-latency registers instead of direct memory accesses.',
   },
   smsp__pcsamp_warps_issue_stalled_sleeping: {
     reasonLabel: 'Sleeping',
     description:
-      'Warp was stalled due to all threads in the warp being in the blocked, yielded, or sleep state. Reduce the number of executed NANOSLEEP instructions, lower the specified time delay, and attempt to group threads in a way that multiple threads in a warp sleep at the same time.',
+      'Warp stalled because all of its threads are in the blocked, yielded, or sleep state. Reduce the number of NANOSLEEP instructions executed, lower the specified time delay, and try to arrange for multiple threads in a warp to sleep at the same time.',
   },
   smsp__pcsamp_warps_issue_stalled_tex_throttle: {
     reasonLabel: 'Tex Throttle',
     description:
-      'Warp was stalled waiting for the L1 instruction queue for texture operations to be not full. This stall reason is high in cases of extreme utilization of the L1TEX pipeline. Try issuing fewer texture fetches, surface loads, surface stores, or decoupled math operations. If applicable, consider combining multiple lower-width memory operations into fewer wider memory operations and try interleaving memory operations and math instructions. Consider converting texture lookups or surface loads into global memory lookups. Texture can accept four threads’ requests per cycle, whereas global accepts 32 threads.',
+      'Warp stalled waiting for the L1 instruction queue for texture operations to be not full. This is high under extreme utilization of the L1TEX pipeline. Issue fewer texture fetches, surface loads, surface stores, or decoupled math operations. Where applicable, combine multiple lower-width memory operations into fewer wider ones and interleave memory operations with math instructions. Consider converting texture lookups or surface loads into global memory lookups: texture accepts four threads’ requests per cycle, whereas global accepts 32 threads.',
   },
   smsp__pcsamp_warps_issue_stalled_wait: {
     reasonLabel: 'Wait',
     description:
-      'Warp was stalled waiting on a fixed latency execution dependency. Typically, this stall reason should be very low and only shows up as a top contributor in already highly optimized kernels. Try to hide the corresponding instruction latencies by increasing the number of active warps, restructuring the code or unrolling loops. Furthermore, consider switching to lower-latency instructions, e.g. by making use of fast math compiler options.',
+      'Warp stalled on a fixed-latency execution dependency. This should normally be very low and only shows up as a top contributor in already highly optimized kernels. Hide the instruction latencies by increasing the number of active warps, restructuring the code, or unrolling loops; you can also switch to lower-latency instructions, e.g. via fast-math compiler options.',
   },
   smsp__pcsamp_warps_issue_stalled_warpgroup_arrive: {
     reasonLabel: 'Warpgroup Arrive',
-    description:
-      'Warp was stalled waiting on a WARPGROUP.ARRIVES or WARPGROUP.WAIT instruction.',
+    description: 'Warp stalled waiting on a WARPGROUP.ARRIVES or WARPGROUP.WAIT instruction.',
   },
 
   // --- Warp Stall Reasons (Not Issued) ---
   smsp__pcsamp_warps_issue_stalled_barrier_not_issued: {
     reasonLabel: 'Barrier (Not Issued)',
     description:
-      'Warp was stalled waiting for sibling warps at a CTA barrier. A high number of warps waiting at a barrier is commonly caused by diverging code paths before a barrier. This causes some warps to wait a long time until other warps reach the synchronization point. Whenever possible, try to divide up the work into blocks of uniform workloads. If the block size is 512 threads or greater, consider splitting it into smaller groups. This can increase eligible warps without affecting occupancy, unless shared memory becomes a new occupancy limiter. Also, try to identify which barrier instruction causes the most stalls, and optimize the code executed before that synchronization point first.',
+      'Warp stalled waiting for sibling warps to reach a CTA barrier. This is usually caused by divergent code paths before the barrier, which make some warps wait a long time while others catch up to the synchronization point. Where possible, split work into uniform-sized blocks; for blocks of 512 threads or more, consider breaking them into smaller groups. That raises the number of eligible warps without changing occupancy, unless shared memory then becomes the occupancy limiter. It also helps to identify which barrier instruction stalls the most and optimize the code that runs before that synchronization point first.',
   },
   smsp__pcsamp_warps_issue_stalled_branch_resolving_not_issued: {
     reasonLabel: 'Branch Resolving (Not Issued)',
     description:
-      'Warp was stalled waiting for a branch target to be computed, and the warp program counter to be updated. To reduce the number of stalled cycles, consider using fewer jump/branch operations and reduce control flow divergence, e.g. by reducing or coalescing conditionals in your code. See also the related No Instructions state.',
+      'Warp stalled waiting for a branch target to be computed and the warp program counter to be updated. Cut stalled cycles by using fewer jump/branch operations and reducing control-flow divergence, e.g. by reducing or coalescing conditionals in the code. See also the related No Instructions state.',
   },
   smsp__pcsamp_warps_issue_stalled_dispatch_stall_not_issued: {
     reasonLabel: 'Dispatch Stall (Not Issued)',
     description:
-      'Warp was stalled waiting on a dispatch stall. A warp stalled during dispatch has an instruction ready to issue, but the dispatcher holds back issuing the warp due to other conflicts or events.',
+      'Warp stalled on a dispatch stall: the warp has an instruction ready to issue, but the dispatcher withholds it because of other conflicts or events.',
   },
   smsp__pcsamp_warps_issue_stalled_drain_not_issued: {
     reasonLabel: 'Drain (Not Issued)',
     description:
-      'Warp was stalled after EXIT waiting for all memory operations to complete so that warp resources can be freed. A high number of stalls due to draining warps typically occurs when a lot of data is written to memory towards the end of a kernel. Make sure the memory access patterns of these store operations are optimal for the target architecture and consider parallelized data reduction, if applicable.',
+      'Warp stalled after EXIT, waiting for all memory operations to complete so warp resources can be freed. A high number of draining warps typically happens when a lot of data is written to memory towards the end of a kernel. Make sure those store operations use memory access patterns optimal for the target architecture, and consider a parallelized data reduction where applicable.',
   },
   smsp__pcsamp_warps_issue_stalled_imc_miss_not_issued: {
     reasonLabel: 'IMC Miss (Not Issued)',
     description:
-      'Warp was stalled waiting for an immediate constant cache (IMC) miss. A read from constant memory costs one memory read from device memory only on a cache miss; otherwise, it just costs one read from the constant cache. Accesses to different addresses by threads within a warp are serialized, thus the cost scales linearly with the number of unique addresses read by all threads within a warp. As such, the constant cache is best when threads in the same warp access only a few distinct locations. If all threads of a warp access the same location, then constant memory can be as fast as a register access.',
+      'Warp stalled on an immediate constant cache (IMC) miss. A read from constant memory costs one device-memory read only on a cache miss; otherwise it costs just one read from the constant cache. Accesses to different addresses by threads within a warp are serialized, so the cost scales linearly with the number of unique addresses the warp reads. The constant cache is therefore best when threads in the same warp access only a few distinct locations; if all threads of a warp access the same location, constant memory can be as fast as a register access.',
   },
   smsp__pcsamp_warps_issue_stalled_lg_throttle_not_issued: {
     reasonLabel: 'LG Throttle (Not Issued)',
     description:
-      'Warp was stalled waiting for the L1 instruction queue for local and global (LG) memory operations to be not full. Typically, this stall occurs only when executing local or global memory instructions extremely frequently. Avoid redundant global memory accesses. Try to avoid using thread-local memory by checking if dynamically indexed arrays are declared in local scope, or if the kernel has excessive register pressure causing spills. If applicable, consider combining multiple lower-width memory operations into fewer wider memory operations and try interleaving memory operations and math instructions.',
+      'Warp stalled waiting for the L1 instruction queue for local and global (LG) memory operations to be not full. This typically occurs only when local or global memory instructions execute extremely frequently. Avoid redundant global memory accesses. Try to avoid thread-local memory by checking whether dynamically indexed arrays are declared in local scope, or whether excessive register pressure is causing spills. Where applicable, combine multiple lower-width memory operations into fewer wider ones and interleave memory operations with math instructions.',
   },
   smsp__pcsamp_warps_issue_stalled_long_scoreboard_not_issued: {
     reasonLabel: 'Long Scoreboard (Not Issued)',
     description:
-      'Warp was stalled waiting for a scoreboard dependency on a L1TEX (local, global, surface, texture) operation. Find the instruction producing the data being waited upon to identify the culprit. To reduce the number of cycles waiting on L1TEX data accesses verify the memory access patterns are optimal for the target architecture, attempt to increase cache hit rates by increasing data locality (coalescing), or by changing the cache configuration. Consider moving frequently used data to shared memory.',
+      'Warp stalled on a scoreboard dependency for an L1TEX (local, global, surface, texture) operation. Find the instruction producing the awaited data to identify the cause. To reduce cycles spent waiting on L1TEX accesses, verify that memory access patterns are optimal for the target architecture, raise cache hit rates by improving data locality (coalescing) or by changing the cache configuration, and consider moving frequently used data into shared memory.',
   },
   smsp__pcsamp_warps_issue_stalled_math_pipe_throttle_not_issued: {
     reasonLabel: 'Math Pipe Throttle (Not Issued)',
     description:
-      'Warp was stalled waiting for the execution pipe to be available. This stall occurs when all active warps execute their next instruction on a specific, oversubscribed math pipeline. Try to increase the number of active warps to hide the existent latency or try changing the instruction mix to utilize all available pipelines in a more balanced way.',
+      'Warp stalled waiting for an execution pipe to become available. This happens when every active warp’s next instruction targets the same oversubscribed math pipeline. Increase the number of active warps to hide the latency, or change the instruction mix to use all available pipelines more evenly.',
   },
   smsp__pcsamp_warps_issue_stalled_membar_not_issued: {
     reasonLabel: 'Membar (Not Issued)',
     description:
-      'Warp was stalled waiting on a memory barrier. Avoid executing any unnecessary memory barriers and assure that any outstanding memory operations are fully optimized for the target architecture.',
+      'Warp stalled on a memory barrier. Avoid any unnecessary memory barriers and make sure outstanding memory operations are fully optimized for the target architecture.',
   },
   smsp__pcsamp_warps_issue_stalled_mio_throttle_not_issued: {
     reasonLabel: 'MIO Throttle (Not Issued)',
     description:
-      'Warp was stalled waiting for the MIO (memory input/output) instruction queue to be not full. This stall reason is high in cases of extreme utilization of the MIO pipelines, which include special math instructions, dynamic branches, as well as shared memory instructions. When caused by shared memory accesses, trying to use fewer but wider loads can reduce pipeline pressure.',
+      'Warp stalled waiting for the MIO (memory input/output) instruction queue to be not full. This is high under extreme utilization of the MIO pipelines, which include special math instructions, dynamic branches, and shared memory instructions. When the cause is shared memory accesses, using fewer but wider loads can reduce the pipeline pressure.',
   },
   smsp__pcsamp_warps_issue_stalled_misc_not_issued: {
     reasonLabel: 'Misc (Not Issued)',
-    description: 'Warp was stalled for a miscellaneous hardware reason.',
+    description: 'Warp stalled for a miscellaneous hardware reason.',
   },
   smsp__pcsamp_warps_issue_stalled_no_instructions_not_issued: {
     reasonLabel: 'No Instructions (Not Issued)',
     description:
-      'Warp was stalled waiting to be selected to fetch an instruction or waiting on an instruction cache miss. A high number of warps not having an instruction fetched is typical for very short kernels with less than one full wave of work in the grid. Excessively jumping across large blocks of assembly code can also lead to more warps stalled for this reason, if this causes misses in the instruction cache. See also the related Branch Resolving state.',
+      'Warp stalled waiting to be selected to fetch an instruction, or on an instruction cache miss. Many warps in this state is typical for very short kernels with less than one full wave of work in the grid. Excessively jumping across large blocks of assembly code can also cause it, if that misses in the instruction cache. See also the related Branch Resolving state.',
   },
   smsp__pcsamp_warps_issue_stalled_not_selected_not_issued: {
     reasonLabel: 'Not Selected (Not Issued)',
     description:
-      'Warp was stalled waiting for the micro scheduler to select the warp to issue. Not selected warps are eligible warps that were not picked by the scheduler to issue that cycle as another warp was selected. A high number of not selected warps typically means you have sufficient warps to cover warp latencies and you may consider reducing the number of active warps to possibly increase cache coherence and data locality.',
+      'Warp stalled waiting for the micro scheduler to select it to issue. Not-selected warps are eligible warps that were not picked that cycle because another warp was selected instead. A high number typically means you have enough warps to cover warp latencies, and you may be able to reduce the number of active warps to improve cache coherence and data locality.',
   },
   smsp__pcsamp_warps_issue_stalled_selected_not_issued: {
     reasonLabel: 'Selected (Not Issued)',
@@ -394,27 +393,26 @@ export const STALL_REASON_DESCRIPTIONS: Record<string, StallEntry> = {
   smsp__pcsamp_warps_issue_stalled_short_scoreboard_not_issued: {
     reasonLabel: 'Short Scoreboard (Not Issued)',
     description:
-      'Warp was stalled waiting for a scoreboard dependency on a MIO (memory input/output) operation (not to L1TEX). The primary reason for a high number of stalls due to short scoreboards is typically memory operations to shared memory. Other reasons include frequent execution of special math instructions (e.g. MUFU) or dynamic branching (e.g. BRX, JMX). Consult the Memory Workload Analysis section to verify if there are shared memory operations and reduce bank conflicts, if reported. Assigning frequently accessed values to variables can assist the compiler in using low-latency registers instead of direct memory accesses.',
+      'Warp stalled on a scoreboard dependency for a MIO (memory input/output) operation that is not to L1TEX. The primary cause is usually shared memory operations; other causes include frequent special math instructions (e.g. MUFU) or dynamic branching (e.g. BRX, JMX). Check the Memory Workload Analysis section for shared memory operations and reduce any reported bank conflicts. Assigning frequently accessed values to variables can help the compiler use low-latency registers instead of direct memory accesses.',
   },
   smsp__pcsamp_warps_issue_stalled_sleeping_not_issued: {
     reasonLabel: 'Sleeping (Not Issued)',
     description:
-      'Warp was stalled due to all threads in the warp being in the blocked, yielded, or sleep state. Reduce the number of executed NANOSLEEP instructions, lower the specified time delay, and attempt to group threads in a way that multiple threads in a warp sleep at the same time.',
+      'Warp stalled because all of its threads are in the blocked, yielded, or sleep state. Reduce the number of NANOSLEEP instructions executed, lower the specified time delay, and try to arrange for multiple threads in a warp to sleep at the same time.',
   },
   smsp__pcsamp_warps_issue_stalled_tex_throttle_not_issued: {
     reasonLabel: 'Tex Throttle (Not Issued)',
     description:
-      'Warp was stalled waiting for the L1 instruction queue for texture operations to be not full. This stall reason is high in cases of extreme utilization of the L1TEX pipeline. Try issuing fewer texture fetches, surface loads, surface stores, or decoupled math operations. If applicable, consider combining multiple lower-width memory operations into fewer wider memory operations and try interleaving memory operations and math instructions. Consider converting texture lookups or surface loads into global memory lookups. Texture can accept four threads’ requests per cycle, whereas global accepts 32 threads.',
+      'Warp stalled waiting for the L1 instruction queue for texture operations to be not full. This is high under extreme utilization of the L1TEX pipeline. Issue fewer texture fetches, surface loads, surface stores, or decoupled math operations. Where applicable, combine multiple lower-width memory operations into fewer wider ones and interleave memory operations with math instructions. Consider converting texture lookups or surface loads into global memory lookups: texture accepts four threads’ requests per cycle, whereas global accepts 32 threads.',
   },
   smsp__pcsamp_warps_issue_stalled_wait_not_issued: {
     reasonLabel: 'Wait (Not Issued)',
     description:
-      'Warp was stalled waiting on a fixed latency execution dependency. Typically, this stall reason should be very low and only shows up as a top contributor in already highly optimized kernels. Try to hide the corresponding instruction latencies by increasing the number of active warps, restructuring the code or unrolling loops. Furthermore, consider switching to lower-latency instructions, e.g. by making use of fast math compiler options.',
+      'Warp stalled on a fixed-latency execution dependency. This should normally be very low and only shows up as a top contributor in already highly optimized kernels. Hide the instruction latencies by increasing the number of active warps, restructuring the code, or unrolling loops; you can also switch to lower-latency instructions, e.g. via fast-math compiler options.',
   },
   smsp__pcsamp_warps_issue_stalled_warpgroup_arrive_not_issued: {
     reasonLabel: 'Warpgroup Arrive (Not Issued)',
-    description:
-      'Warp was stalled waiting on a WARPGROUP.ARRIVES or WARPGROUP.WAIT instruction.',
+    description: 'Warp stalled waiting on a WARPGROUP.ARRIVES or WARPGROUP.WAIT instruction.',
   },
 };
 
