@@ -22,6 +22,8 @@ import {formatDateTimeDownToMS, getLastItem} from '@parca/utilities';
 
 import {hexifyAddress, truncateString, truncateStringReverse} from '../utils';
 import {ExpandOnHover} from './ExpandOnHoverValue';
+import {gpuFrameInfo, type GpuFrameInfo} from './gpuFrameDescriptions';
+import {openInNewTab} from './openInNewTab';
 import {useGraphTooltip} from './useGraphTooltip';
 import {useGraphTooltipMetaInfo} from './useGraphTooltipMetaInfo';
 
@@ -34,6 +36,7 @@ interface GraphTooltipArrowContentProps {
   row: number | null;
   isFixed: boolean;
   compareAbsolute: boolean;
+  frozen?: boolean;
 }
 
 const NoData = (): React.JSX.Element => {
@@ -49,6 +52,7 @@ const GraphTooltipArrowContent = ({
   row,
   isFixed,
   compareAbsolute,
+  frozen = false,
 }: GraphTooltipArrowContentProps): React.JSX.Element => {
   const graphTooltipData = useGraphTooltip({
     table,
@@ -74,10 +78,21 @@ const GraphTooltipArrowContent = ({
     row: rowNumber,
   } = graphTooltipData;
 
+  const info = gpuFrameInfo(name);
+
+  // Outer card gains a subtle ring when frozen, matching the design's
+  // `.is-frozen` treatment.
+  const cardClassName = [
+    'flex w-auto max-w-[600px] min-w-[300px] flex-col justify-start rounded-lg border bg-gray-50 p-3 shadow-lg dark:bg-gray-900',
+    frozen
+      ? 'border-indigo-400/60 ring-2 ring-indigo-400/20 dark:border-indigo-400/40'
+      : 'border-gray-300 dark:border-gray-500',
+  ].join(' ');
+
   return (
     <div className={`flex text-sm ${isFixed ? 'w-full' : ''}`}>
       <div className={`m-auto w-full ${isFixed ? 'w-full' : ''}`}>
-        <div className="flex w-auto max-w-[600px] min-w-[300px] flex-col justify-start rounded-lg border border-gray-300 bg-gray-50 p-3 shadow-lg dark:border-gray-500 dark:bg-gray-900">
+        <div className={cardClassName}>
           <div className="flex flex-row">
             <div className="mx-2">
               <div className="flex min-h-10 items-start justify-between gap-4 break-all font-semibold mb-2">
@@ -120,15 +135,81 @@ const GraphTooltipArrowContent = ({
               </table>
             </div>
           </div>
-          <div className="flex w-full items-center gap-1 text-xs text-gray-500">
-            <Icon icon="iconoir:mouse-button-right" />
-            <div>Right click to show context menu</div>
-          </div>
+          {info !== undefined && <GpuDescriptionBlock info={info} />}
+          <ShortcutFooter frozen={frozen} />
         </div>
       </div>
     </div>
   );
 };
+
+const GpuDescriptionBlock = ({info}: {info: GpuFrameInfo}): React.JSX.Element => {
+  const chipPrefix = info.kind === 'stall' ? 'Stall reason' : 'SASS instruction';
+
+  return (
+    <div className="mx-2 mt-3 border-t border-gray-200 pt-3 dark:border-gray-700">
+      <div className="mb-2 text-xs font-semibold text-gray-700 dark:text-gray-200">
+        {chipPrefix} · {info.entry.reasonLabel}
+      </div>
+      <div className="font-mono text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400">
+        Description
+      </div>
+      <p className="mt-1 text-xs leading-relaxed text-gray-600 dark:text-gray-300">
+        {info.entry.description}
+      </p>
+      <button
+        type="button"
+        onClick={e => {
+          e.preventDefault();
+          e.stopPropagation();
+          openInNewTab(info.sourceUrl);
+        }}
+        title={info.sourceLabel}
+        className="mt-2 inline-flex cursor-pointer items-center gap-1 self-start text-[11px] text-indigo-600 hover:underline dark:text-indigo-400"
+      >
+        Docs
+        <Icon icon="iconoir:open-new-window" className="opacity-80" width={11} height={11} />
+      </button>
+    </div>
+  );
+};
+
+const ShortcutFooter = ({frozen}: {frozen: boolean}): React.JSX.Element => (
+  <div className="mx-2 mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-gray-200 pt-2 text-[11px] text-gray-500 dark:border-gray-700 dark:text-gray-400">
+    <span
+      className={`inline-flex items-center gap-1.5 ${
+        frozen ? 'text-gray-600 dark:text-gray-300' : ''
+      }`}
+    >
+      <kbd
+        className={[
+          'inline-flex min-w-[18px] justify-center rounded border border-b-2 px-1 font-mono text-[10px] leading-4',
+          frozen
+            ? 'border-gray-300 bg-gray-200 text-gray-600 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300'
+            : 'border-gray-300 bg-white text-gray-600 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-300',
+        ].join(' ')}
+      >
+        ⇧
+      </kbd>
+      {frozen ? (
+        <span>
+          <b className="font-semibold">Frozen</b> · release to resume hover
+        </span>
+      ) : (
+        <span>
+          Hold <b className="font-semibold">Shift</b> to freeze · interact
+        </span>
+      )}
+    </span>
+    <span className="inline-block h-3 w-px bg-gray-200 dark:bg-gray-700" />
+    <span className="inline-flex items-center gap-1.5">
+      <Icon icon="iconoir:mouse-button-right" width={12} height={14} />
+      <span>
+        <b className="font-semibold">Right-click</b> for context menu
+      </span>
+    </span>
+  </div>
+);
 
 const TooltipMetaInfo = ({table, row}: {table: Table; row: number}): React.JSX.Element => {
   const {
