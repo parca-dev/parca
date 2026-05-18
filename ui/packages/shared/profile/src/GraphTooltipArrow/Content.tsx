@@ -176,7 +176,11 @@ const GpuDescriptionBlock = ({info}: {info: GpuFrameInfo}): React.JSX.Element =>
 
 const ShortcutFooter = ({frozen}: {frozen: boolean}): React.JSX.Element => (
   <div className="mx-2 mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-gray-200 pt-2 text-[11px] text-gray-500 dark:border-gray-700 dark:text-gray-400">
-    <span className={`inline-flex items-center gap-1.5 ${frozen ? 'text-gray-600 dark:text-gray-300' : ''}`}>
+    <span
+      className={`inline-flex items-center gap-1.5 ${
+        frozen ? 'text-gray-600 dark:text-gray-300' : ''
+      }`}
+    >
       <kbd
         className={[
           'inline-flex min-w-[18px] justify-center rounded border border-b-2 px-1 font-mono text-[10px] leading-4',
