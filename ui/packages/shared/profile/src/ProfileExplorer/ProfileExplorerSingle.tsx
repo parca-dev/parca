@@ -14,7 +14,6 @@
 import {useCallback, useState} from 'react';
 
 import {QueryServiceClient} from '@parca/client';
-import type {NavigateFunction} from '@parca/utilities';
 
 import {ProfileViewWithData} from '..';
 import ProfileSelector from '../ProfileSelector';
@@ -22,13 +21,9 @@ import {useQueryState} from '../hooks/useQueryState';
 
 interface ProfileExplorerSingleProps {
   queryClient: QueryServiceClient;
-  navigateTo: NavigateFunction;
 }
 
-const ProfileExplorerSingle = ({
-  queryClient,
-  navigateTo,
-}: ProfileExplorerSingleProps): JSX.Element => {
+const ProfileExplorerSingle = ({queryClient}: ProfileExplorerSingleProps): JSX.Element => {
   const [showMetricsGraph, setShowMetricsGraph] = useState(true);
   const {profileSource, setDraftTimeRange, commitDraft} = useQueryState({suffix: '_a'});
 
@@ -47,7 +42,6 @@ const ProfileExplorerSingle = ({
           closeProfile={() => {}} // eslint-disable-line @typescript-eslint/no-empty-function
           comparing={false}
           enforcedProfileName={''}
-          navigateTo={navigateTo}
           suffix="_a"
           showMetricsGraph={showMetricsGraph}
           setDisplayHideMetricsGraphButton={setShowMetricsGraph}
