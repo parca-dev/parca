@@ -62,7 +62,7 @@ const Profiles = () => {
       }}
     >
       <div className="bg-white dark:bg-gray-900 p-3">
-        <ProfileExplorer queryClient={queryClient} navigateTo={navigateTo} />
+        <ProfileExplorer queryClient={queryClient} />
       </div>
     </ParcaContextProvider>
   );
