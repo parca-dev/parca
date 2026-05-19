@@ -140,21 +140,26 @@ func (sp *scrapePool) DroppedTargets() []*Target {
 // stop terminates all scrape loops and returns after they all terminated.
 func (sp *scrapePool) stop() {
 	sp.cancel()
-	var wg sync.WaitGroup
 
+	// Snapshot loops under the lock, then release before waiting — same
+	// reasoning as sync(): a hung scrape loop must not be able to wedge
+	// other sp.mtx readers (and, transitively, the manager's mtxScrape).
 	sp.mtx.Lock()
-	defer sp.mtx.Unlock()
-
+	toStop := make([]loop, 0, len(sp.loops))
 	for fp, l := range sp.loops {
-		wg.Add(1)
+		toStop = append(toStop, l)
+		delete(sp.loops, fp)
+		delete(sp.activeTargets, fp)
+	}
+	sp.mtx.Unlock()
 
+	var wg sync.WaitGroup
+	for _, l := range toStop {
+		wg.Add(1)
 		go func(l loop) {
 			l.stop()
 			wg.Done()
 		}(l)
-
-		delete(sp.loops, fp)
-		delete(sp.activeTargets, fp)
 	}
 	wg.Wait()
 }
@@ -166,7 +171,6 @@ func (sp *scrapePool) reload(cfg *config.ScrapeConfig) {
 	start := time.Now()
 
 	sp.mtx.Lock()
-	defer sp.mtx.Unlock()
 
 	client, err := commonconfig.NewClientFromConfig(cfg.HTTPClientConfig, cfg.JobName)
 	if err != nil {
@@ -177,27 +181,36 @@ func (sp *scrapePool) reload(cfg *config.ScrapeConfig) {
 	sp.client = client
 
 	var (
-		wg       sync.WaitGroup
 		interval = time.Duration(sp.config.ScrapeInterval)
 		timeout  = time.Duration(sp.config.ScrapeTimeout)
 	)
 
+	// Swap old loops for new under the lock, but don't wait for the old
+	// loops to stop while still holding sp.mtx — same reasoning as sync():
+	// a slow oldLoop.stop() must not wedge other sp.mtx readers (and,
+	// transitively, the manager's mtxScrape).
+	type loopPair struct{ oldLoop, newLoop loop }
+	swaps := make([]loopPair, 0, len(sp.loops))
 	for fp, oldLoop := range sp.loops {
 		var (
 			t       = sp.activeTargets[fp]
 			s       = &targetScraper{Target: t, logger: sp.logger, client: sp.client, timeout: timeout}
 			newLoop = sp.newLoop(t, s)
 		)
-		wg.Add(1)
+		swaps = append(swaps, loopPair{oldLoop: oldLoop, newLoop: newLoop})
+		sp.loops[fp] = newLoop
+	}
+	sp.mtx.Unlock()
 
+	var wg sync.WaitGroup
+	for _, p := range swaps {
+		wg.Add(1)
 		go func(oldLoop, newLoop loop) {
 			oldLoop.stop()
 			wg.Done()
 
 			go newLoop.run(interval, timeout, nil)
-		}(oldLoop, newLoop)
-
-		sp.loops[fp] = newLoop
+		}(p.oldLoop, p.newLoop)
 	}
 
 	wg.Wait()
@@ -470,7 +483,12 @@ mainLoop:
 		cancel()
 
 		if scrapeErr == nil {
-			err := processScrapeResp(buf, sl, profileType)
+			// Bound the write the same way the scrape itself is bounded.
+			// Without this, a slow store.WriteRaw stalls the per-target
+			// loop indefinitely and the target appears to stop scraping.
+			writeCtx, writeCancel := context.WithTimeout(sl.scrapeCtx, timeout)
+			err := processScrapeResp(writeCtx, buf, sl, profileType)
+			writeCancel()
 			if err != nil {
 				if errc != nil {
 					errc <- err
@@ -509,7 +527,7 @@ mainLoop:
 	close(sl.stopped)
 }
 
-func processScrapeResp(buf *bytes.Buffer, sl *scrapeLoop, profileType string) error {
+func processScrapeResp(ctx context.Context, buf *bytes.Buffer, sl *scrapeLoop, profileType string) error {
 	b := buf.Bytes()
 	defer sl.buffers.Put(b)
 	// NOTE: There were issues with misbehaving clients in the past
@@ -586,7 +604,7 @@ func processScrapeResp(buf *bytes.Buffer, sl *scrapeLoop, profileType string) er
 		byt = newBuf.Bytes()
 	}
 
-	_, err = sl.store.WriteRaw(sl.scrapeCtx, &profilepb.WriteRawRequest{
+	_, err = sl.store.WriteRaw(ctx, &profilepb.WriteRawRequest{
 		Normalized: sl.normalizedAddresses,
 		Series: []*profilepb.RawProfileSeries{
 			{
