@@ -368,8 +368,14 @@ const ProfileMetricsGraph = ({
           yAxisLabel = 'CPU Cores';
           yAxisUnit = '';
         }
-        if (sampleType === 'cuda') {
+        if (sampleType === 'cuda' || sampleType === 'gpu_time') {
           yAxisLabel = 'GPU Time';
+        }
+        if (sampleType === 'gpu_kernel_time') {
+          yAxisLabel = 'GPU Kernel Time';
+        }
+        if (sampleType === 'gpu_stall_time') {
+          yAxisLabel = 'GPU Stall Time';
         }
       }
       if (sampleUnit === 'bytes') {
