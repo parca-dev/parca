@@ -1149,11 +1149,9 @@ export interface FieldOptions {
      */
     deprecated?: boolean;
     /**
-     * DEPRECATED. DO NOT USE!
      * For Google-internal migration only. Do not use.
      *
-     * @deprecated
-     * @generated from protobuf field: optional bool weak = 10 [default = false, deprecated = true]
+     * @generated from protobuf field: optional bool weak = 10 [default = false]
      */
     weak?: boolean;
     /**
@@ -2181,12 +2179,6 @@ export enum Edition {
      * @generated from protobuf enum value: EDITION_2024 = 1001;
      */
     EDITION_2024 = 1001,
-    /**
-     * A placeholder edition for developing and testing unscheduled features.
-     *
-     * @generated from protobuf enum value: EDITION_UNSTABLE = 9999;
-     */
-    EDITION_UNSTABLE = 9999,
     /**
      * Placeholder editions for testing feature resolution.  These should not be
      * used or relied on outside of tests.
@@ -3658,7 +3650,7 @@ class FieldOptions$Type extends MessageType<FieldOptions> {
                 case /* optional bool deprecated = 3 [default = false] */ 3:
                     message.deprecated = reader.bool();
                     break;
-                case /* optional bool weak = 10 [default = false, deprecated = true] */ 10:
+                case /* optional bool weak = 10 [default = false] */ 10:
                     message.weak = reader.bool();
                     break;
                 case /* optional bool debug_redact = 16 [default = false] */ 16:
@@ -3713,7 +3705,7 @@ class FieldOptions$Type extends MessageType<FieldOptions> {
         /* optional google.protobuf.FieldOptions.JSType jstype = 6 [default = JS_NORMAL]; */
         if (message.jstype !== undefined)
             writer.tag(6, WireType.Varint).int32(message.jstype);
-        /* optional bool weak = 10 [default = false, deprecated = true]; */
+        /* optional bool weak = 10 [default = false]; */
         if (message.weak !== undefined)
             writer.tag(10, WireType.Varint).bool(message.weak);
         /* optional bool unverified_lazy = 15 [default = false]; */
