@@ -48,6 +48,11 @@ func (m *Profile) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.DocUrl != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.DocUrl))
+		i--
+		dAtA[i] = 0x78
+	}
 	if m.DefaultSampleType != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.DefaultSampleType))
 		i--
@@ -566,6 +571,11 @@ func (m *Line) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.Column != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Column))
+		i--
+		dAtA[i] = 0x18
+	}
 	if m.Line != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Line))
 		i--
@@ -707,6 +717,9 @@ func (m *Profile) SizeVT() (n int) {
 	}
 	if m.DefaultSampleType != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.DefaultSampleType))
+	}
+	if m.DocUrl != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.DocUrl))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -859,6 +872,9 @@ func (m *Line) SizeVT() (n int) {
 	}
 	if m.Line != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.Line))
+	}
+	if m.Column != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.Column))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -1342,6 +1358,25 @@ func (m *Profile) UnmarshalVT(dAtA []byte) error {
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.DefaultSampleType |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 15:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DocUrl", wireType)
+			}
+			m.DocUrl = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DocUrl |= int64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -2291,6 +2326,25 @@ func (m *Line) UnmarshalVT(dAtA []byte) error {
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.Line |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Column", wireType)
+			}
+			m.Column = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Column |= int64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}

@@ -294,6 +294,7 @@ func (w *PprofWriter) location(
 				loc.Line = append(loc.Line, &pprofpb.Line{
 					FunctionId: functionId,
 					Line:       r.LineNumber.Value(k),
+					Column:     int64(r.LineColumn.Value(k)),
 				})
 			}
 		}
