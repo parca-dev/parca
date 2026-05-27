@@ -107,21 +107,23 @@ export const wellKnownProfiles: WellKnownProfiles = {
     name: 'Off-CPU',
     help: 'Time spent off the CPU as observed by the Parca Agent.',
   },
+  // deprecated with PC sampling
   'parca_agent:cuda:nanoseconds:cuda:nanoseconds:delta': {
     name: 'On-GPU',
     help: 'Time spent on the GPU.',
   },
+  // use this for combined PC stall and kernel timing, not the default
   'parca_agent:gpu_time:nanoseconds:gpu_time:nanoseconds:delta': {
     name: 'On-GPU',
     help: 'Time spent on the GPU. Combines kernel execution time and PC stall samples; the gpu_view label distinguishes the two views.',
   },
   'parca_agent:gpu_kernel_time:nanoseconds:gpu_kernel_time:nanoseconds:delta': {
-    name: 'On-GPU',
+    name: 'GPU Kernels',
     help: 'GPU kernel execution time measured via CUDA runtime callbacks.',
   },
-  'parca_agent:gpu_stall_time:nanoseconds:gpu_stall_time:nanoseconds:delta': {
-    name: 'GPU Stalls',
-    help: 'GPU stall time accumulated from PC sampling — shows where threads were waiting on the GPU.',
+  'parca_agent:gpu_pcsample:count:gpu_pcsample:nanoseconds:delta': {
+    name: 'GPU Instructions',
+    help: 'PC samples from the GPU — all PC activity, not just stalls; shows the instruction/stall reason.',
   },
 };
 
