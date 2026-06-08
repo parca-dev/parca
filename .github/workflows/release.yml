@@ -12,8 +12,6 @@ concurrency:
 env:
   # renovate: datasource=go depName=github.com/goreleaser/goreleaser
   GORELEASER_VERSION: v1.26.2
-  # renovate: datasource=npm depName=pnpm versioning=npm
-  PNPM_VERSION: '10.33.0'
 
 permissions:
   contents: write
@@ -39,9 +37,7 @@ jobs:
         with:
           go-version-file: .go-version
 
-      - uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0
-        with:
-          version: ${{ env.PNPM_VERSION }}
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
 
       - name: Set up Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
