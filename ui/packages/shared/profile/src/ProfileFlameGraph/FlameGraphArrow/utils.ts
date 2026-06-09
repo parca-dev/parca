@@ -173,7 +173,7 @@ export const getCurrentPathFrameData = (table: Table, row: number): CurrentPathF
   };
 };
 
-function getLabelSet(table: Table, row: number): string {
+export function getLabelPairs(table: Table, row: number): Array<[string, string]> {
   const labelPrefix = 'labels.';
   const labelColumnNames = table.schema.fields.filter(field => field.name.startsWith(labelPrefix));
 
@@ -182,7 +182,11 @@ function getLabelSet(table: Table, row: number): string {
       labelColumnNames[i].name.slice(labelPrefix.length),
       arrowToString(table.getChild(field.name)?.get(row)) ?? '',
     ])
-    .filter(value => value[1] !== '')
+    .filter(value => value[1] !== '') as Array<[string, string]>;
+}
+
+function getLabelSet(table: Table, row: number): string {
+  return getLabelPairs(table, row)
     .map(([k, v]) => `${k}="${v}"`)
     .join(', ');
 }

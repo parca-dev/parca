@@ -13,7 +13,14 @@
 
 import {describe, expect, test} from 'vitest';
 
-import {SASS_SOURCE_URL, STALL_SOURCE_URL, gpuFrameInfo} from './gpuFrameDescriptions';
+import {
+  CUDA_SASS_INSTRUCTION_LABEL,
+  CUDA_STALL_REASON_LABEL,
+  SASS_SOURCE_URL,
+  STALL_SOURCE_URL,
+  gpuFrameInfo,
+  gpuFrameInfosFromLabels,
+} from './gpuFrameDescriptions';
 
 describe('gpuFrameInfo', () => {
   test.each([
@@ -50,4 +57,38 @@ describe('gpuFrameInfo', () => {
       expect(gpuFrameInfo(name)).toBeUndefined();
     }
   );
+});
+
+describe('gpuFrameInfosFromLabels', () => {
+  test('returns a single SASS info for the cuda_sass_instruction label', () => {
+    const infos = gpuFrameInfosFromLabels([[CUDA_SASS_INSTRUCTION_LABEL, 'STS']]);
+    expect(infos).toHaveLength(1);
+    expect(infos[0].kind).toBe('sass');
+    expect(infos[0].entry.description).toBe('Store to Shared Memory');
+  });
+
+  test('returns a single stall info for the cuda_stall_reason label', () => {
+    const infos = gpuFrameInfosFromLabels([
+      [CUDA_STALL_REASON_LABEL, 'smsp__pcsamp_warps_issue_stalled_long_scoreboard'],
+    ]);
+    expect(infos).toHaveLength(1);
+    expect(infos[0].kind).toBe('stall');
+    expect(infos[0].entry.reasonLabel).toBe('Long Scoreboard');
+  });
+
+  test('returns SASS first then stall when both labels are present', () => {
+    const infos = gpuFrameInfosFromLabels([
+      [CUDA_STALL_REASON_LABEL, 'smsp__pcsamp_warps_issue_stalled_long_scoreboard'],
+      [CUDA_SASS_INSTRUCTION_LABEL, 'STS'],
+    ]);
+    expect(infos.map(i => i.kind)).toEqual(['sass', 'stall']);
+  });
+
+  test('ignores non-cuda labels and unknown values', () => {
+    expect(gpuFrameInfosFromLabels([['service', 'api']])).toEqual([]);
+    expect(gpuFrameInfosFromLabels([[CUDA_SASS_INSTRUCTION_LABEL, 'NOT_A_REAL_OPCODE']])).toEqual(
+      []
+    );
+    expect(gpuFrameInfosFromLabels([])).toEqual([]);
+  });
 });

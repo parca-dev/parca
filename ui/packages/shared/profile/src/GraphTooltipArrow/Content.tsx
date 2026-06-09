@@ -20,9 +20,10 @@ import {useParcaContext} from '@parca/components';
 import {ProfileType} from '@parca/parser';
 import {formatDateTimeDownToMS, getLastItem} from '@parca/utilities';
 
+import {getLabelPairs} from '../ProfileFlameGraph/FlameGraphArrow/utils';
 import {hexifyAddress, truncateString, truncateStringReverse} from '../utils';
 import {ExpandOnHover} from './ExpandOnHoverValue';
-import {gpuFrameInfo, type GpuFrameInfo} from './gpuFrameDescriptions';
+import {gpuFrameInfosFromLabels, type GpuFrameInfo} from './gpuFrameDescriptions';
 import {openInNewTab} from './openInNewTab';
 import {useGraphTooltip} from './useGraphTooltip';
 import {useGraphTooltipMetaInfo} from './useGraphTooltipMetaInfo';
@@ -78,7 +79,7 @@ const GraphTooltipArrowContent = ({
     row: rowNumber,
   } = graphTooltipData;
 
-  const info = gpuFrameInfo(name);
+  const gpuInfos = gpuFrameInfosFromLabels(getLabelPairs(table, rowNumber));
 
   // Outer card gains a subtle ring when frozen, matching the design's
   // `.is-frozen` treatment.
@@ -135,7 +136,15 @@ const GraphTooltipArrowContent = ({
               </table>
             </div>
           </div>
-          {info !== undefined && <GpuDescriptionBlock info={info} />}
+          {gpuInfos.map((info, i) => (
+            <GpuDescriptionBlock
+              key={i}
+              info={info}
+              // When both a SASS and a stall block are shown, keep the tooltip
+              // compact by trimming the (typically longer) stall description.
+              maxSentences={gpuInfos.length > 1 && info.kind === 'stall' ? 2 : undefined}
+            />
+          ))}
           <ShortcutFooter frozen={frozen} />
         </div>
       </div>
@@ -143,8 +152,26 @@ const GraphTooltipArrowContent = ({
   );
 };
 
-const GpuDescriptionBlock = ({info}: {info: GpuFrameInfo}): React.JSX.Element => {
+// Trims a description to at most `max` sentences, appending an ellipsis when
+// anything was dropped.
+const truncateToSentences = (text: string, max: number): string => {
+  const sentences = text.match(/[^.!?]+[.!?]+(\s|$)|[^.!?]+$/g);
+  if (sentences === null || sentences.length <= max) return text;
+  return `${sentences.slice(0, max).join('').trimEnd()} …`;
+};
+
+const GpuDescriptionBlock = ({
+  info,
+  maxSentences,
+}: {
+  info: GpuFrameInfo;
+  maxSentences?: number;
+}): React.JSX.Element => {
   const chipPrefix = info.kind === 'stall' ? 'Stall reason' : 'SASS instruction';
+  const description =
+    maxSentences === undefined
+      ? info.entry.description
+      : truncateToSentences(info.entry.description, maxSentences);
 
   return (
     <div className="mx-2 mt-3 border-t border-gray-200 pt-3 dark:border-gray-700">
@@ -155,7 +182,7 @@ const GpuDescriptionBlock = ({info}: {info: GpuFrameInfo}): React.JSX.Element =>
         Description
       </div>
       <p className="mt-1 text-xs leading-relaxed text-gray-600 dark:text-gray-300">
-        {info.entry.description}
+        {description}
       </p>
       <button
         type="button"
