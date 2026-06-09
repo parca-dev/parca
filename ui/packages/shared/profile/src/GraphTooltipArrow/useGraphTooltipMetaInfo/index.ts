@@ -28,7 +28,7 @@ import {
   FIELD_MAPPING_FILE,
   FIELD_TIMESTAMP,
 } from '../../ProfileFlameGraph/FlameGraphArrow';
-import {arrowToString} from '../../ProfileFlameGraph/FlameGraphArrow/utils';
+import {arrowToString, getLabelPairs} from '../../ProfileFlameGraph/FlameGraphArrow/utils';
 import {ProfileSource} from '../../ProfileSource';
 import {useProfileViewContext} from '../../ProfileView/context/ProfileViewContext';
 import {stringParam} from '../../hooks/urlParsers';
@@ -69,8 +69,6 @@ export const useGraphTooltipMetaInfo = ({table, row}: Props): GraphTooltipMetaIn
   const functionStartLine: bigint = table.getChild(FIELD_FUNCTION_START_LINE)?.get(row) ?? 0n;
   const lineNumber =
     locationLine !== 0n ? locationLine : functionStartLine !== 0n ? functionStartLine : undefined;
-  const labelPrefix = 'labels.';
-  const labelColumnNames = table.schema.fields.filter(field => field.name.startsWith(labelPrefix));
   const timestamp = table.getChild(FIELD_TIMESTAMP)?.get(row);
 
   const {queryServiceClient, enableSourcesView} = useParcaContext();
@@ -103,12 +101,7 @@ export const useGraphTooltipMetaInfo = ({table, row}: Props): GraphTooltipMetaIn
   };
   const file = getTextForFile();
 
-  const labelPairs: Array<[string, string]> = labelColumnNames
-    .map((field, i) => [
-      labelColumnNames[i].name.slice(labelPrefix.length),
-      arrowToString(table.getChild(field.name)?.get(row)) ?? '',
-    ])
-    .filter(value => value[1] !== '') as Array<[string, string]>;
+  const labelPairs: Array<[string, string]> = getLabelPairs(table, row);
 
   const {dashboardItems, setDashboardItems} = useDashboardItems();
 

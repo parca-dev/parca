@@ -530,27 +530,56 @@ function stallSourceUrl(name: string): string {
   return `${STALL_SOURCE_URL}:~:text=${encodeURIComponent(name)}`;
 }
 
+// Node label keys under which GPU PC-sampling values now arrive. The SASS
+// mnemonic and warp stall reason used to be the leaf frame's function name;
+// they are now carried as node labels.
+export const CUDA_SASS_INSTRUCTION_LABEL = 'cuda_sass_instruction';
+export const CUDA_STALL_REASON_LABEL = 'cuda_stall_reason';
+
+function sassInfo(name: string): GpuFrameInfo | undefined {
+  if (name === '') return undefined;
+  const sass = SASS_INSTRUCTION_DESCRIPTIONS[name];
+  if (sass === undefined) return undefined;
+  return {
+    kind: 'sass',
+    entry: sass,
+    sourceLabel: NVIDIA_DOCS_LABEL,
+    sourceUrl: sass.sourceUrl ?? SASS_SOURCE_URL,
+  };
+}
+
+function stallInfo(name: string): GpuFrameInfo | undefined {
+  if (name === '') return undefined;
+  const stall = STALL_REASON_DESCRIPTIONS[name];
+  if (stall === undefined) return undefined;
+  return {
+    kind: 'stall',
+    entry: stall,
+    sourceLabel: NVIDIA_DOCS_LABEL,
+    sourceUrl: stall.sourceUrl ?? stallSourceUrl(name),
+  };
+}
+
 // Resolves a frame name to its GPU info, or undefined if not a known SASS
 // mnemonic or PC-sampling reason. Both tables are exact-match lookups.
 export function gpuFrameInfo(name: string): GpuFrameInfo | undefined {
-  if (name === '') return undefined;
-  const sass = SASS_INSTRUCTION_DESCRIPTIONS[name];
-  if (sass !== undefined) {
-    return {
-      kind: 'sass',
-      entry: sass,
-      sourceLabel: NVIDIA_DOCS_LABEL,
-      sourceUrl: sass.sourceUrl ?? SASS_SOURCE_URL,
-    };
+  return sassInfo(name) ?? stallInfo(name);
+}
+
+// Resolves GPU info from a node's labels. A node may carry both a SASS
+// instruction and a stall reason label, so this returns an array (SASS first,
+// then stall) of the entries that matched a known description.
+export function gpuFrameInfosFromLabels(labelPairs: Array<[string, string]>): GpuFrameInfo[] {
+  const infos: GpuFrameInfo[] = [];
+  const sassValue = labelPairs.find(([key]) => key === CUDA_SASS_INSTRUCTION_LABEL)?.[1];
+  const stallValue = labelPairs.find(([key]) => key === CUDA_STALL_REASON_LABEL)?.[1];
+  if (sassValue !== undefined) {
+    const info = sassInfo(sassValue);
+    if (info !== undefined) infos.push(info);
   }
-  const stall = STALL_REASON_DESCRIPTIONS[name];
-  if (stall !== undefined) {
-    return {
-      kind: 'stall',
-      entry: stall,
-      sourceLabel: NVIDIA_DOCS_LABEL,
-      sourceUrl: stall.sourceUrl ?? stallSourceUrl(name),
-    };
+  if (stallValue !== undefined) {
+    const info = stallInfo(stallValue);
+    if (info !== undefined) infos.push(info);
   }
-  return undefined;
+  return infos;
 }
