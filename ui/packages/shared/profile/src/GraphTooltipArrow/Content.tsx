@@ -181,9 +181,7 @@ const GpuDescriptionBlock = ({
       <div className="font-mono text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400">
         Description
       </div>
-      <p className="mt-1 text-xs leading-relaxed text-gray-600 dark:text-gray-300">
-        {description}
-      </p>
+      <p className="mt-1 text-xs leading-relaxed text-gray-600 dark:text-gray-300">{description}</p>
       <button
         type="button"
         onClick={e => {

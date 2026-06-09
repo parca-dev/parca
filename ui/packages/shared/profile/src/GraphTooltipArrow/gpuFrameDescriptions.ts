@@ -569,9 +569,7 @@ export function gpuFrameInfo(name: string): GpuFrameInfo | undefined {
 // Resolves GPU info from a node's labels. A node may carry both a SASS
 // instruction and a stall reason label, so this returns an array (SASS first,
 // then stall) of the entries that matched a known description.
-export function gpuFrameInfosFromLabels(
-  labelPairs: Array<[string, string]>
-): GpuFrameInfo[] {
+export function gpuFrameInfosFromLabels(labelPairs: Array<[string, string]>): GpuFrameInfo[] {
   const infos: GpuFrameInfo[] = [];
   const sassValue = labelPairs.find(([key]) => key === CUDA_SASS_INSTRUCTION_LABEL)?.[1];
   const stallValue = labelPairs.find(([key]) => key === CUDA_STALL_REASON_LABEL)?.[1];
