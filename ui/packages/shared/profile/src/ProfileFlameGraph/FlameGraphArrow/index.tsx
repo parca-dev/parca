@@ -21,7 +21,7 @@ import React, {
   useState,
 } from 'react';
 
-import {Table, tableFromIPC} from '@uwdata/flechette';
+import {Table, tableFromIPC, tableToIPC} from '@uwdata/flechette';
 import {useContextMenu} from 'react-contexify';
 
 import {FlamegraphArrow} from '@parca/client';
@@ -35,6 +35,7 @@ import {ProfileSource} from '../../ProfileSource';
 import {useProfileFilters} from '../../ProfileView/components/ProfileFilters/useProfileFilters';
 import {useProfileViewContext} from '../../ProfileView/context/ProfileViewContext';
 import {TimelineGuide} from '../../TimelineGuide';
+import {afterPaint, benchEnabled, benchMeta, mark, measure} from '../../bench';
 import {alignedUint8Array} from '../../utils';
 import ContextMenuWrapper, {ContextMenuWrapperRef} from './ContextMenuWrapper';
 import {FlameNode, RowHeight, colorByColors} from './FlameGraphNodes';
@@ -161,7 +162,17 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
   const {perf, isDarkMode} = useParcaContext();
 
   const table: Table = useMemo(() => {
+    mark('bench:v1:decode-start');
     const result = tableFromIPC(alignedUint8Array(arrow.record), {useBigInt: true});
+    mark('bench:v1:decode-end');
+    measure('bench:v1:decode', 'bench:v1:decode-start', 'bench:v1:decode-end');
+    // Mark once per table (not per render) so bench:v1:render anchors at the true build start.
+    mark('bench:v1:extract-start');
+    // Node count = decoded Arrow rows (one row per frame); driver compares it across variants.
+    benchMeta('flamegraph-nodes', result.numRows);
+    exposeLastArrow(arrow.record);
+    // Re-serializable fixture for the offline replay / node-count parity gate.
+    exposeFixture(result, 'flamegraph-v1');
 
     if (perf?.setMeasurement != null) {
       perf.setMeasurement('flamegraph.node_count', result.numRows);
@@ -173,6 +184,9 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
   const containerRef = useRef<HTMLDivElement>(null);
   const renderStartTime = useRef<number>(0);
   const hasInitialRenderCompleted = useRef(false);
+  const firstPaintPendingRef = useRef(true);
+  const pendingZoomRef = useRef(false);
+  const pendingResetRef = useRef(false);
 
   const [svgElement, setSvgElement] = useState<SVGSVGElement | null>(null);
 
@@ -234,6 +248,8 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
         // In flame charts, we don't want to expand the node, so we return early.
         return;
       }
+      pendingZoomRef.current = true;
+      mark('bench:v1:zoom-start');
       // Walk down the stack starting at row until we reach the root (row 0).
       const path: CurrentPathFrame[] = [];
       let currentRow = row;
@@ -327,6 +343,93 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
   // Show skeleton only during initial load, not during scroll updates
   const showSkeleton =
     !hasInitialRenderCompleted.current && batchedNodes.length !== visibleNodes.length;
+
+  useEffect(() => {
+    firstPaintPendingRef.current = true;
+  }, [table]);
+
+  useEffect(() => {
+    if (!isBatchingComplete) return;
+
+    if (firstPaintPendingRef.current) {
+      firstPaintPendingRef.current = false;
+      // Visible-node build is done (batched across frames). Same-version diagnostic only:
+      // V1 builds SVG nodes lazily, so this is not comparable to V2's eager extract.
+      mark('bench:v1:extract-end');
+      measure('bench:v1:extract', 'bench:v1:extract-start', 'bench:v1:extract-end');
+      afterPaint(() => {
+        mark('bench:v1:first-render-paint');
+        measure('bench:v1:first-render', 'bench:v1:decode-end', 'bench:v1:first-render-paint');
+        measure('bench:v1:e2e', 'bench:v1:query-start', 'bench:v1:first-render-paint');
+        // Apples-to-apples render cost: anchored at the in-component extract-start so V1 and V2
+        // measure the same span (data-ready-in-component → painted), not decode-end.
+        measure('bench:v1:render', 'bench:v1:extract-start', 'bench:v1:first-render-paint');
+      });
+    }
+
+    if (pendingZoomRef.current) {
+      pendingZoomRef.current = false;
+      afterPaint(() => {
+        mark('bench:v1:zoom-end');
+        measure('bench:v1:zoom', 'bench:v1:zoom-start', 'bench:v1:zoom-end');
+      });
+    }
+
+    if (pendingResetRef.current) {
+      pendingResetRef.current = false;
+      afterPaint(() => {
+        mark('bench:v1:reset-end');
+        measure('bench:v1:reset', 'bench:v1:reset-start', 'bench:v1:reset-end');
+      });
+    }
+  }, [isBatchingComplete, table, curPath]);
+
+  useEffect(() => {
+    if (!benchEnabled()) return;
+
+    const win = window as BenchWindow;
+    const resetFlamegraph = (): boolean => {
+      if (curPath.length === 0) return false;
+      pendingResetRef.current = true;
+      mark('bench:v1:reset-start');
+      setCurPath([]);
+      return true;
+    };
+    const scrollFlamegraph = (direction: 'down' | 'up'): boolean => {
+      const scrollElement = benchScrollElement(containerRef.current);
+      if (scrollElement == null) return false;
+
+      const delta = Math.max(RowHeight * 8, Math.min(scrollElement.clientHeight * 0.7, 700));
+      const nextScrollTop =
+        direction === 'down'
+          ? Math.min(
+              scrollElement.scrollHeight - scrollElement.clientHeight,
+              scrollElement.scrollTop + delta
+            )
+          : Math.max(0, scrollElement.scrollTop - delta);
+      if (nextScrollTop === scrollElement.scrollTop) return false;
+
+      mark(`bench:v1:scroll-${direction}-start`);
+      scrollElement.scrollTo({top: nextScrollTop, behavior: 'auto'});
+      afterPaint(() => {
+        mark(`bench:v1:scroll-${direction}-end`);
+        measure(
+          `bench:v1:scroll-${direction}`,
+          `bench:v1:scroll-${direction}-start`,
+          `bench:v1:scroll-${direction}-end`
+        );
+      });
+      return true;
+    };
+
+    win.__benchResetFlamegraph = resetFlamegraph;
+    win.__benchScrollFlamegraph = scrollFlamegraph;
+
+    return () => {
+      if (win.__benchResetFlamegraph === resetFlamegraph) delete win.__benchResetFlamegraph;
+      if (win.__benchScrollFlamegraph === scrollFlamegraph) delete win.__benchScrollFlamegraph;
+    };
+  }, [curPath.length, setCurPath]);
 
   useEffect(() => {
     if (perf?.markInteraction != null) {
@@ -471,3 +574,82 @@ export const FlameGraphArrow = memo(function FlameGraphArrow({
 });
 
 export default FlameGraphArrow;
+
+type BenchWindow = Window &
+  typeof globalThis & {
+    __lastArrowV1?: {bytes: Uint8Array};
+    __dumpArrowV1?: () => void;
+    __dumpFixture?: (name?: string) => void;
+    __benchResetFlamegraph?: () => boolean;
+    __benchScrollFlamegraph?: (direction: 'down' | 'up') => boolean;
+  };
+
+const benchScrollElement = (start: HTMLElement | null): HTMLElement | null => {
+  if (
+    document.scrollingElement instanceof HTMLElement &&
+    document.scrollingElement.scrollHeight > document.scrollingElement.clientHeight
+  ) {
+    return document.scrollingElement;
+  }
+
+  let current: HTMLElement | null = start;
+  while (current != null) {
+    const overflowY = getComputedStyle(current).overflowY;
+    if (
+      current.scrollHeight > current.clientHeight &&
+      (overflowY === 'auto' || overflowY === 'scroll')
+    ) {
+      return current;
+    }
+    current = current.parentElement;
+  }
+  return null;
+};
+
+const exposeLastArrow = (bytes: Uint8Array): void => {
+  if (!benchEnabled()) return;
+
+  const win = window as BenchWindow;
+  win.__lastArrowV1 = {bytes};
+  win.__dumpArrowV1 = () => {
+    const lastArrow = win.__lastArrowV1;
+    if (lastArrow == null) return;
+
+    const bytes = new Uint8Array(lastArrow.bytes.byteLength);
+    bytes.set(lastArrow.bytes);
+    const url = URL.createObjectURL(
+      new Blob([bytes.buffer], {type: 'application/vnd.apache.arrow.stream'})
+    );
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = 'v1-flamegraph.arrow';
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+};
+
+// Re-serialize the decoded table to a clean, single-buffer, uncompressed Arrow IPC *file* that
+// flechette can reload in node or the browser — seeds the offline replay and the parity check.
+const exposeFixture = (table: Table, defaultName: string): void => {
+  if (!benchEnabled()) return;
+
+  const win = window as BenchWindow;
+  win.__dumpFixture = (name = defaultName) => {
+    const bytes = tableToIPC(table, {format: 'file'});
+    if (bytes == null) return;
+    downloadBytes(bytes, `${name}.arrow`);
+  };
+};
+
+const downloadBytes = (bytes: Uint8Array, filename: string): void => {
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  const url = URL.createObjectURL(
+    new Blob([copy.buffer], {type: 'application/vnd.apache.arrow.file'})
+  );
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+};

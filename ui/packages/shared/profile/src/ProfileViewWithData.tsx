@@ -107,6 +107,7 @@ export const ProfileViewWithData = ({
     groupBy,
     invertCallStack: invertCallStack ?? false,
     protoFilters,
+    benchName: 'v1',
   });
 
   const samplesEnabled = !!(

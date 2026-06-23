@@ -24,6 +24,7 @@ import {formatDate, formatForTimespan, getPrecision, valueFormatter} from '@parc
 
 import MetricsCircle from '../MetricsCircle';
 import MetricsSeries from '../MetricsSeries';
+import {afterPaint, mark, measure} from '../bench';
 import MetricsContextMenu, {
   ContextMenuItem,
   ContextMenuItemOrSubmenu,
@@ -150,6 +151,7 @@ export const RawMetricsGraph = ({
   const [pos, setPos] = useState([0, 0]);
   const [isContextMenuOpen, setIsContextMenuOpen] = useState<boolean>(false);
   const metricPointRef = useRef(null);
+  const pendingHoverRef = useRef(false);
   const idForContextMenu = useId();
 
   if (width === undefined || width == null) {
@@ -349,8 +351,24 @@ export const RawMetricsGraph = ({
     const yCoordinate = rel[1];
     const yCoordinateWithoutMargin = yCoordinate - margin;
 
+    pendingHoverRef.current = true;
+    mark('bench:v1:metrics:hover-start');
     throttledSetPos([xCoordinateWithoutMargin, yCoordinateWithoutMargin]);
   };
+
+  React.useEffect(() => {
+    if (!pendingHoverRef.current || !hovering || highlighted == null) return;
+
+    pendingHoverRef.current = false;
+    afterPaint(() => {
+      mark('bench:v1:metrics:hover-end');
+      measure(
+        'bench:v1:metrics:hover',
+        'bench:v1:metrics:hover-start',
+        'bench:v1:metrics:hover-end'
+      );
+    });
+  }, [highlighted, hovering]);
 
   const MENU_ID = `metrics-context-menu-${idForContextMenu}`;
 

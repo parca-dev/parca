@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {useEffect, useMemo, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 
 import {Icon} from '@iconify/react';
 import {AnimatePresence, motion} from 'framer-motion';
@@ -36,6 +36,7 @@ import {capitalizeOnlyFirstLetter, formatDate, timePattern, valueFormatter} from
 import {MergedProfileSelection, ProfileSelection} from '..';
 import MetricsGraph, {ContextMenuItemOrSubmenu, Series, SeriesPoint} from '../MetricsGraph';
 import {useMetricsGraphDimensions} from '../MetricsGraph/useMetricsGraphDimensions';
+import {afterPaint, benchEnabled, mark, measure} from '../bench';
 import {intParam} from '../hooks/urlParsers';
 import {getStepCountFromScreenWidth, useQueryRange} from './hooks/useQueryRange';
 
@@ -187,6 +188,12 @@ interface ProfileMetricsGraphProps {
   comparing?: boolean;
 }
 
+type BenchWindow = Window &
+  typeof globalThis & {
+    __benchRenderMetricsGraph?: () => boolean;
+    __dumpMetricsFixture?: (name?: string) => void;
+  };
+
 const ProfileMetricsGraph = ({
   queryClient,
   queryExpression,
@@ -220,7 +227,8 @@ const ProfileMetricsGraph = ({
     to,
     sumBy,
     stepCount,
-    queryExpression === ''
+    queryExpression === '',
+    'v1:metrics'
   );
   const {onError, perf, authenticationErrorMessage, isDarkMode, timezone, profileExplorer} =
     useParcaContext();
@@ -228,9 +236,11 @@ const ProfileMetricsGraph = ({
     comparing,
     profileExplorer?.metricsGraph.height
   );
+  const firstPaintPendingRef = useRef(true);
   const [showAllSeriesForResponse, setShowAllSeriesForResponse] = useState<typeof response | null>(
     null
   );
+  const [benchRenderTick, setBenchRenderTick] = useState(0);
 
   useEffect(() => {
     if (error !== null) {
@@ -241,6 +251,7 @@ const ProfileMetricsGraph = ({
   // Reset showAllSeriesForResponse when response changes to free memory
   useEffect(() => {
     setShowAllSeriesForResponse(null);
+    firstPaintPendingRef.current = true;
   }, [response]);
 
   useEffect(() => {
@@ -326,8 +337,25 @@ const ProfileMetricsGraph = ({
   }, [profile, originalSeries]);
 
   const transformedSeries = useMemo(() => {
-    return originalSeries != null ? transformMetricsData(originalSeries) : [];
-  }, [originalSeries]);
+    mark('bench:v1:metrics:extract-start');
+    if (benchRenderTick > 0) mark('bench:v1:metrics:render-only-extract-start');
+    const result = originalSeries != null ? transformMetricsData(originalSeries) : [];
+    mark('bench:v1:metrics:extract-end');
+    measure(
+      'bench:v1:metrics:extract',
+      'bench:v1:metrics:extract-start',
+      'bench:v1:metrics:extract-end'
+    );
+    if (benchRenderTick > 0) {
+      mark('bench:v1:metrics:render-only-extract-end');
+      measure(
+        'bench:v1:metrics:render-only-extract',
+        'bench:v1:metrics:render-only-extract-start',
+        'bench:v1:metrics:render-only-extract-end'
+      );
+    }
+    return result;
+  }, [benchRenderTick, originalSeries]);
 
   const contextMenuItems = useMemo(() => {
     return originalSeries != null
@@ -387,6 +415,98 @@ const ProfileMetricsGraph = ({
   }, [dataAvailable, originalSeries, queryExpression, profile]);
 
   const loading = metricsGraphLoading;
+
+  useEffect(() => {
+    if (!benchEnabled() || !dataAvailable) return;
+
+    const win = window as BenchWindow;
+    const renderMetricsGraph = (): boolean => {
+      mark('bench:v1:metrics:render-only-start');
+      setBenchRenderTick(tick => tick + 1);
+      return true;
+    };
+    win.__benchRenderMetricsGraph = renderMetricsGraph;
+
+    return () => {
+      if (win.__benchRenderMetricsGraph === renderMetricsGraph) {
+        delete win.__benchRenderMetricsGraph;
+      }
+    };
+  }, [dataAvailable]);
+
+  // V1 metrics is protobuf, not Arrow — dump the renderer's Series[] as JSON so it can be replayed
+  // and compared against the V2 metrics .arrow fixture. Registered on mount (not gated on data) so
+  // it never throws "not defined" mid-capture; it warns if the graph hasn't loaded yet.
+  useEffect(() => {
+    if (!benchEnabled()) return;
+
+    const win = window as BenchWindow;
+    const dumpMetricsFixture = (name = 'metrics-v1'): void => {
+      if (transformedSeries.length === 0) {
+        // eslint-disable-next-line no-console
+        console.warn('[bench] metrics graph has no data yet — wait for it to render, then retry.');
+        return;
+      }
+      const json = JSON.stringify(transformedSeries, (_key, value) =>
+        typeof value === 'bigint' ? value.toString() : value
+      );
+      const url = URL.createObjectURL(new Blob([json], {type: 'application/json'}));
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `${name}.json`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    };
+    win.__dumpMetricsFixture = dumpMetricsFixture;
+
+    return () => {
+      if (win.__dumpMetricsFixture === dumpMetricsFixture) {
+        delete win.__dumpMetricsFixture;
+      }
+    };
+  }, [transformedSeries]);
+
+  useEffect(() => {
+    if (benchRenderTick <= 0 || !dataAvailable) return;
+
+    afterPaint(() => {
+      mark('bench:v1:metrics:render-only-paint');
+      measure(
+        'bench:v1:metrics:render-only',
+        'bench:v1:metrics:render-only-start',
+        'bench:v1:metrics:render-only-paint'
+      );
+    });
+  }, [benchRenderTick, dataAvailable, transformedSeries]);
+
+  useEffect(() => {
+    if (loading || !dataAvailable || !firstPaintPendingRef.current) return;
+
+    firstPaintPendingRef.current = false;
+    afterPaint(() => {
+      mark('bench:v1:metrics:first-render-paint');
+      measure(
+        'bench:v1:metrics:first-render',
+        'bench:v1:metrics:query-end',
+        'bench:v1:metrics:first-render-paint'
+      );
+      measure(
+        'bench:v1:metrics:e2e',
+        'bench:v1:metrics:query-start',
+        'bench:v1:metrics:first-render-paint'
+      );
+      measure(
+        'bench:v1:metrics:client-to-paint',
+        'bench:v1:metrics:query-end',
+        'bench:v1:metrics:first-render-paint'
+      );
+      measure(
+        'bench:v1:metrics:render',
+        'bench:v1:metrics:extract-start',
+        'bench:v1:metrics:first-render-paint'
+      );
+    });
+  }, [dataAvailable, loading, transformedSeries]);
 
   // Handle errors after all hooks have been called
   if (!metricsGraphLoading && error !== null) {

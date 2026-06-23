@@ -19,6 +19,7 @@ import {QueryRequest_ReportType, QueryResponse, QueryServiceClient} from '@parca
 import {useGrpcMetadata} from '@parca/components';
 
 import {ProfileSource} from './ProfileSource';
+import {mark} from './bench';
 import useGrpcQuery from './useGrpcQuery';
 
 export interface IQueryResult {
@@ -39,6 +40,7 @@ interface UseQueryOptions {
   sandwichByFunction?: string;
   protoFilters?: any[]; // Using any[] to match the Filter type from hook
   staleTime?: number;
+  benchName?: 'v1';
 }
 
 export const useQuery = (
@@ -93,6 +95,7 @@ export const useQuery = (
       }
 
       try {
+        if (options?.benchName === 'v1') mark('bench:v1:query-start');
         const {response} = await client.query(req, {meta: metadata, abort: signal});
         return response;
       } catch (e) {

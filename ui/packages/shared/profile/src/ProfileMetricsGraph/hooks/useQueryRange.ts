@@ -17,6 +17,7 @@ import {Duration, QueryRangeResponse, QueryServiceClient, Timestamp} from '@parc
 import {useGrpcMetadata} from '@parca/components';
 import {getStepDuration, getStepDurationInMilliseconds} from '@parca/utilities';
 
+import {benchEnabled, mark, measure} from '../../bench';
 import useGrpcQuery from '../../useGrpcQuery';
 
 interface QueryRangeResult {
@@ -48,15 +49,18 @@ export const useQueryRange = (
   end: number,
   sumBy: string[],
   stepCount: number,
-  skip = false
+  skip = false,
+  benchName?: 'v1:metrics'
 ): IQueryRangeState => {
   const metadata = useGrpcMetadata();
 
   const {data, isLoading, error} = useGrpcQuery<QueryRangeResult | undefined>({
     key: ['query-range', queryExpression, start, end, (sumBy ?? []).join(','), stepCount, metadata],
     queryFn: async signal => {
+      const benchPrefix = benchEnabled() && benchName === 'v1:metrics' ? 'bench:v1:metrics' : null;
       const stepDuration = getStepDuration(start, end, stepCount);
       const stepDurationMs = getStepDurationInMilliseconds(stepDuration);
+      if (benchPrefix != null) mark(`${benchPrefix}:query-start`);
       const {response} = await client.queryRange(
         {
           query: queryExpression,
@@ -68,6 +72,10 @@ export const useQueryRange = (
         },
         {meta: metadata, abort: signal}
       );
+      if (benchPrefix != null) {
+        mark(`${benchPrefix}:query-end`);
+        measure(`${benchPrefix}:query`, `${benchPrefix}:query-start`, `${benchPrefix}:query-end`);
+      }
       return {response, stepDurationMs};
     },
     options: {
