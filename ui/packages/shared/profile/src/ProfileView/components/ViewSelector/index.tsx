@@ -120,10 +120,10 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
         !item.canBeSelected && item.key === 'source'
           ? 'Add Panel'
           : item.canBeSelected
-            ? 'Add Panel'
-            : dashboardItems.includes(item.key)
-              ? 'Close Panel'
-              : 'Add Panel',
+          ? 'Add Panel'
+          : dashboardItems.includes(item.key)
+          ? 'Close Panel'
+          : 'Add Panel',
       onClick: () => {
         if (item.canBeSelected) {
           setDashboardItems([...dashboardItems, item.key]);
