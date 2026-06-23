@@ -58,7 +58,7 @@ export const useVisualizationState = (): {
 
   const [curPathArrow, setRawCurPathArrow] = useQueryState(
     'cur_path',
-    jsonParser<CurrentPathFrame[]>().withDefault([])
+    jsonParser<CurrentPathFrame[]>().withDefault([]).withOptions({history: 'push'})
   );
   const setCurPathArrow = useCallback(
     (path: CurrentPathFrame[]) => {
@@ -70,16 +70,18 @@ export const useVisualizationState = (): {
   const {colorBy, setColorBy} = useColorBy();
   const [alignFunctionNameRaw, setStoreAlignFunctionName] = useQueryState(
     'align_function_name',
-    stringParam
+    stringParam.withOptions({history: 'push'})
   );
   const alignFunctionName = alignFunctionNameRaw ?? alignFunctionNamePreference ?? 'left';
   const [groupBy, setStoreGroupBy] = useQueryState(
     'group_by',
-    groupByParser.withDefault([FIELD_FUNCTION_NAME])
+    groupByParser.withDefault([FIELD_FUNCTION_NAME]).withOptions({history: 'push'})
   );
+  // Shared with resetSandwichFunctionName below, so keep the default 'replace';
+  // user "show in sandwich" actions push from the Table/flamegraph menus.
   const [sandwichFunctionName, setRawSandwichFunctionName] = useQueryState(
     'sandwich_function_name',
-    stringParam
+    stringParam.withOptions({history: 'replace'})
   );
   const setSandwichFunctionName = useCallback(
     (name: string | null) => {
@@ -89,7 +91,7 @@ export const useVisualizationState = (): {
   );
   const [flamechartDimension, setStoreFlamechartDimension] = useQueryState(
     'flamechart_dimension',
-    flamechartDimensionParser.withDefault([])
+    flamechartDimensionParser.withDefault([]).withOptions({history: 'push'})
   );
   const resetFlameGraphState = useResetFlameGraphState();
 

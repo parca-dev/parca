@@ -40,7 +40,7 @@ interface LineRange {
 const useLineRange = (): LineRange => {
   const [lineRange, setRawLineRange] = useQueryState(
     'source_line',
-    lineRangeParser.withDefault({start: -1, end: -1})
+    lineRangeParser.withDefault({start: -1, end: -1}).withOptions({history: 'push'})
   );
 
   const setLineRange = useCallback(

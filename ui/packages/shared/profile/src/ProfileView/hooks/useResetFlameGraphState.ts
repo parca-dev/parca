@@ -16,7 +16,10 @@ import {useQueryState} from 'nuqs';
 import {stringParam} from '../../hooks/urlParsers';
 
 export const useResetFlameGraphState = (): (() => void) => {
-  const [val, setCurPath] = useQueryState('cur_path', stringParam);
+  const [val, setCurPath] = useQueryState(
+    'cur_path',
+    stringParam.withOptions({history: 'replace'})
+  );
 
   return () => {
     setTimeout(() => {

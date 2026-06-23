@@ -30,6 +30,7 @@ plugins:
   - '@typescript-eslint'
   - react-hooks
   - typescript-enum
+  - local-rules
 
 settings:
   import/resolver:
@@ -75,3 +76,13 @@ rules:
   import/export: 2
 
   promise/catch-or-return: [error, {allowFinally: true}]
+
+# Profiler URL state must be back-button friendly: every writable nuqs param has
+# to declare its history mode explicitly (push for user actions, replace for
+# seeding/reset). Rule lives in eslint-local-rules/index.cjs.
+overrides:
+  - files:
+      - 'packages/shared/profile/**/*.ts'
+      - 'packages/shared/profile/**/*.tsx'
+    rules:
+      local-rules/require-nuqs-history: error

@@ -139,7 +139,10 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     [setQueryParams]
   );
 
-  const [, setRawGroupByParam] = useNuqsQueryState('group_by', commaArrayParam);
+  const [, setRawGroupByParam] = useNuqsQueryState(
+    'group_by',
+    commaArrayParam.withOptions({history: 'replace'})
+  );
   const setGroupByParam = useCallback(
     (val: string[] | null) => {
       void setRawGroupByParam(val);
@@ -388,17 +391,21 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
         }
       }
 
-      // Atomic URL update with all params at once
-      void setQueryParams({
-        expression: finalExpression,
-        from: finalFrom,
-        to: finalTo,
-        time_selection: finalTimeSelection,
-        sum_by: sumByValue,
-        merge_from: mergeFromValue,
-        merge_to: mergeToValue,
-        selection: selectionValue,
-      });
+      // Atomic URL update with all params at once. Push a history entry so the
+      // back button steps through profile/time selections (default is 'replace').
+      void setQueryParams(
+        {
+          expression: finalExpression,
+          from: finalFrom,
+          to: finalTo,
+          time_selection: finalTimeSelection,
+          sum_by: sumByValue,
+          merge_from: mergeFromValue,
+          merge_to: mergeToValue,
+          selection: selectionValue,
+        },
+        {history: 'push'}
+      );
 
       resetFlameGraphState();
       if (
@@ -464,14 +471,18 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     [draftProfileName]
   );
 
-  // Set ProfileSelection (auto-commits to URL immediately)
+  // Set ProfileSelection (auto-commits to URL immediately). Push a history
+  // entry so selecting a sample is a back-navigable step (default is 'replace').
   const setProfileSelection = useCallback(
     (mergeFrom: bigint, mergeTo: bigint, query: Query) => {
-      void setQueryParams({
-        selection: query.toString(),
-        merge_from: mergeFrom.toString(),
-        merge_to: mergeTo.toString(),
-      });
+      void setQueryParams(
+        {
+          selection: query.toString(),
+          merge_from: mergeFrom.toString(),
+          merge_to: mergeTo.toString(),
+        },
+        {history: 'push'}
+      );
     },
     [setQueryParams]
   );

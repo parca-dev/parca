@@ -89,7 +89,7 @@ const ContextMenu = ({
   const {dashboardItems, setDashboardItems} = useDashboardItems();
   const [_sandwichFunctionName, setSandwichFunctionName] = useQueryState(
     'sandwich_function_name',
-    stringParam
+    stringParam.withOptions({history: 'push'})
   );
 
   if (contextMenuData === null) {
@@ -117,10 +117,10 @@ const ContextMenu = ({
     row === 0
       ? ''
       : name !== ''
-      ? name
-      : locationAddress !== 0n
-      ? hexifyAddress(locationAddress)
-      : '';
+        ? name
+        : locationAddress !== 0n
+          ? hexifyAddress(locationAddress)
+          : '';
 
   const buildIdText = !isMappingBuildIDAvailable ? '' : mappingBuildID;
   const inlinedText = inlined === null ? 'merged' : inlined ? 'yes' : 'no';

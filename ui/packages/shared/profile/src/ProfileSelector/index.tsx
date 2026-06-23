@@ -113,7 +113,7 @@ const ProfileSelector = ({
   const {externalProfilerComponent, additionalMetricsGraph} = useParcaContext();
   const [queryBrowserMode, setRawQueryBrowserMode] = useNuqsQueryState(
     'query_browser_mode',
-    stringParam
+    stringParam.withOptions({history: 'replace'})
   );
   const setQueryBrowserMode = useCallback(
     (mode: string | null) => {

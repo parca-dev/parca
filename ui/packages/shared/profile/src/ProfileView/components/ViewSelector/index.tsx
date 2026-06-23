@@ -28,7 +28,10 @@ interface Props {
 
 const ViewSelector = ({profileSource}: Props): JSX.Element => {
   const {dashboardItems, setDashboardItems} = useDashboardItems();
-  const [, setSandwichFunctionName] = useQueryState('sandwich_function_name', stringParam);
+  const [, setSandwichFunctionName] = useQueryState(
+    'sandwich_function_name',
+    stringParam.withOptions({history: 'replace'})
+  );
   const {enableSourcesView, enableSandwichView} = useParcaContext();
 
   const allItems: Array<{
@@ -117,10 +120,10 @@ const ViewSelector = ({profileSource}: Props): JSX.Element => {
         !item.canBeSelected && item.key === 'source'
           ? 'Add Panel'
           : item.canBeSelected
-          ? 'Add Panel'
-          : dashboardItems.includes(item.key)
-          ? 'Close Panel'
-          : 'Add Panel',
+            ? 'Add Panel'
+            : dashboardItems.includes(item.key)
+              ? 'Close Panel'
+              : 'Add Panel',
       onClick: () => {
         if (item.canBeSelected) {
           setDashboardItems([...dashboardItems, item.key]);
