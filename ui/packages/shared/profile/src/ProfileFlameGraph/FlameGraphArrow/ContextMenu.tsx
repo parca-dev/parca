@@ -89,7 +89,7 @@ const ContextMenu = ({
   const {dashboardItems, setDashboardItems} = useDashboardItems();
   const [_sandwichFunctionName, setSandwichFunctionName] = useQueryState(
     'sandwich_function_name',
-    stringParam
+    stringParam.withOptions({history: 'push'})
   );
 
   if (contextMenuData === null) {

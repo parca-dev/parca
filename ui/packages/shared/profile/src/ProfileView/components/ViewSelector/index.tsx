@@ -28,7 +28,10 @@ interface Props {
 
 const ViewSelector = ({profileSource}: Props): JSX.Element => {
   const {dashboardItems, setDashboardItems} = useDashboardItems();
-  const [, setSandwichFunctionName] = useQueryState('sandwich_function_name', stringParam);
+  const [, setSandwichFunctionName] = useQueryState(
+    'sandwich_function_name',
+    stringParam.withOptions({history: 'replace'})
+  );
   const {enableSourcesView, enableSandwichView} = useParcaContext();
 
   const allItems: Array<{

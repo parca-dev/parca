@@ -21,7 +21,10 @@ import {invertCallStackParser} from '../../../hooks/urlParsers';
 import {useResetFlameGraphState} from '../../hooks/useResetFlameGraphState';
 
 const InvertCallStack = (): JSX.Element => {
-  const [isInvert, setInvertStack] = useQueryState('invert_call_stack', invertCallStackParser);
+  const [isInvert, setInvertStack] = useQueryState(
+    'invert_call_stack',
+    invertCallStackParser.withOptions({history: 'push'})
+  );
   const resetFlameGraphState = useResetFlameGraphState();
 
   const handleSetInvert = (value: boolean): void => {

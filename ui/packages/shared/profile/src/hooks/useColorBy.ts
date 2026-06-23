@@ -26,7 +26,10 @@ export const useColorBy = (): {
   const [colorByPreference, setColorByPreference] = useUserPreference<string>(
     USER_PREFERENCES.COLOR_BY.key
   );
-  const [colorByRaw, setRawColorBy] = useQueryState('color_by', stringParam);
+  const [colorByRaw, setRawColorBy] = useQueryState(
+    'color_by',
+    stringParam.withOptions({history: 'push'})
+  );
 
   const colorBy = colorByRaw ?? colorByPreference ?? 'binary';
 

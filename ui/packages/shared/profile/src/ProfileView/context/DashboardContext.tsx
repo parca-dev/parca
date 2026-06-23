@@ -30,7 +30,10 @@ const DashboardContext = createContext<DashboardContextType | undefined>(undefin
 
 export const DashboardProvider: FC<PropsWithChildren> = ({children}) => {
   const {dashboardItems, setDashboardItems} = useDashboardItems();
-  const [, setSandwichFunctionName] = useQueryState('sandwich_function_name', stringParam);
+  const [, setSandwichFunctionName] = useQueryState(
+    'sandwich_function_name',
+    stringParam.withOptions({history: 'replace'})
+  );
 
   const handleClosePanel = (visualizationType: VisualizationType): void => {
     const newDashboardItems = dashboardItems.filter(item => item !== visualizationType);

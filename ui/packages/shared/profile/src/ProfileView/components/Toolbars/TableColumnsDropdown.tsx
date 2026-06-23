@@ -33,7 +33,10 @@ interface Props {
 
 const TableColumnsDropdown = ({profileType, total, filtered}: Props): JSX.Element => {
   const {compareMode} = useProfileViewContext();
-  const [tableColumns, setTableColumns] = useQueryState('table_columns', tableColumnsParser);
+  const [tableColumns, setTableColumns] = useQueryState(
+    'table_columns',
+    tableColumnsParser.withOptions({history: 'push'})
+  );
 
   const columnHelper = createColumnHelper<Row>();
 
