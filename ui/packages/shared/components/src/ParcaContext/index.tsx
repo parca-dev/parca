@@ -55,6 +55,7 @@ export interface AdditionalMetricsGraphProps {
 interface ExternalProfilerComponentProps {
   disableProfileTypesDropdown?: boolean;
   defaultProfileType?: string;
+  defaultSumBy?: string[];
   configuredLabelNames?: string[];
   disableExplorativeQuerying?: boolean;
   profileFilterDefaults?: unknown[];

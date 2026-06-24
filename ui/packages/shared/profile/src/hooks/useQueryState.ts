@@ -79,7 +79,7 @@ interface UseQueryStateReturn {
 }
 
 export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryStateReturn => {
-  const {queryServiceClient: queryClient} = useParcaContext();
+  const {queryServiceClient: queryClient, externalProfilerComponent} = useParcaContext();
   const {
     suffix = '',
     defaultExpression = '',
@@ -153,6 +153,13 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
   // Parse sumBy from URL parameter format
   const sumBy = useSumByFromParams(sumByParam ?? undefined);
 
+  // Fall back to the externally-provided sumBy default when the URL carries no
+  // sum_by, so the materialized value reflects it instead of the empty __none__
+  // sentinel (an explicit __none__ from the URL is left untouched).
+  const externalSumBy = externalProfilerComponent?.defaultSumBy;
+  const sumByWithViewDefault =
+    sumBy ?? (externalSumBy && externalSumBy.length > 0 ? externalSumBy : undefined);
+
   // Draft state management
   const [draftExpression, setDraftExpression] = useState<string>(expression ?? defaultExpression);
   const [draftFrom, setDraftFrom] = useState<string>(from ?? defaultFrom?.toString() ?? '');
@@ -209,7 +216,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
     draftTimeRange,
     draftProfileType,
     draftTimeRange,
-    sumBy
+    sumByWithViewDefault
   );
 
   // Sync draft state with URL state when URL changes externally
