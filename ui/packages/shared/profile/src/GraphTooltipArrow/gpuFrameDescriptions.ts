@@ -36,7 +36,7 @@ export const NVIDIA_DOCS_LABEL = 'NVIDIA docs';
 export const STALL_SOURCE_URL =
   'https://docs.nvidia.com/nsight-compute/ProfilingGuide/index.html#warp-stall-reasons';
 export const SASS_SOURCE_URL =
-  'https://docs.nvidia.com/cuda/cuda-binary-utilities/index.html#turing-turing-instruction-set-table';
+  'https://docs.nvidia.com/cuda/cuda-binary-utilities/index.html#instruction-set-reference';
 
 export interface StallEntry {
   reasonLabel: string;
@@ -50,14 +50,35 @@ export interface SASSEntry {
   sourceUrl?: string;
 }
 
-// Ref: https://docs.nvidia.com/cuda/cuda-binary-utilities/index.html#turing-turing-instruction-set-table
+// Ref: https://docs.nvidia.com/cuda/cuda-binary-utilities/index.html#instruction-set-reference
+// Covers the Volta/Turing/Ampere/Ada/Hopper/Blackwell instruction set tables too.
 export const SASS_INSTRUCTION_DESCRIPTIONS: Record<string, SASSEntry> = {
   // --- Floating Point Instructions ---
+  DADD: {reasonLabel: 'Floating Point Instructions', description: 'FP64 Add'},
+  DFMA: {reasonLabel: 'Floating Point Instructions', description: 'FP64 Fused Mutiply Add'},
+  DMMA: {reasonLabel: 'Floating Point Instructions', description: 'Matrix Multiply and Accumulate'},
+  DMUL: {reasonLabel: 'Floating Point Instructions', description: 'FP64 Multiply'},
+  DSETP: {
+    reasonLabel: 'Floating Point Instructions',
+    description: 'FP64 Compare And Set Predicate',
+  },
   FADD: {reasonLabel: 'Floating Point Instructions', description: 'FP32 Add'},
+  FADD2: {reasonLabel: 'Floating Point Instructions', description: 'FP32 Add'},
+  FADD32I: {reasonLabel: 'Floating Point Instructions', description: 'FP32 Add'},
   FCHK: {reasonLabel: 'Floating Point Instructions', description: 'Floating-point Range Check'},
   FFMA: {reasonLabel: 'Floating Point Instructions', description: 'FP32 Fused Multiply and Add'},
+  FFMA2: {reasonLabel: 'Floating Point Instructions', description: 'FP32 Fused Multiply and Add'},
+  FFMA32I: {reasonLabel: 'Floating Point Instructions', description: 'FP32 Fused Multiply and Add'},
+  FHADD: {reasonLabel: 'Floating Point Instructions', description: 'FP32 Addition'},
+  FHFMA: {reasonLabel: 'Floating Point Instructions', description: 'FP32 Fused Multiply and Add'},
   FMNMX: {reasonLabel: 'Floating Point Instructions', description: 'FP32 Minimum/Maximum'},
+  FMNMX3: {
+    reasonLabel: 'Floating Point Instructions',
+    description: '3-Input Floating-point Minimum/Maximum',
+  },
   FMUL: {reasonLabel: 'Floating Point Instructions', description: 'FP32 Multiply'},
+  FMUL2: {reasonLabel: 'Floating Point Instructions', description: 'FP32 Multiply'},
+  FMUL32I: {reasonLabel: 'Floating Point Instructions', description: 'FP32 Multiply'},
   FSEL: {reasonLabel: 'Floating Point Instructions', description: 'Floating Point Select'},
   FSET: {reasonLabel: 'Floating Point Instructions', description: 'FP32 Compare And Set'},
   FSETP: {
@@ -65,22 +86,27 @@ export const SASS_INSTRUCTION_DESCRIPTIONS: Record<string, SASSEntry> = {
     description: 'FP32 Compare And Set Predicate',
   },
   FSWZADD: {reasonLabel: 'Floating Point Instructions', description: 'FP32 Swizzle Add'},
-  MUFU: {reasonLabel: 'Floating Point Instructions', description: 'FP32 Multi Function Operation'},
   HADD2: {reasonLabel: 'Floating Point Instructions', description: 'FP16 Add'},
+  HADD2_32I: {reasonLabel: 'Floating Point Instructions', description: 'FP16 Add'},
   HFMA2: {reasonLabel: 'Floating Point Instructions', description: 'FP16 Fused Mutiply Add'},
+  HFMA2_32I: {reasonLabel: 'Floating Point Instructions', description: 'FP16 Fused Multiply Add'},
   HMMA: {reasonLabel: 'Floating Point Instructions', description: 'Matrix Multiply and Accumulate'},
+  HMNMX2: {reasonLabel: 'Floating Point Instructions', description: 'FP16 Minimum/Maximum'},
   HMUL2: {reasonLabel: 'Floating Point Instructions', description: 'FP16 Multiply'},
+  HMUL2_32I: {reasonLabel: 'Floating Point Instructions', description: 'FP16 Multiply'},
   HSET2: {reasonLabel: 'Floating Point Instructions', description: 'FP16 Compare And Set'},
   HSETP2: {
     reasonLabel: 'Floating Point Instructions',
     description: 'FP16 Compare And Set Predicate',
   },
-  DADD: {reasonLabel: 'Floating Point Instructions', description: 'FP64 Add'},
-  DFMA: {reasonLabel: 'Floating Point Instructions', description: 'FP64 Fused Mutiply Add'},
-  DMUL: {reasonLabel: 'Floating Point Instructions', description: 'FP64 Multiply'},
-  DSETP: {
+  MUFU: {reasonLabel: 'Floating Point Instructions', description: 'FP32 Multi Function Operation'},
+  OMMA: {
     reasonLabel: 'Floating Point Instructions',
-    description: 'FP64 Compare And Set Predicate',
+    description: 'FP4 Matrix Multiply and Accumulate Across a Warp',
+  },
+  QMMA: {
+    reasonLabel: 'Floating Point Instructions',
+    description: 'FP8 Matrix Multiply and Accumulate Across a Warp',
   },
 
   // --- Integer Instructions ---
@@ -91,6 +117,7 @@ export const SASS_INSTRUCTION_DESCRIPTIONS: Record<string, SASSEntry> = {
   IABS: {reasonLabel: 'Integer Instructions', description: 'Integer Absolute Value'},
   IADD: {reasonLabel: 'Integer Instructions', description: 'Integer Addition'},
   IADD3: {reasonLabel: 'Integer Instructions', description: '3-input Integer Addition'},
+  IADD32I: {reasonLabel: 'Integer Instructions', description: 'Integer Addition'},
   IDP: {reasonLabel: 'Integer Instructions', description: 'Integer Dot Product and Accumulate'},
   IDP4A: {reasonLabel: 'Integer Instructions', description: 'Integer Dot Product and Accumulate'},
   IMAD: {reasonLabel: 'Integer Instructions', description: 'Integer Multiply And Add'},
@@ -100,17 +127,31 @@ export const SASS_INSTRUCTION_DESCRIPTIONS: Record<string, SASSEntry> = {
   },
   IMNMX: {reasonLabel: 'Integer Instructions', description: 'Integer Minimum/Maximum'},
   IMUL: {reasonLabel: 'Integer Instructions', description: 'Integer Multiply'},
+  IMUL32I: {reasonLabel: 'Integer Instructions', description: 'Integer Multiply'},
   ISCADD: {reasonLabel: 'Integer Instructions', description: 'Scaled Integer Addition'},
+  ISCADD32I: {reasonLabel: 'Integer Instructions', description: 'Scaled Integer Addition'},
   ISETP: {reasonLabel: 'Integer Instructions', description: 'Integer Compare And Set Predicate'},
   LEA: {reasonLabel: 'Integer Instructions', description: 'LOAD Effective Address'},
   LOP: {reasonLabel: 'Integer Instructions', description: 'Logic Operation'},
   LOP3: {reasonLabel: 'Integer Instructions', description: 'Logic Operation'},
+  LOP32I: {reasonLabel: 'Integer Instructions', description: 'Logic Operation'},
   POPC: {reasonLabel: 'Integer Instructions', description: 'Population count'},
   SHF: {reasonLabel: 'Integer Instructions', description: 'Funnel Shift'},
   SHL: {reasonLabel: 'Integer Instructions', description: 'Shift Left'},
   SHR: {reasonLabel: 'Integer Instructions', description: 'Shift Right'},
   VABSDIFF: {reasonLabel: 'Integer Instructions', description: 'Absolute Difference'},
   VABSDIFF4: {reasonLabel: 'Integer Instructions', description: 'Absolute Difference'},
+  VHMNMX: {reasonLabel: 'Integer Instructions', description: 'SIMD FP16 3-Input Minimum/Maximum'},
+  VIADD: {reasonLabel: 'Integer Instructions', description: 'SIMD Integer Addition'},
+  VIADDMNMX: {
+    reasonLabel: 'Integer Instructions',
+    description: 'SIMD Integer Addition and Fused Min/Max Comparison',
+  },
+  VIMNMX: {reasonLabel: 'Integer Instructions', description: 'SIMD Integer Minimum/Maximum'},
+  VIMNMX3: {
+    reasonLabel: 'Integer Instructions',
+    description: 'SIMD Integer 3-Input Minimum/Maximum',
+  },
 
   // --- Conversion Instructions ---
   F2F: {
@@ -121,19 +162,25 @@ export const SASS_INSTRUCTION_DESCRIPTIONS: Record<string, SASSEntry> = {
     reasonLabel: 'Conversion Instructions',
     description: 'Floating Point To Integer Conversion',
   },
+  F2IP: {
+    reasonLabel: 'Conversion Instructions',
+    description: 'FP32 Down-Convert to Integer and Pack',
+  },
+  FRND: {reasonLabel: 'Conversion Instructions', description: 'Round To Integer'},
   I2F: {
     reasonLabel: 'Conversion Instructions',
     description: 'Integer To Floating Point Conversion',
   },
+  I2FP: {reasonLabel: 'Conversion Instructions', description: 'Integer to FP32 Convert and Pack'},
   I2I: {reasonLabel: 'Conversion Instructions', description: 'Integer To Integer Conversion'},
   I2IP: {
     reasonLabel: 'Conversion Instructions',
     description: 'Integer To Integer Conversion and Packing',
   },
-  FRND: {reasonLabel: 'Conversion Instructions', description: 'Round To Integer'},
 
   // --- Movement Instructions ---
   MOV: {reasonLabel: 'Movement Instructions', description: 'Move'},
+  MOV32I: {reasonLabel: 'Movement Instructions', description: 'Move'},
   MOVM: {
     reasonLabel: 'Movement Instructions',
     description: 'Move Matrix with Transposition or Expansion',
@@ -153,41 +200,85 @@ export const SASS_INSTRUCTION_DESCRIPTIONS: Record<string, SASSEntry> = {
   R2P: {reasonLabel: 'Predicate Instructions', description: 'Move Register To Predicate Register'},
 
   // --- Load/Store Instructions ---
+  ATOM: {reasonLabel: 'Load/Store Instructions', description: 'Atomic Operation on Generic Memory'},
+  ATOMG: {reasonLabel: 'Load/Store Instructions', description: 'Atomic Operation on Global Memory'},
+  ATOMS: {reasonLabel: 'Load/Store Instructions', description: 'Atomic Operation on Shared Memory'},
+  CCTL: {reasonLabel: 'Load/Store Instructions', description: 'Cache Control'},
+  CCTLL: {reasonLabel: 'Load/Store Instructions', description: 'Cache Control'},
+  CCTLT: {reasonLabel: 'Load/Store Instructions', description: 'Texture Cache Control'},
+  ERRBAR: {reasonLabel: 'Load/Store Instructions', description: 'Error Barrier'},
+  FENCE: {
+    reasonLabel: 'Load/Store Instructions',
+    description: 'Memory Visibility Guarantee for Shared or Global Memory',
+  },
   LD: {reasonLabel: 'Load/Store Instructions', description: 'Load from generic Memory'},
   LDC: {reasonLabel: 'Load/Store Instructions', description: 'Load Constant'},
   LDG: {reasonLabel: 'Load/Store Instructions', description: 'Load from Global Memory'},
+  LDGDEPBAR: {
+    reasonLabel: 'Load/Store Instructions',
+    description: 'Global Load Dependency Barrier',
+  },
+  LDGMC: {reasonLabel: 'Load/Store Instructions', description: 'Reducing Load'},
+  LDGSTS: {
+    reasonLabel: 'Load/Store Instructions',
+    description: 'Asynchronous Global to Shared Memcopy',
+  },
   LDL: {reasonLabel: 'Load/Store Instructions', description: 'Load within Local Memory Window'},
   LDS: {reasonLabel: 'Load/Store Instructions', description: 'Load within Shared Memory Window'},
   LDSM: {
     reasonLabel: 'Load/Store Instructions',
     description: 'Load Matrix from Shared Memory with Element Size Expansion',
   },
-  ST: {reasonLabel: 'Load/Store Instructions', description: 'Store to Generic Memory'},
-  STG: {reasonLabel: 'Load/Store Instructions', description: 'Store to Global Memory'},
-  STL: {reasonLabel: 'Load/Store Instructions', description: 'Store to Local Memory'},
-  STS: {reasonLabel: 'Load/Store Instructions', description: 'Store to Shared Memory'},
   MATCH: {
     reasonLabel: 'Load/Store Instructions',
     description: 'Match Register Values Across Thread Group',
   },
+  MEMBAR: {reasonLabel: 'Load/Store Instructions', description: 'Memory Barrier'},
   QSPC: {reasonLabel: 'Load/Store Instructions', description: 'Query Space'},
-  ATOM: {reasonLabel: 'Load/Store Instructions', description: 'Atomic Operation on Generic Memory'},
-  ATOMS: {reasonLabel: 'Load/Store Instructions', description: 'Atomic Operation on Shared Memory'},
-  ATOMG: {reasonLabel: 'Load/Store Instructions', description: 'Atomic Operation on Global Memory'},
   RED: {
     reasonLabel: 'Load/Store Instructions',
     description: 'Reduction Operation on Generic Memory',
   },
-  CCTL: {reasonLabel: 'Load/Store Instructions', description: 'Cache Control'},
-  CCTLL: {reasonLabel: 'Load/Store Instructions', description: 'Cache Control'},
-  ERRBAR: {reasonLabel: 'Load/Store Instructions', description: 'Error Barrier'},
-  MEMBAR: {reasonLabel: 'Load/Store Instructions', description: 'Memory Barrier'},
-  CCTLT: {reasonLabel: 'Load/Store Instructions', description: 'Texture Cache Control'},
+  REDAS: {
+    reasonLabel: 'Load/Store Instructions',
+    description:
+      'Asynchronous Reduction on Distributed Shared Memory With Explicit Synchronization',
+  },
+  REDG: {
+    reasonLabel: 'Load/Store Instructions',
+    description: 'Reduction Operation on Generic Memory',
+  },
+  ST: {reasonLabel: 'Load/Store Instructions', description: 'Store to Generic Memory'},
+  STAS: {
+    reasonLabel: 'Load/Store Instructions',
+    description: 'Asynchronous Store to Distributed Shared Memory With Explicit Synchronization',
+  },
+  STG: {reasonLabel: 'Load/Store Instructions', description: 'Store to Global Memory'},
+  STL: {reasonLabel: 'Load/Store Instructions', description: 'Store to Local Memory'},
+  STS: {reasonLabel: 'Load/Store Instructions', description: 'Store to Shared Memory'},
+  STSM: {reasonLabel: 'Load/Store Instructions', description: 'Store Matrix to Shared Memory'},
+  SYNCS: {reasonLabel: 'Load/Store Instructions', description: 'Sync Unit'},
 
   // --- Uniform Datapath Instructions ---
+  CREDUX: {
+    reasonLabel: 'Uniform Datapath Instructions',
+    description: 'Coupled Reduction of a Vector Register into a Uniform Register',
+  },
+  CS2UR: {
+    reasonLabel: 'Uniform Datapath Instructions',
+    description: 'Load a Value from Constant Memory into a Uniform Register',
+  },
+  LDCU: {
+    reasonLabel: 'Uniform Datapath Instructions',
+    description: 'Load a Value from Constant Memory into a Uniform Register',
+  },
   R2UR: {
     reasonLabel: 'Uniform Datapath Instructions',
     description: 'Move from Vector Register to a Uniform Register',
+  },
+  REDUX: {
+    reasonLabel: 'Uniform Datapath Instructions',
+    description: 'Reduction of a Vector Register into a Uniform Register',
   },
   S2UR: {
     reasonLabel: 'Uniform Datapath Instructions',
@@ -195,15 +286,90 @@ export const SASS_INSTRUCTION_DESCRIPTIONS: Record<string, SASSEntry> = {
   },
   UBMSK: {reasonLabel: 'Uniform Datapath Instructions', description: 'Uniform Bitfield Mask'},
   UBREV: {reasonLabel: 'Uniform Datapath Instructions', description: 'Uniform Bit Reverse'},
+  UCGABAR_ARV: {
+    reasonLabel: 'Uniform Datapath Instructions',
+    description: 'CGA Barrier Synchronization',
+  },
+  UCGABAR_WAIT: {
+    reasonLabel: 'Uniform Datapath Instructions',
+    description: 'CGA Barrier Synchronization',
+  },
   UCLEA: {
     reasonLabel: 'Uniform Datapath Instructions',
     description: 'Load Effective Address for a Constant',
   },
+  UF2F: {
+    reasonLabel: 'Uniform Datapath Instructions',
+    description: 'Uniform Float-to-Float Conversion',
+  },
+  UF2FP: {
+    reasonLabel: 'Uniform Datapath Instructions',
+    description: 'Uniform FP32 Down-convert and Pack',
+  },
+  UF2I: {
+    reasonLabel: 'Uniform Datapath Instructions',
+    description: 'Uniform Float-to-Integer Conversion',
+  },
+  UF2IP: {
+    reasonLabel: 'Uniform Datapath Instructions',
+    description: 'Uniform FP32 Down-Convert to Integer and Pack',
+  },
+  UFADD: {reasonLabel: 'Uniform Datapath Instructions', description: 'Uniform FP32 Addition'},
+  UFFMA: {
+    reasonLabel: 'Uniform Datapath Instructions',
+    description: 'Uniform FP32 Fused Multiply-Add',
+  },
   UFLO: {reasonLabel: 'Uniform Datapath Instructions', description: 'Uniform Find Leading One'},
+  UFMNMX: {
+    reasonLabel: 'Uniform Datapath Instructions',
+    description: 'Uniform Floating-point Minimum/Maximum',
+  },
+  UFMUL: {reasonLabel: 'Uniform Datapath Instructions', description: 'Uniform FP32 Multiply'},
+  UFRND: {reasonLabel: 'Uniform Datapath Instructions', description: 'Uniform Round to Integer'},
+  UFSEL: {
+    reasonLabel: 'Uniform Datapath Instructions',
+    description: 'Uniform Floating-Point Select',
+  },
+  UFSET: {
+    reasonLabel: 'Uniform Datapath Instructions',
+    description: 'Uniform Floating-Point Compare and Set',
+  },
+  UFSETP: {
+    reasonLabel: 'Uniform Datapath Instructions',
+    description: 'Uniform Floating-Point Compare and Set Predicate',
+  },
+  UGETNEXTWORKID: {
+    reasonLabel: 'Uniform Datapath Instructions',
+    description: 'Uniform Get Next Work ID',
+  },
+  UI2F: {
+    reasonLabel: 'Uniform Datapath Instructions',
+    description: 'Uniform Integer to Float conversion',
+  },
+  UI2FP: {
+    reasonLabel: 'Uniform Datapath Instructions',
+    description: 'Uniform Integer to FP32 Convert and Pack',
+  },
+  UI2I: {
+    reasonLabel: 'Uniform Datapath Instructions',
+    description: 'Uniform Saturating Integer-to-Integer Conversion',
+  },
+  UI2IP: {
+    reasonLabel: 'Uniform Datapath Instructions',
+    description: 'Uniform Dual Saturating Integer-to-Integer Conversion and Packing',
+  },
+  UIABS: {
+    reasonLabel: 'Uniform Datapath Instructions',
+    description: 'Uniform Integer Absolute Value',
+  },
   UIADD3: {reasonLabel: 'Uniform Datapath Instructions', description: 'Uniform Integer Addition'},
   UIMAD: {
     reasonLabel: 'Uniform Datapath Instructions',
     description: 'Uniform Integer Multiplication',
+  },
+  UIMNMX: {
+    reasonLabel: 'Uniform Datapath Instructions',
+    description: 'Uniform Integer Minimum/Maximum',
   },
   UISETP: {
     reasonLabel: 'Uniform Datapath Instructions',
@@ -217,8 +383,11 @@ export const SASS_INSTRUCTION_DESCRIPTIONS: Record<string, SASSEntry> = {
     reasonLabel: 'Uniform Datapath Instructions',
     description: 'Uniform Load Effective Address',
   },
+  ULEPC: {reasonLabel: 'Uniform Datapath Instructions', description: 'Uniform Load Effective PC'},
   ULOP: {reasonLabel: 'Uniform Datapath Instructions', description: 'Logic Operation'},
   ULOP3: {reasonLabel: 'Uniform Datapath Instructions', description: 'Logic Operation'},
+  ULOP32I: {reasonLabel: 'Uniform Datapath Instructions', description: 'Logic Operation'},
+  UMEMSETS: {reasonLabel: 'Uniform Datapath Instructions', description: 'Initialize Shared Memory'},
   UMOV: {reasonLabel: 'Uniform Datapath Instructions', description: 'Uniform Move'},
   UP2UR: {
     reasonLabel: 'Uniform Datapath Instructions',
@@ -238,11 +407,35 @@ export const SASS_INSTRUCTION_DESCRIPTIONS: Record<string, SASSEntry> = {
     reasonLabel: 'Uniform Datapath Instructions',
     description: 'Uniform Register to Uniform Predicate',
   },
+  UREDGR: {
+    reasonLabel: 'Uniform Datapath Instructions',
+    description: 'Uniform Reduction on Global Memory with Release',
+  },
   USEL: {reasonLabel: 'Uniform Datapath Instructions', description: 'Uniform Select'},
+  USETMAXREG: {
+    reasonLabel: 'Uniform Datapath Instructions',
+    description: 'Release, Deallocate and Allocate Registers',
+  },
   USGXT: {reasonLabel: 'Uniform Datapath Instructions', description: 'Uniform Sign Extend'},
   USHF: {reasonLabel: 'Uniform Datapath Instructions', description: 'Uniform Funnel Shift'},
   USHL: {reasonLabel: 'Uniform Datapath Instructions', description: 'Uniform Left Shift'},
   USHR: {reasonLabel: 'Uniform Datapath Instructions', description: 'Uniform Right Shift'},
+  USTGR: {
+    reasonLabel: 'Uniform Datapath Instructions',
+    description: 'Uniform Store to Global Memory with Release',
+  },
+  UVIADD: {
+    reasonLabel: 'Uniform Datapath Instructions',
+    description: 'Uniform SIMD Integer Addition',
+  },
+  UVIMNMX: {
+    reasonLabel: 'Uniform Datapath Instructions',
+    description: 'Uniform SIMD Integer Minimum/Maximum',
+  },
+  UVIRTCOUNT: {
+    reasonLabel: 'Uniform Datapath Instructions',
+    description: 'Virtual Resource Management',
+  },
   VOTEU: {
     reasonLabel: 'Uniform Datapath Instructions',
     description: 'Voting across SIMD Thread Group with Results in Uniform Destination',
@@ -263,6 +456,14 @@ export const SASS_INSTRUCTION_DESCRIPTIONS: Record<string, SASSEntry> = {
   SUST: {reasonLabel: 'Surface Instructions', description: 'Surface Store'},
 
   // --- Control Instructions ---
+  ACQBULK: {
+    reasonLabel: 'Control Instructions',
+    description: 'Wait for Bulk Release Status Warp State',
+  },
+  ACQSHMINIT: {
+    reasonLabel: 'Control Instructions',
+    description: 'Wait for Shared Memory Initialization Release Status Warp State',
+  },
   BMOV: {reasonLabel: 'Control Instructions', description: 'Move Convergence Barrier State'},
   BPT: {reasonLabel: 'Control Instructions', description: 'BreakPoint/Trap'},
   BRA: {reasonLabel: 'Control Instructions', description: 'Relative Branch'},
@@ -284,6 +485,9 @@ export const SASS_INSTRUCTION_DESCRIPTIONS: Record<string, SASSEntry> = {
     description: 'Synchronize Threads on a Convergence Barrier',
   },
   CALL: {reasonLabel: 'Control Instructions', description: 'Call Function'},
+  CGAERRBAR: {reasonLabel: 'Control Instructions', description: 'CGA Error Barrier'},
+  ELECT: {reasonLabel: 'Control Instructions', description: 'Elect a Leader Thread'},
+  ENDCOLLECTIVE: {reasonLabel: 'Control Instructions', description: 'Reset the MCOLLECTIVE mask'},
   EXIT: {reasonLabel: 'Control Instructions', description: 'Exit Program'},
   JMP: {reasonLabel: 'Control Instructions', description: 'Absolute Jump'},
   JMX: {reasonLabel: 'Control Instructions', description: 'Absolute Jump Indirect'},
@@ -293,6 +497,7 @@ export const SASS_INSTRUCTION_DESCRIPTIONS: Record<string, SASSEntry> = {
   },
   KILL: {reasonLabel: 'Control Instructions', description: 'Kill Thread'},
   NANOSLEEP: {reasonLabel: 'Control Instructions', description: 'Suspend Execution'},
+  PREEXIT: {reasonLabel: 'Control Instructions', description: 'Dependent Task Launch Hint'},
   RET: {reasonLabel: 'Control Instructions', description: 'Return From Subroutine'},
   RPCMOV: {reasonLabel: 'Control Instructions', description: 'PC Register Move'},
   RTT: {reasonLabel: 'Control Instructions', description: 'Return From Trap'},
@@ -325,6 +530,99 @@ export const SASS_INSTRUCTION_DESCRIPTIONS: Record<string, SASSEntry> = {
     description: 'Set Local Memory Base Address',
   },
   VOTE: {reasonLabel: 'Miscellaneous Instructions', description: 'Vote Across SIMD Thread Group'},
+
+  // --- Warpgroup Instructions ---
+  BGMMA: {
+    reasonLabel: 'Warpgroup Instructions',
+    description: 'Bit Matrix Multiply and Accumulate Across Warps',
+  },
+  HGMMA: {
+    reasonLabel: 'Warpgroup Instructions',
+    description: 'Matrix Multiply and Accumulate Across a Warpgroup',
+  },
+  IGMMA: {
+    reasonLabel: 'Warpgroup Instructions',
+    description: 'Integer Matrix Multiply and Accumulate Across a Warpgroup',
+  },
+  QGMMA: {
+    reasonLabel: 'Warpgroup Instructions',
+    description: 'FP8 Matrix Multiply and Accumulate Across a Warpgroup',
+  },
+  WARPGROUP: {reasonLabel: 'Warpgroup Instructions', description: 'Warpgroup Synchronization'},
+  WARPGROUPSET: {reasonLabel: 'Warpgroup Instructions', description: 'Set Warpgroup Counters'},
+
+  // --- Tensor Memory Access Instructions ---
+  UBLKCP: {reasonLabel: 'Tensor Memory Access Instructions', description: 'Bulk Data Copy'},
+  UBLKPF: {reasonLabel: 'Tensor Memory Access Instructions', description: 'Bulk Data Prefetch'},
+  UBLKRED: {
+    reasonLabel: 'Tensor Memory Access Instructions',
+    description: 'Bulk Data Copy from Shared Memory with Reduction',
+  },
+  UTMACCTL: {reasonLabel: 'Tensor Memory Access Instructions', description: 'TMA Cache Control'},
+  UTMACMDFLUSH: {
+    reasonLabel: 'Tensor Memory Access Instructions',
+    description: 'TMA Command Flush',
+  },
+  UTMALDG: {
+    reasonLabel: 'Tensor Memory Access Instructions',
+    description: 'Tensor Load from Global to Shared Memory',
+  },
+  UTMAPF: {reasonLabel: 'Tensor Memory Access Instructions', description: 'Tensor Prefetch'},
+  UTMAREDG: {
+    reasonLabel: 'Tensor Memory Access Instructions',
+    description: 'Tensor Store from Shared to Global Memory with Reduction',
+  },
+  UTMASTG: {
+    reasonLabel: 'Tensor Memory Access Instructions',
+    description: 'Tensor Store from Shared to Global Memory',
+  },
+
+  // --- Tensor Core Memory Instructions ---
+  LDT: {
+    reasonLabel: 'Tensor Core Memory Instructions',
+    description: 'Load Matrix from Tensor Memory to Register File',
+  },
+  LDTM: {
+    reasonLabel: 'Tensor Core Memory Instructions',
+    description: 'Load Matrix from Tensor Memory to Register File',
+  },
+  STT: {
+    reasonLabel: 'Tensor Core Memory Instructions',
+    description: 'Store Matrix to Tensor Memory from Register File',
+  },
+  STTM: {
+    reasonLabel: 'Tensor Core Memory Instructions',
+    description: 'Store Matrix to Tensor Memory from Register File',
+  },
+  UTCATOMSWS: {
+    reasonLabel: 'Tensor Core Memory Instructions',
+    description: 'Perform Atomic operation on SW State Register',
+  },
+  UTCBAR: {reasonLabel: 'Tensor Core Memory Instructions', description: 'Tensor Core Barrier'},
+  UTCCP: {
+    reasonLabel: 'Tensor Core Memory Instructions',
+    description: 'Asynchonous data copy from Shared Memory to Tensor Memory',
+  },
+  UTCHMMA: {
+    reasonLabel: 'Tensor Core Memory Instructions',
+    description: 'Uniform Matrix Multiply and Accumulate',
+  },
+  UTCIMMA: {
+    reasonLabel: 'Tensor Core Memory Instructions',
+    description: 'Uniform Matrix Multiply and Accumulate',
+  },
+  UTCOMMA: {
+    reasonLabel: 'Tensor Core Memory Instructions',
+    description: 'Uniform Matrix Multiply and Accumulate',
+  },
+  UTCQMMA: {
+    reasonLabel: 'Tensor Core Memory Instructions',
+    description: 'Uniform Matrix Multiply and Accumulate',
+  },
+  UTCSHIFT: {
+    reasonLabel: 'Tensor Core Memory Instructions',
+    description: 'Shift elements in Tensor Memory',
+  },
 };
 
 // Ref: https://docs.nvidia.com/nsight-compute/ProfilingGuide/index.html#warp-stall-reasons
