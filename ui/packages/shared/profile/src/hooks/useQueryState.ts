@@ -158,7 +158,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
   // sentinel (an explicit __none__ from the URL is left untouched).
   const externalSumBy = externalProfilerComponent?.defaultSumBy;
   const sumByWithViewDefault =
-    sumBy ?? (externalSumBy && externalSumBy.length > 0 ? externalSumBy : undefined);
+    sumBy ?? (externalSumBy != null && externalSumBy.length > 0 ? externalSumBy : undefined);
 
   // Draft state management
   const [draftExpression, setDraftExpression] = useState<string>(expression ?? defaultExpression);
