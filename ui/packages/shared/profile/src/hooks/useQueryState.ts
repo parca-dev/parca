@@ -243,7 +243,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
   // Sync computed sumBy to URL if URL doesn't already have a value
   // to ensure the shared URL can always pick it up.
   // Only run once (when sumByParam first becomes available), not on every change,
-  // to avoid oscillation with external writers (useViewQueryState).
+  // to avoid oscillation with external writers
   const hasSyncedSumByRef = useRef(false);
   useEffect(() => {
     if (sumByParam !== null) {
@@ -253,6 +253,7 @@ export const useQueryState = (options: UseQueryStateOptions = {}): UseQueryState
       !hasSyncedSumByRef.current &&
       sumByParam === null &&
       computedSumByFromURL !== undefined &&
+      computedSumByFromURL.length > 0 &&
       !sumBySelectionLoading
     ) {
       hasSyncedSumByRef.current = true;
