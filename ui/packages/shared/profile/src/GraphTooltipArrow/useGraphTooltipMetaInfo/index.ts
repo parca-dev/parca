@@ -105,20 +105,11 @@ export const useGraphTooltipMetaInfo = ({table, row}: Props): GraphTooltipMetaIn
 
   const {dashboardItems, setDashboardItems} = useDashboardItems();
 
-  const [_unusedBuildId, setSourceBuildId] = useQueryState(
-    'source_buildid',
-    stringParam.withOptions({history: 'push'})
-  );
+  const [_unusedBuildId, setSourceBuildId] = useQueryState('source_buildid', stringParam);
 
-  const [_unusedFilename, setSourceFilename] = useQueryState(
-    'source_filename',
-    stringParam.withOptions({history: 'push'})
-  );
+  const [_unusedFilename, setSourceFilename] = useQueryState('source_filename', stringParam);
 
-  const [_unusedLine, setSourceLine] = useQueryState(
-    'source_line',
-    stringParam.withOptions({history: 'push'})
-  );
+  const [_unusedLine, setSourceLine] = useQueryState('source_line', stringParam);
 
   const openFile = (): void => {
     setDashboardItems([dashboardItems[0], 'source']);

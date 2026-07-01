@@ -129,8 +129,8 @@ const MenuItem: React.FC<MenuItemProps> = ({
                 disabled
                   ? 'text-gray-400'
                   : isActive
-                  ? 'text-white bg-indigo-400 hover:text-white'
-                  : 'text-white-600 hover:bg-indigo-600 hover:text-white'
+                    ? 'text-white bg-indigo-400 hover:text-white'
+                    : 'text-white-600 hover:bg-indigo-600 hover:text-white'
               } flex justify-between items-center`}
               onClick={handleSelect}
               id={id}
@@ -213,11 +213,11 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
   const [storeSortBy] = useQueryState('sort_by', stringParam.withDefault(FIELD_FUNCTION_NAME));
   const [colorStackLegend, setStoreColorStackLegend] = useQueryState(
     'color_stack_legend',
-    stringParam.withOptions({history: 'push'})
+    stringParam
   );
   const [hiddenBinaries, setHiddenBinaries] = useQueryState(
     'hidden_binaries',
-    hiddenBinariesParser.withOptions({history: 'push'})
+    hiddenBinariesParser
   );
   const {compareMode} = useProfileViewContext();
   const [colorProfileName] = useUserPreference<string>(
@@ -230,10 +230,7 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
   // For non-delta profiles, like goroutines or memory, we want the profiles to be compared absolutely.
   const compareAbsoluteDefault = profileType?.delta === false;
 
-  const [compareAbsolute, setCompareAbsolute] = useQueryState(
-    'compare_absolute',
-    boolParam.withOptions({history: 'push'})
-  );
+  const [compareAbsolute, setCompareAbsolute] = useQueryState('compare_absolute', boolParam);
   const isCompareAbsolute = compareAbsolute ?? compareAbsoluteDefault;
 
   useEffect(() => {
