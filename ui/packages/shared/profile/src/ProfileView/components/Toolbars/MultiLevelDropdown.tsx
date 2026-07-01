@@ -129,8 +129,8 @@ const MenuItem: React.FC<MenuItemProps> = ({
                 disabled
                   ? 'text-gray-400'
                   : isActive
-                    ? 'text-white bg-indigo-400 hover:text-white'
-                    : 'text-white-600 hover:bg-indigo-600 hover:text-white'
+                  ? 'text-white bg-indigo-400 hover:text-white'
+                  : 'text-white-600 hover:bg-indigo-600 hover:text-white'
               } flex justify-between items-center`}
               onClick={handleSelect}
               id={id}
