@@ -13,13 +13,11 @@
 
 import {createParser, parseAsArrayOf, parseAsBoolean, parseAsInteger, parseAsString} from 'nuqs';
 
-const opts = {history: 'replace' as const};
-
-// === Base parsers with common options ===
-export const stringParam = parseAsString.withOptions(opts);
-export const boolParam = parseAsBoolean.withOptions(opts);
-export const intParam = parseAsInteger.withOptions(opts);
-export const commaArrayParam = parseAsArrayOf(parseAsString, ',').withOptions(opts);
+// === Base parsers ===
+export const stringParam = parseAsString;
+export const boolParam = parseAsBoolean;
+export const intParam = parseAsInteger;
+export const commaArrayParam = parseAsArrayOf(parseAsString, ',');
 
 // === Param-specific parsers with defaults ===
 export const invertCallStackParser = boolParam.withDefault(false);
@@ -34,5 +32,5 @@ export function jsonParser<T>(): ReturnType<typeof createParser<T>> {
     parse: (value: string) => JSON.parse(value) as T,
     serialize: (value: T) =>
       JSON.stringify(value, (_, v) => (typeof v === 'bigint' ? v.toString() : v)),
-  }).withOptions(opts);
+  });
 }
