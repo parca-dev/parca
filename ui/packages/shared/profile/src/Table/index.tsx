@@ -76,10 +76,7 @@ export const Table = React.memo(function Table({
 }: TableProps): React.JSX.Element {
   const currentColorProfile = useCurrentColorProfile();
   const {dashboardItems} = useDashboardItems();
-  const [_, setSandwichFunctionName] = useQueryState(
-    'sandwich_function_name',
-    stringParam.withOptions({history: 'push'})
-  );
+  const [_, setSandwichFunctionName] = useQueryState('sandwich_function_name', stringParam);
   const {colorBy, setColorBy} = useColorBy();
   const {isDarkMode} = useParcaContext();
   const {compareMode} = useProfileViewContext();

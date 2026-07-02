@@ -69,7 +69,7 @@ const App = () => {
     <Provider store={reduxStore}>
       <PersistGate loading={null} persistor={persistor}>
         <BrowserRouter basename={getBasename()}>
-          <NuqsAdapter>
+          <NuqsAdapter defaultOptions={{history: 'push'}}>
             <QueryClientProvider client={queryClient}>
               <ThemeProvider>
                 <Header />

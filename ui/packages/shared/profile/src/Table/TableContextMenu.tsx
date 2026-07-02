@@ -45,10 +45,7 @@ const TableContextMenu = ({
   totalUnfiltered,
   columnVisibility,
 }: TableContextMenuProps): React.JSX.Element => {
-  const [_, setSandwichFunctionName] = useQueryState(
-    'sandwich_function_name',
-    stringParam.withOptions({history: 'push'})
-  );
+  const [_, setSandwichFunctionName] = useQueryState('sandwich_function_name', stringParam);
   const {dashboardItems, setDashboardItems} = useDashboardItems();
   const {enableSandwichView, isDarkMode} = useParcaContext();
 

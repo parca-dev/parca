@@ -26,7 +26,7 @@ import {useProfileViewContext} from '../../context/ProfileViewContext';
 const SortByDropdown = (): React.JSX.Element => {
   const [storeSortBy, setStoreSortBy] = useQueryState(
     'sort_by',
-    stringParam.withDefault(FIELD_FUNCTION_NAME).withOptions({history: 'push'})
+    stringParam.withDefault(FIELD_FUNCTION_NAME)
   );
 
   const {compareMode} = useProfileViewContext();

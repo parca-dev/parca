@@ -213,11 +213,11 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
   const [storeSortBy] = useQueryState('sort_by', stringParam.withDefault(FIELD_FUNCTION_NAME));
   const [colorStackLegend, setStoreColorStackLegend] = useQueryState(
     'color_stack_legend',
-    stringParam.withOptions({history: 'push'})
+    stringParam
   );
   const [hiddenBinaries, setHiddenBinaries] = useQueryState(
     'hidden_binaries',
-    hiddenBinariesParser.withOptions({history: 'push'})
+    hiddenBinariesParser
   );
   const {compareMode} = useProfileViewContext();
   const [colorProfileName] = useUserPreference<string>(
@@ -230,10 +230,7 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({
   // For non-delta profiles, like goroutines or memory, we want the profiles to be compared absolutely.
   const compareAbsoluteDefault = profileType?.delta === false;
 
-  const [compareAbsolute, setCompareAbsolute] = useQueryState(
-    'compare_absolute',
-    boolParam.withOptions({history: 'push'})
-  );
+  const [compareAbsolute, setCompareAbsolute] = useQueryState('compare_absolute', boolParam);
   const isCompareAbsolute = compareAbsolute ?? compareAbsoluteDefault;
 
   useEffect(() => {
