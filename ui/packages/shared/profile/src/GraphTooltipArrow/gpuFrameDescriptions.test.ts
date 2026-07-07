@@ -30,6 +30,10 @@ describe('gpuFrameInfo', () => {
     ['MOV', 'Move'],
     ['FFMA', 'FP32 Fused Multiply and Add'],
     ['LDG', 'Load from Global Memory'],
+    ['LDCU', 'Load a Value from Constant Memory into a Uniform Register'],
+    ['HGMMA', 'Matrix Multiply and Accumulate Across a Warpgroup'],
+    ['UTMALDG', 'Tensor Load from Global to Shared Memory'],
+    ['LDT', 'Load Matrix from Tensor Memory to Register File'],
   ])('returns SASS info for %s with verbatim description %j', (mnemonic, description) => {
     const info = gpuFrameInfo(mnemonic);
     expect(info?.kind).toBe('sass');
