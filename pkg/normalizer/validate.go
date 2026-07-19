@@ -37,10 +37,10 @@ func ValidatePprofProfile(p *pprofpb.Profile, ei []*profilestorepb.ExecutableInf
 		if m.Id != uint64(i+1) {
 			return fmt.Errorf("mapping id is not sequential")
 		}
-		if m.Filename != 0 && m.Filename > stringTableLen {
+		if m.Filename != 0 && m.Filename >= stringTableLen {
 			return fmt.Errorf("mapping (id: %d) has invalid filename index %d", m.Id, m.Filename)
 		}
-		if m.BuildId != 0 && m.BuildId > stringTableLen {
+		if m.BuildId != 0 && m.BuildId >= stringTableLen {
 			return fmt.Errorf("mapping (id: %d) has invalid buildid index %d", m.Id, m.Filename)
 		}
 	}
@@ -57,13 +57,13 @@ func ValidatePprofProfile(p *pprofpb.Profile, ei []*profilestorepb.ExecutableInf
 		if f.Id != uint64(i+1) {
 			return fmt.Errorf("function id is not sequential")
 		}
-		if f.Name != 0 && f.Name > stringTableLen {
+		if f.Name != 0 && f.Name >= stringTableLen {
 			return fmt.Errorf("function (id: %d) has invalid name index %d", f.Id, f.Name)
 		}
-		if f.SystemName != 0 && f.SystemName > stringTableLen {
+		if f.SystemName != 0 && f.SystemName >= stringTableLen {
 			return fmt.Errorf("function (id: %d) has invalid systemname index %d", f.Id, f.SystemName)
 		}
-		if f.Filename != 0 && f.Filename > stringTableLen {
+		if f.Filename != 0 && f.Filename >= stringTableLen {
 			return fmt.Errorf("function (id: %d) has invalid filename index %d", f.Id, f.Filename)
 		}
 	}
@@ -97,21 +97,23 @@ func ValidatePprofProfile(p *pprofpb.Profile, ei []*profilestorepb.ExecutableInf
 			return fmt.Errorf("profile has nil sample type")
 		}
 
-		if st.Type != 0 && st.Type > stringTableLen {
+		if st.Type != 0 && st.Type >= stringTableLen {
 			return fmt.Errorf("sample type %d has invalid type index %d", i, st.Type)
 		}
 
-		if st.Unit != 0 && st.Unit > stringTableLen {
+		if st.Unit != 0 && st.Unit >= stringTableLen {
 			return fmt.Errorf("sample type %d has invalid unit index %d", i, st.Unit)
 		}
 	}
 
-	if p.PeriodType.Type != 0 && p.PeriodType.Type > stringTableLen {
-		return fmt.Errorf("period type has invalid type index %d", p.PeriodType.Type)
-	}
+	if p.PeriodType != nil {
+		if p.PeriodType.Type != 0 && p.PeriodType.Type >= stringTableLen {
+			return fmt.Errorf("period type has invalid type index %d", p.PeriodType.Type)
+		}
 
-	if p.PeriodType.Unit != 0 && p.PeriodType.Unit > stringTableLen {
-		return fmt.Errorf("period type has invalid unit index %d", p.PeriodType.Unit)
+		if p.PeriodType.Unit != 0 && p.PeriodType.Unit >= stringTableLen {
+			return fmt.Errorf("period type has invalid unit index %d", p.PeriodType.Unit)
+		}
 	}
 
 	for i, s := range p.Sample {
@@ -133,10 +135,10 @@ func ValidatePprofProfile(p *pprofpb.Profile, ei []*profilestorepb.ExecutableInf
 			if label.Key == 0 {
 				return fmt.Errorf("sample %d label %d has no key", i, j)
 			}
-			if label.Key != 0 && label.Key > stringTableLen {
+			if label.Key != 0 && label.Key >= stringTableLen {
 				return fmt.Errorf("sample %d label %d has invalid key index %d", i, j, label.Key)
 			}
-			if label.Str != 0 && label.Str > stringTableLen {
+			if label.Str != 0 && label.Str >= stringTableLen {
 				return fmt.Errorf("sample %d label %d has invalid str index %d", i, j, label.Str)
 			}
 		}
