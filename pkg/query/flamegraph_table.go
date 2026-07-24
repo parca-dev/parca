@@ -279,6 +279,9 @@ func (c *tableConverter) AddProfileLocation(l *profile.Location) uint32 {
 
 	lines := make([]*metastorev1alpha1.Line, 0, len(l.Lines))
 	for _, line := range l.Lines {
+		if line.Function == nil {
+			continue
+		}
 		lines = append(lines, &metastorev1alpha1.Line{
 			Line:          line.Line,
 			FunctionIndex: c.AddFunction(line.Function),
