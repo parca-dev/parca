@@ -31,7 +31,7 @@
   },
   "devDependencies": {
     "@babel/cli": "^7.28.6",
-    "@babel/core": "7.29.0",
+    "@babel/core": "7.29.6",
     "@babel/node": "7.29.0",
     "@babel/plugin-proposal-export-default-from": "7.27.1",
     "@babel/plugin-proposal-private-property-in-object": "7.21.11",
