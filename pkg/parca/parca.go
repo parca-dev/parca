@@ -35,13 +35,7 @@ import (
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/oklog/run"
-	"github.com/polarsignals/frostdb"
 	"github.com/polarsignals/frostdb/dynparquet"
-	"github.com/polarsignals/frostdb/index"
-	"github.com/polarsignals/frostdb/query"
-	"github.com/polarsignals/frostdb/storage"
-	"github.com/polarsignals/iceberg-go"
-	"github.com/polarsignals/iceberg-go/catalog"
 	"github.com/prometheus/client_golang/prometheus"
 	promconfig "github.com/prometheus/common/config"
 	"github.com/prometheus/prometheus/discovery"
@@ -70,7 +64,6 @@ import (
 	"github.com/parca-dev/parca/pkg/clickhouse"
 	"github.com/parca-dev/parca/pkg/config"
 	"github.com/parca-dev/parca/pkg/debuginfo"
-	"github.com/parca-dev/parca/pkg/demangle"
 	"github.com/parca-dev/parca/pkg/ingester"
 	"github.com/parca-dev/parca/pkg/kv"
 	"github.com/parca-dev/parca/pkg/parcacol"
@@ -111,7 +104,7 @@ type Flags struct {
 	MutexProfileFraction int `default:"0" help:"Fraction of mutex profile samples to collect."`
 	BlockProfileRate     int `default:"0" help:"Sample rate for block profile."`
 
-	EnablePersistence bool `default:"false" help:"Turn on persistent storage for the metastore and profile storage."`
+	EnablePersistence bool `default:"false" help:"Turn on persistent storage for the local metastore (profile data is stored in ClickHouse regardless)."`
 
 	Storage FlagsStorage `embed:"" prefix:"storage-"`
 
@@ -130,6 +123,8 @@ type Flags struct {
 	ExternalLabel      map[string]string `kong:"help='Label(s) to attach to all profiles in scraper-only mode.'"`
 	GRPCHeaders        map[string]string `kong:"help='Additional gRPC headers to send with each request to the remote store (key=value pairs).'"`
 
+	ClickHouse FlagsClickHouse `embed:"" prefix:"clickhouse-"`
+
 	Hidden FlagsHidden `embed:"" prefix:""`
 }
 
@@ -146,12 +141,7 @@ type FlagsOTLP struct {
 }
 
 type FlagsStorage struct {
-	ActiveMemory        int64  `default:"536870912" help:"Amount of memory to use for active storage. Defaults to 512MB."`
-	Path                string `default:"data" help:"Path to storage directory."`
-	EnableWAL           bool   `default:"false" help:"Enables write ahead log for profile storage."`
-	SnapshotTriggerSize int64  `default:"134217728" help:"Number of bytes to trigger a snapshot. Defaults to 1/4 of active memory. This is only used if enable-wal is set."`
-	RowGroupSize        int    `default:"8192" help:"Number of rows in each row group during compaction and persistence. Setting to <= 0 results in a single row group per file."`
-	IndexOnDisk         bool   `default:"false" help:"Whether to store the index on disk instead of in memory. Useful to reduce the memory footprint of the store."`
+	Path string `default:"data" help:"Path to storage directory used for the local metastore."`
 }
 
 type FlagsSymbolizer struct {
@@ -176,23 +166,17 @@ type FlagsDebuginfod struct {
 
 // FlagsClickHouse configures the ClickHouse storage backend.
 type FlagsClickHouse struct {
-	Enabled  bool   `kong:"help='Enable ClickHouse storage backend instead of FrostDB.',default='false',hidden=''"`
-	Address  string `kong:"help='ClickHouse server address.',default='localhost:9000',hidden=''"`
-	Database string `kong:"help='ClickHouse database name.',default='parca',hidden=''"`
-	Username string `kong:"help='ClickHouse username.',default='',hidden=''"`
-	Password string `kong:"help='ClickHouse password.',default='',env='PARCA_CLICKHOUSE_PASSWORD',hidden=''"`
-	Table    string `kong:"help='ClickHouse table name for profile data.',default='stacktraces',hidden=''"`
-	Secure   bool   `kong:"help='Use TLS for ClickHouse connection.',default='false',hidden=''"`
+	Address  string `kong:"help='ClickHouse server address.',default='localhost:9000'"`
+	Database string `kong:"help='ClickHouse database name.',default='parca'"`
+	Username string `kong:"help='ClickHouse username.',default=''"`
+	Password string `kong:"help='ClickHouse password.',default='',env='PARCA_CLICKHOUSE_PASSWORD'"`
+	Table    string `kong:"help='ClickHouse table name for profile data.',default='stacktraces'"`
+	Secure   bool   `kong:"help='Use TLS for ClickHouse connection.',default='false'"`
 }
 
 // FlagsHidden contains hidden flags intended only for debugging or experimental features.
 type FlagsHidden struct {
 	DebugNormalizeAddresses bool `kong:"help='Normalize sampled addresses.',default='true',hidden=''"`
-
-	// IcebergStorage is a experimental feature that enables Apache Iceberg storage for profile storage. This can be used with the enable-persistence flag.
-	IcebergStorage bool `kong:"help='Use iceberg storage for profile storage. Requires enable-persistence flag.',default='false',hidden=''"`
-
-	ClickHouse FlagsClickHouse `embed:"" prefix:"clickhouse-"`
 }
 
 // Run the parca server.
@@ -329,197 +313,58 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return err
 	}
 
-	// Initialize storage backend - either ClickHouse or FrostDB
-	var (
-		profileIngester ingester.Ingester
-		querier         queryservice.Querier
-		s               *profilestore.ProfileColumnStore
-		col             *frostdb.ColumnStore
-		chClient        *clickhouse.Client
+	// Initialize the ClickHouse storage backend.
+	level.Info(logger).Log("msg", "initializing ClickHouse storage backend", "address", flags.ClickHouse.Address)
+
+	chClient, err := clickhouse.NewClient(ctx, clickhouse.Config{
+		Address:  flags.ClickHouse.Address,
+		Database: flags.ClickHouse.Database,
+		Username: flags.ClickHouse.Username,
+		Password: flags.ClickHouse.Password,
+		Table:    flags.ClickHouse.Table,
+		Secure:   flags.ClickHouse.Secure,
+	})
+	if err != nil {
+		level.Error(logger).Log("msg", "failed to connect to ClickHouse", "err", err)
+		return fmt.Errorf("failed to connect to ClickHouse: %w", err)
+	}
+
+	if err := chClient.EnsureSchema(ctx); err != nil {
+		level.Error(logger).Log("msg", "failed to ensure ClickHouse schema", "err", err)
+		return fmt.Errorf("failed to ensure ClickHouse schema: %w", err)
+	}
+
+	var profileIngester ingester.Ingester = clickhouse.NewIngester(logger, chClient)
+	var querier queryservice.Querier = clickhouse.NewQuerier(
+		chClient,
+		logger,
+		tracerProvider.Tracer("clickhouse-querier"),
+		memory.DefaultAllocator,
+		symbolizer.New(
+			logger,
+			debuginfoMetadata,
+			symbolizer.NewBadgerCache(db),
+			debuginfo.NewFetcher(debuginfodClients, debuginfoBucket),
+			flags.Debuginfo.CacheDir,
+			flags.Symbolizer.ExternalAddr2linePath,
+			symbolizer.WithDemangleMode(flags.Symbolizer.DemangleMode),
+		),
 	)
 
-	if flags.Hidden.ClickHouse.Enabled {
-		// Initialize ClickHouse storage backend
-		level.Info(logger).Log("msg", "initializing ClickHouse storage backend", "address", flags.Hidden.ClickHouse.Address)
-
-		chClient, err = clickhouse.NewClient(ctx, clickhouse.Config{
-			Address:  flags.Hidden.ClickHouse.Address,
-			Database: flags.Hidden.ClickHouse.Database,
-			Username: flags.Hidden.ClickHouse.Username,
-			Password: flags.Hidden.ClickHouse.Password,
-			Table:    flags.Hidden.ClickHouse.Table,
-			Secure:   flags.Hidden.ClickHouse.Secure,
-		})
-		if err != nil {
-			level.Error(logger).Log("msg", "failed to connect to ClickHouse", "err", err)
-			return fmt.Errorf("failed to connect to ClickHouse: %w", err)
-		}
-
-		if err := chClient.EnsureSchema(ctx); err != nil {
-			level.Error(logger).Log("msg", "failed to ensure ClickHouse schema", "err", err)
-			return fmt.Errorf("failed to ensure ClickHouse schema: %w", err)
-		}
-
-		profileIngester = clickhouse.NewIngester(logger, chClient)
-		querier = clickhouse.NewQuerier(
-			chClient,
-			logger,
-			tracerProvider.Tracer("clickhouse-querier"),
-			memory.DefaultAllocator,
-			symbolizer.New(
-				logger,
-				debuginfoMetadata,
-				symbolizer.NewBadgerCache(db),
-				debuginfo.NewFetcher(debuginfodClients, debuginfoBucket),
-				flags.Debuginfo.CacheDir,
-				flags.Symbolizer.ExternalAddr2linePath,
-				symbolizer.WithDemangleMode(flags.Symbolizer.DemangleMode),
-			),
-		)
-
-		// We still need the schema for ProfileColumnStore
-		def := profile.SchemaDefinition()
-		schema, err := dynparquet.SchemaFromDefinition(def)
-		if err != nil {
-			level.Error(logger).Log("msg", "schema from definition", "err", err)
-			return err
-		}
-
-		s = profilestore.NewProfileColumnStore(
-			reg,
-			logger,
-			tracerProvider.Tracer("profilestore"),
-			profileIngester,
-			schema,
-			memory.DefaultAllocator,
-		)
-	} else {
-		// Initialize FrostDB storage backend (default)
-		frostdbOptions := []frostdb.Option{
-			frostdb.WithActiveMemorySize(flags.Storage.ActiveMemory),
-			frostdb.WithLogger(logger),
-			frostdb.WithRegistry(reg),
-			frostdb.WithTracer(tracerProvider.Tracer("frostdb")),
-		}
-
-		if flags.EnablePersistence {
-			blocksDirectory := "blocks"
-			prefixedBucket := objstore.NewPrefixedBucket(bucket, blocksDirectory)
-			var store frostdb.DataSinkSource
-			if flags.Hidden.IcebergStorage { // Experimental Iceberg storage.
-				// Optain the bucket URI from the config
-				uri, err := BucketURIFromConfig(bucketCfg)
-				if err != nil {
-					level.Error(logger).Log("msg", "failed to get bucket URI from config", "err", err)
-					return err
-				}
-				path := filepath.Join(uri, blocksDirectory)
-				store, err = storage.NewIceberg(path, catalog.NewHDFS(path, prefixedBucket), prefixedBucket,
-					storage.WithIcebergPartitionSpec(
-						iceberg.NewPartitionSpec( // Partition the table by timestamp.
-							iceberg.PartitionField{
-								Name:      profile.ColumnTimestamp,
-								Transform: iceberg.IdentityTransform{},
-							},
-						),
-					))
-				if err != nil {
-					level.Error(logger).Log("msg", "failed to initialize iceberg", "err", err)
-					return err
-				}
-			} else {
-				store = frostdb.NewDefaultObjstoreBucket(prefixedBucket)
-			}
-			frostdbOptions = append(
-				frostdbOptions,
-				frostdb.WithReadWriteStorage(store),
-			)
-		}
-
-		if flags.Storage.EnableWAL {
-			frostdbOptions = append(
-				frostdbOptions,
-				frostdb.WithWAL(),
-				frostdb.WithStoragePath(flags.Storage.Path),
-				frostdb.WithSnapshotTriggerSize(flags.Storage.SnapshotTriggerSize),
-			)
-
-			if flags.Storage.IndexOnDisk {
-				frostdbOptions = append(frostdbOptions, frostdb.WithIndexConfig(
-					[]*index.LevelConfig{
-						{Level: index.L0, MaxSize: 1024 * 1024 * 15, Type: index.CompactionTypeParquetDisk},
-						{Level: index.L1, MaxSize: 1024 * 1024 * 128, Type: index.CompactionTypeParquetDisk},
-						{Level: index.L2, MaxSize: 1024 * 1024 * 512},
-					}))
-			}
-		}
-
-		col, err = frostdb.New(frostdbOptions...)
-		if err != nil {
-			level.Error(logger).Log("msg", "failed to initialize storage", "err", err)
-			return err
-		}
-
-		colDB, err := col.DB(ctx, "parca")
-		if err != nil {
-			level.Error(logger).Log("msg", "failed to load database", "err", err)
-			return err
-		}
-
-		def := profile.SchemaDefinition()
-		table, err := colDB.Table("stacktraces",
-			frostdb.NewTableConfig(
-				def,
-				frostdb.WithRowGroupSize(flags.Storage.RowGroupSize),
-			),
-		)
-		if err != nil {
-			level.Error(logger).Log("msg", "create table", "err", err)
-			return err
-		}
-		schema, err := dynparquet.SchemaFromDefinition(def)
-		if err != nil {
-			level.Error(logger).Log("msg", "schema from definition", "err", err)
-			return err
-		}
-
-		profileIngester = ingester.NewIngester(logger, table)
-		queryDemangler, err := demangle.NewDefaultDemangler()
-		if err != nil {
-			level.Error(logger).Log("msg", "failed to initialize demangler", "err", err)
-			return err
-		}
-		querier = parcacol.NewQuerier(
-			logger,
-			tracerProvider.Tracer("querier"),
-			query.NewEngine(
-				memory.DefaultAllocator,
-				colDB.TableProvider(),
-				query.WithTracer(tracerProvider.Tracer("query-engine")),
-			),
-			"stacktraces",
-			symbolizer.New(
-				logger,
-				debuginfoMetadata,
-				symbolizer.NewBadgerCache(db),
-				debuginfo.NewFetcher(debuginfodClients, debuginfoBucket),
-				flags.Debuginfo.CacheDir,
-				flags.Symbolizer.ExternalAddr2linePath,
-				symbolizer.WithDemangleMode(flags.Symbolizer.DemangleMode),
-			),
-			queryDemangler,
-			memory.DefaultAllocator,
-		)
-
-		s = profilestore.NewProfileColumnStore(
-			reg,
-			logger,
-			tracerProvider.Tracer("profilestore"),
-			profileIngester,
-			schema,
-			memory.DefaultAllocator,
-		)
+	schema, err := dynparquet.SchemaFromDefinition(profile.SchemaDefinition())
+	if err != nil {
+		level.Error(logger).Log("msg", "schema from definition", "err", err)
+		return err
 	}
+
+	s := profilestore.NewProfileColumnStore(
+		reg,
+		logger,
+		tracerProvider.Tracer("profilestore"),
+		profileIngester,
+		schema,
+		memory.DefaultAllocator,
+	)
 
 	propagators := propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{})
 	opts := []grpc.DialOption{
@@ -732,17 +577,8 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 			}
 
 			// Close the storage backend after the parcaserver has shutdown to ensure no more writes occur against it.
-
-			if col != nil {
-				if err := col.Close(); err != nil {
-					level.Error(logger).Log("msg", "error closing columnstore", "err", err)
-				}
-			}
-
-			if chClient != nil {
-				if err := chClient.Close(); err != nil {
-					level.Error(logger).Log("msg", "error closing ClickHouse client", "err", err)
-				}
+			if err := chClient.Close(); err != nil {
+				level.Error(logger).Log("msg", "error closing ClickHouse client", "err", err)
 			}
 		},
 	)
@@ -1022,52 +858,4 @@ func getDiscoveryConfigs(cfgs []*config.ScrapeConfig) map[string]discovery.Confi
 		c[v.JobName] = v.ServiceDiscoveryConfigs
 	}
 	return c
-}
-
-func BucketURIFromConfig(bucketCfg []byte) (string, error) {
-	bucketConf := &client.BucketConfig{}
-	if err := yaml.Unmarshal(bucketCfg, bucketConf); err != nil {
-		return "", fmt.Errorf("failed to unmarshal bucket config: %w", err)
-	}
-
-	type Config struct {
-		Bucket string `yaml:"bucket"`
-	}
-
-	config, err := yaml.Marshal(bucketConf.Config)
-	if err != nil {
-		return "", fmt.Errorf("failed to marshal content of bucket configuration: %w", err)
-	}
-
-	switch strings.ToUpper(string(bucketConf.Type)) {
-	case string(client.GCS):
-		var cfg Config
-		if err := yaml.Unmarshal(config, &cfg); err != nil {
-			return "", err
-		}
-		return filepath.Join("gs://", cfg.Bucket, bucketConf.Prefix), nil
-	case string(client.S3):
-		var cfg Config
-		if err := yaml.Unmarshal(config, &cfg); err != nil {
-			return "", err
-		}
-		return filepath.Join("s3://", cfg.Bucket, bucketConf.Prefix), nil
-	case string(client.FILESYSTEM):
-		type Config struct {
-			Directory string `yaml:"directory"`
-		}
-
-		var cfg Config
-		if err := yaml.Unmarshal(config, &cfg); err != nil {
-			return "", err
-		}
-
-		path, err := filepath.Abs(cfg.Directory)
-		if err != nil {
-			return "", err
-		}
-		return path, nil
-	default:
-		return "", fmt.Errorf("unknown bucket type: %s", bucketConf.Type)
-	}
 }
