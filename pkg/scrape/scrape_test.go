@@ -14,13 +14,58 @@
 package scrape
 
 import (
+	"bytes"
+	"compress/gzip"
 	"errors"
 	"testing"
 
+	"github.com/klauspost/compress/zstd"
+	"github.com/pierrec/lz4/v4"
 	"github.com/stretchr/testify/require"
 
 	profilepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 )
+
+func TestReadProfile(t *testing.T) {
+	raw := []byte("profile")
+	cases := map[string]func(*testing.T, *bytes.Buffer){
+		"raw": func(_ *testing.T, b *bytes.Buffer) {},
+		"gzip": func(t *testing.T, b *bytes.Buffer) {
+			w := gzip.NewWriter(b)
+			_, err := w.Write(raw)
+			require.NoError(t, err)
+			require.NoError(t, w.Close())
+		},
+		"lz4": func(t *testing.T, b *bytes.Buffer) {
+			w := lz4.NewWriter(b)
+			_, err := w.Write(raw)
+			require.NoError(t, err)
+			require.NoError(t, w.Close())
+		},
+		"zstd": func(t *testing.T, b *bytes.Buffer) {
+			w, err := zstd.NewWriter(b)
+			require.NoError(t, err)
+			_, err = w.Write(raw)
+			require.NoError(t, err)
+			require.NoError(t, w.Close())
+		},
+	}
+
+	for name, encode := range cases {
+		t.Run(name, func(t *testing.T) {
+			var encoded, decoded bytes.Buffer
+			if name != "raw" {
+				encode(t, &encoded)
+			}
+			input := bytes.NewReader(encoded.Bytes())
+			if name == "raw" {
+				input = bytes.NewReader(raw)
+			}
+			require.NoError(t, readProfile(input, &decoded))
+			require.Equal(t, raw, decoded.Bytes())
+		})
+	}
+}
 
 func TestParseExecutableInfo(t *testing.T) {
 	testCases := []struct {

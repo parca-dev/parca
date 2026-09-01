@@ -14,7 +14,9 @@
 package scrape
 
 import (
+	"bufio"
 	"bytes"
+	"compress/gzip"
 	"context"
 	"errors"
 	"fmt"
@@ -28,6 +30,8 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/google/pprof/profile"
+	"github.com/klauspost/compress/zstd"
+	"github.com/pierrec/lz4/v4"
 	"github.com/prometheus/client_golang/prometheus"
 	commonconfig "github.com/prometheus/common/config"
 	"github.com/prometheus/common/version"
@@ -365,16 +369,57 @@ func (s *targetScraper) scrape(ctx context.Context, w io.Writer, profileType str
 	case ProfileTraceType:
 		return fmt.Errorf("unimplemented")
 	default:
-		b, err := io.ReadAll(io.TeeReader(resp.Body, w))
-		if err != nil {
+		if err := readProfile(resp.Body, w); err != nil {
 			return fmt.Errorf("failed to read body: %w", err)
-		}
-
-		if len(b) == 0 {
-			return fmt.Errorf("empty %s profile from %s", profileType, s.req.URL.String())
 		}
 	}
 
+	return nil
+}
+
+const maxProfileSize = 100 * 1024 * 1024
+
+func readProfile(r io.Reader, w io.Writer) error {
+	br := bufio.NewReader(r)
+	magic, err := br.Peek(4)
+	if err != nil && !errors.Is(err, io.EOF) {
+		return err
+	}
+
+	var profile io.Reader = br
+	var cleanup func()
+	switch {
+	case len(magic) >= 2 && magic[0] == 0x1f && magic[1] == 0x8b:
+		gz, err := gzip.NewReader(br)
+		if err != nil {
+			return err
+		}
+		profile = gz
+		cleanup = func() { _ = gz.Close() }
+	case len(magic) >= 4 && magic[0] == 0x04 && magic[1] == 0x22 && magic[2] == 0x4d && magic[3] == 0x18:
+		profile = lz4.NewReader(br)
+	case len(magic) >= 4 && magic[0] == 0x28 && magic[1] == 0xb5 && magic[2] == 0x2f && magic[3] == 0xfd:
+		decoder, err := zstd.NewReader(br)
+		if err != nil {
+			return err
+		}
+		profile = decoder
+		cleanup = decoder.Close
+	}
+	if cleanup != nil {
+		defer cleanup()
+	}
+
+	n, err := io.Copy(w, io.LimitReader(profile, maxProfileSize+1))
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return errors.New("empty profile")
+	}
+	if n > maxProfileSize {
+		return fmt.Errorf("profile exceeds %d bytes", maxProfileSize)
+	}
 	return nil
 }
 

@@ -30,6 +30,7 @@ require (
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/klauspost/compress v1.18.5
 	github.com/m1gwings/treedrawer v0.3.3-beta
+	github.com/pierrec/lz4/v4 v4.1.25
 	github.com/minio/minio-go/v7 v7.0.72
 	github.com/nanmu42/limitio v1.0.0
 	github.com/oklog/run v1.2.0
@@ -219,7 +220,6 @@ require (
 	github.com/oracle/oci-go-sdk/v65 v65.41.1 // indirect
 	github.com/ovh/go-ovh v1.8.0 // indirect
 	github.com/paulmach/orb v0.12.0 // indirect
-	github.com/pierrec/lz4/v4 v4.1.25 // indirect
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
