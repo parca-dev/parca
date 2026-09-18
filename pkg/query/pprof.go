@@ -252,12 +252,21 @@ func (w *PprofWriter) mapping(
 		return 0
 	}
 
+	filename := int64(0)
+	if !r.MappingFileIndices.IsNull(j) {
+		filename = t.mappingFile(r.MappingFileIndices.Value(j))
+	}
+	buildID := int64(0)
+	if !r.MappingBuildIDIndices.IsNull(j) {
+		buildID = t.mappingBuildID(r.MappingBuildIDIndices.Value(j))
+	}
+
 	m := &pprofpb.Mapping{
 		MemoryStart:  r.MappingStart.Value(j),
 		MemoryLimit:  r.MappingLimit.Value(j),
 		FileOffset:   r.MappingOffset.Value(j),
-		Filename:     t.mappingFile(r.MappingFileIndices.Value(j)),
-		BuildId:      t.mappingBuildID(r.MappingBuildIDIndices.Value(j)),
+		Filename:     filename,
+		BuildId:      buildID,
 		HasFunctions: true,
 	}
 
@@ -291,6 +300,9 @@ func (w *PprofWriter) location(
 		for k := int(lineStart); k < int(lineEnd); k++ {
 			if r.Line.IsValid(k) {
 				functionId := w.function(r, t, k)
+				if functionId == 0 {
+					continue
+				}
 				loc.Line = append(loc.Line, &pprofpb.Line{
 					FunctionId: functionId,
 					Line:       r.LineNumber.Value(k),
@@ -317,15 +329,34 @@ func (w *PprofWriter) function(
 	t *pprofTranspositions,
 	k int,
 ) uint64 {
-	if r.LineFunctionNameIndices.IsNull(k) {
+	nameNull := r.LineFunctionNameIndices.IsNull(k)
+	systemNameNull := r.LineFunctionSystemNameIndices.IsNull(k)
+	filenameNull := r.LineFunctionFilenameIndices.IsNull(k)
+	if nameNull && systemNameNull && filenameNull && r.LineFunctionStartLine.IsNull(k) {
 		return 0
+	}
+	name := int64(0)
+	if !nameNull {
+		name = t.functionName(r.LineFunctionNameIndices.Value(k))
+	}
+	systemName := int64(0)
+	if !systemNameNull {
+		systemName = t.functionSystemName(r.LineFunctionSystemNameIndices.Value(k))
+	}
+	filename := int64(0)
+	if !filenameNull {
+		filename = t.functionFilename(r.LineFunctionFilenameIndices.Value(k))
+	}
+	startLine := int64(0)
+	if !r.LineFunctionStartLine.IsNull(k) {
+		startLine = r.LineFunctionStartLine.Value(k)
 	}
 
 	f := &pprofpb.Function{
-		Name:       t.functionName(r.LineFunctionNameIndices.Value(k)),
-		SystemName: t.functionSystemName(r.LineFunctionSystemNameIndices.Value(k)),
-		Filename:   t.functionFilename(r.LineFunctionFilenameIndices.Value(k)),
-		StartLine:  r.LineFunctionStartLine.Value(k),
+		Name:       name,
+		SystemName: systemName,
+		Filename:   filename,
+		StartLine:  startLine,
 	}
 
 	key := makeFunctionKey(f)
