@@ -15,7 +15,7 @@ require (
 	github.com/dgraph-io/badger/v4 v4.9.1
 	github.com/felixge/fgprof v0.9.5
 	github.com/fsnotify/fsnotify v1.9.0
-	github.com/go-chi/chi/v5 v5.2.5
+	github.com/go-chi/chi/v5 v5.3.0
 	github.com/go-chi/cors v1.2.2
 	github.com/go-delve/delve v1.26.1
 	github.com/go-kit/log v0.2.1
@@ -28,7 +28,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.30.0
 	github.com/ianlancetaylor/demangle v0.0.0-20250628045327-2d64ad6b7ec5
 	github.com/improbable-eng/grpc-web v0.15.0
-	github.com/klauspost/compress v1.18.5
+	github.com/klauspost/compress v1.18.7
 	github.com/m1gwings/treedrawer v0.3.3-beta
 	github.com/minio/minio-go/v7 v7.0.72
 	github.com/nanmu42/limitio v1.0.0
