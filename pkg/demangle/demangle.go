@@ -55,7 +55,7 @@ func stringsToDemanglerOptions(stringOptions []string) ([]demangle.Option, error
 	for _, str := range stringOptions {
 		opt, ok := demangleOptionMappings[str]
 		if !ok {
-			return nil, fmt.Errorf("unknown demangle option %q", opt)
+			return nil, fmt.Errorf("unknown demangle option %q", str)
 		}
 		res = append(res, opt)
 	}
