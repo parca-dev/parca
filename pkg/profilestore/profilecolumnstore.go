@@ -156,7 +156,7 @@ func (s *ProfileColumnStore) writeSeries(ctx context.Context, req *profilestorep
 
 		// Validate profile type by trying to parse it as a PromQL selector.
 		queryStr := fmt.Sprintf("%s{}", profileType)
-		if _, parseErr := parser.ParseMetricSelector(queryStr); parseErr != nil {
+		if _, parseErr := parser.NewParser(parser.Options{}).ParseMetricSelector(queryStr); parseErr != nil {
 			return fmt.Errorf("invalid profile type at row %d (%s): %v", rowIdx, profileType, parseErr)
 		}
 	}

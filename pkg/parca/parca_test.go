@@ -33,7 +33,7 @@ import (
 	"github.com/polarsignals/frostdb"
 	"github.com/polarsignals/frostdb/query"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/prometheus/model/labels"
+	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/timestamp"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
@@ -127,7 +127,7 @@ func Benchmark_WriteRaw(b *testing.B) {
 					Labels: &profilestorepb.LabelSet{
 						Labels: []*profilestorepb.Label{
 							{
-								Name:  labels.MetricName,
+								Name:  model.MetricNameLabel,
 								Value: "allocs",
 							},
 							{

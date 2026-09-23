@@ -120,7 +120,7 @@ jobs:
         with:
           distribution: goreleaser
           version: ${{ env.GORELEASER_VERSION }}
-          args: release --clean --skip=validate --skip-publish --timeout=60m
+          args: release --clean --skip=validate --skip-publish --timeout=60m --parallelism=2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GORELEASER_CURRENT_TAG: "${{ env.goreleaser_current_tag }}"

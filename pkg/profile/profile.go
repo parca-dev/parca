@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/apache/arrow-go/v18/arrow"
+	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/promql/parser"
 	"google.golang.org/grpc/codes"
@@ -209,7 +210,7 @@ type QueryParts struct {
 // ParseQuery parses a Parca query string into its components.
 // The query format is: <name>:<sample-type>:<sample-unit>:<period-type>:<period-unit>[:delta]{label=value,...}.
 func ParseQuery(query string) (QueryParts, error) {
-	parsedSelector, err := parser.ParseMetricSelector(query)
+	parsedSelector, err := parser.NewParser(parser.Options{}).ParseMetricSelector(query)
 	if err != nil {
 		return QueryParts{}, status.Error(codes.InvalidArgument, "failed to parse query")
 	}
@@ -217,7 +218,7 @@ func ParseQuery(query string) (QueryParts, error) {
 	sel := make([]*labels.Matcher, 0, len(parsedSelector))
 	var nameLabel *labels.Matcher
 	for _, matcher := range parsedSelector {
-		if matcher.Name == labels.MetricName {
+		if matcher.Name == model.MetricNameLabel {
 			nameLabel = matcher
 		} else {
 			sel = append(sel, matcher)
