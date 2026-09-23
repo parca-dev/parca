@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/apache/arrow-go/v18/arrow"
+	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/promql/parser"
 	"google.golang.org/grpc/codes"
@@ -217,7 +218,7 @@ func ParseQuery(query string) (QueryParts, error) {
 	sel := make([]*labels.Matcher, 0, len(parsedSelector))
 	var nameLabel *labels.Matcher
 	for _, matcher := range parsedSelector {
-		if matcher.Name == labels.MetricName {
+		if matcher.Name == model.MetricNameLabel {
 			nameLabel = matcher
 		} else {
 			sel = append(sel, matcher)
