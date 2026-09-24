@@ -264,11 +264,21 @@ func (q *Querier) ProfileTypes(
 
 // HasProfileData checks if there is any profile data in the store.
 func (q *Querier) HasProfileData(ctx context.Context) (bool, error) {
-	types, err := q.ProfileTypes(ctx, time.UnixMilli(0), time.UnixMilli(0))
+	ctx, span := q.tracer.Start(ctx, "ClickHouse/HasProfileData")
+	defer span.End()
+
+	// LIMIT 1 lets ClickHouse stop at the first granule instead of running
+	// the previous DISTINCT over the whole table.
+	rows, err := q.client.Query(ctx, fmt.Sprintf(`
+		SELECT 1 FROM %s
+		LIMIT 1
+	`, q.client.FullTableName()))
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed to query profile data existence: %w", err)
 	}
-	return len(types) > 0, nil
+	defer rows.Close()
+
+	return rows.Next(), rows.Err()
 }
 
 // QueryRange executes a range query and returns time series data.
