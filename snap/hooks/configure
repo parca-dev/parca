@@ -19,11 +19,6 @@ set -euo pipefail
 # We need to handle that case and reset $SNAP
 SNAP="${SNAP//\/var\/lib\/snapd/}"
 
-storage_active_memory="$(snapctl get storage-active-memory)"
-if [[ -z "$storage_active_memory" ]]; then
-    snapctl set storage-active-memory=536870912
-fi
-
 log_level="$(snapctl get log-level)"
 if [[ -z "$log_level" ]]; then
     snapctl set log-level=info
