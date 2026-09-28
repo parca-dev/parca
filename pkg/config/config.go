@@ -253,6 +253,9 @@ func (c *ScrapeConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		if rlcfg == nil {
 			return errors.New("empty or null target relabeling rule in scrape config")
 		}
+		if err := rlcfg.Validate(model.UTF8Validation); err != nil {
+			return err
+		}
 	}
 
 	// Validate the scrape and timeout internal configuration. When /debug/pprof/profile scraping

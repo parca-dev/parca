@@ -19,6 +19,8 @@ import (
 
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/discovery"
+	"github.com/prometheus/prometheus/model/labels"
+	"github.com/prometheus/prometheus/model/relabel"
 	"github.com/stretchr/testify/require"
 	"github.com/thanos-io/objstore/client"
 )
@@ -33,6 +35,34 @@ func TestLoad(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+// TestLoadRelabelConfigNameValidationScheme is a regression test for a panic
+// ("Invalid name validation scheme requested: unset") that occurred because
+// parsed relabel configs never had their NameValidationScheme populated,
+// leaving it at the zero value (model.UnsetValidation).
+func TestLoadRelabelConfigNameValidationScheme(t *testing.T) {
+	t.Parallel()
+
+	cfg, err := Load(`scrape_configs:
+- job_name: 'test'
+  static_configs:
+  - targets: ['localhost:8080']
+  relabel_configs:
+  - source_labels: ['__meta_foo']
+    regex: '(.+)'
+    target_label: '__meta_${1}'
+    replacement: 'bar'
+    action: replace`)
+	require.NoError(t, err)
+	require.Len(t, cfg.ScrapeConfigs, 1)
+	require.Len(t, cfg.ScrapeConfigs[0].RelabelConfigs, 1)
+	require.Equal(t, model.UTF8Validation, cfg.ScrapeConfigs[0].RelabelConfigs[0].NameValidationScheme)
+
+	lb := labels.NewBuilder(labels.FromStrings("__meta_foo", "extra"))
+	require.NotPanics(t, func() {
+		relabel.ProcessBuilder(lb, cfg.ScrapeConfigs[0].RelabelConfigs...)
+	})
 }
 
 func TestLoadComplex(t *testing.T) {
