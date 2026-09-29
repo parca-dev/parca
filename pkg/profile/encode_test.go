@@ -16,7 +16,9 @@ package profile
 import (
 	"testing"
 
+	"github.com/apache/arrow-go/v18/arrow/array"
 	"github.com/apache/arrow-go/v18/arrow/memory"
+	"github.com/stretchr/testify/require"
 
 	pprofpb "github.com/parca-dev/parca/gen/proto/go/google/pprof"
 )
@@ -71,4 +73,30 @@ func TestEncodeDecode(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Locations written by the v2 ingest path before it populated the function
+// name (e.g. agent-symbolized kernel frames) only carry a system name.
+func TestDecodeFallsBackToSystemName(t *testing.T) {
+	t.Parallel()
+
+	buf := EncodePprofLocation(
+		&pprofpb.Location{Line: []*pprofpb.Line{{Line: 1, FunctionId: 1}}},
+		nil,
+		[]*pprofpb.Function{{SystemName: 1, Filename: 2}},
+		[]string{"", "do_syscall_64", "vmlinux"},
+	)
+
+	name, err := DecodeFunctionName(buf)
+	require.NoError(t, err)
+	require.Equal(t, "do_syscall_64", string(name))
+
+	lw := NewLocationsWriter(memory.DefaultAllocator)
+	defer lw.RecordBuilder.Release()
+	_, err = DecodeInto(lw, buf, nil)
+	require.NoError(t, err)
+
+	arr := lw.FunctionName.NewArray().(*array.Dictionary)
+	defer arr.Release()
+	require.Equal(t, "do_syscall_64", arr.Dictionary().(*array.Binary).ValueString(arr.GetValueIndex(0)))
 }

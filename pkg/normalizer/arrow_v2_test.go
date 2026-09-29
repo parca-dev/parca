@@ -14,6 +14,7 @@
 package normalizer
 
 import (
+	"bytes"
 	"context"
 	"testing"
 
@@ -69,6 +70,13 @@ func TestAddSampleRecordV2(t *testing.T) {
 	} {
 		require.NotEmpty(t, schema.FieldIndices(name), "expected internal record to have column %q", name)
 	}
+
+	// v2 only carries system_name; it must also be written as the function
+	// name, which is what the flame graph and table read.
+	stacks := out.Column(schema.FieldIndices(profile.ColumnStacktrace)[0]).(*array.List)
+	locs := stacks.ListValues().(*array.Dictionary)
+	encoded := locs.Dictionary().(*array.Binary).Value(locs.GetValueIndex(0))
+	require.Equal(t, 2, bytes.Count(encoded, []byte("do_thing")), "expected name and system_name to both be do_thing")
 
 	// Verify the timestamp ms / time_nanos split.
 	timestampIdx := schema.FieldIndices(profile.ColumnTimestamp)[0]
