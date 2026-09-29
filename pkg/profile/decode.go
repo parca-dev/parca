@@ -159,6 +159,15 @@ func DecodeInto(lw LocationsWriter, data []byte, demangler Demangler) (DecodeRes
 				name, n := decodeString(data[offset:])
 				offset += n
 
+				systemName, n := decodeString(data[offset:])
+				offset += n
+
+				// Data written by the v2 ingest path before it populated the
+				// name only carries system_name.
+				if len(name) == 0 {
+					name = systemName
+				}
+
 				if demangler != nil {
 					name = []byte(demangler.Demangle(name))
 				}
@@ -166,9 +175,6 @@ func DecodeInto(lw LocationsWriter, data []byte, demangler Demangler) (DecodeRes
 				if err := lw.FunctionName.Append([]byte(name)); err != nil {
 					return DecodeResult{}, fmt.Errorf("append function name: %w", err)
 				}
-
-				systemName, n := decodeString(data[offset:])
-				offset += n
 
 				if err := lw.FunctionSystemName.Append(systemName); err != nil {
 					return DecodeResult{}, fmt.Errorf("append function system name: %w", err)
@@ -257,7 +263,11 @@ func DecodeFunctionName(data []byte) ([]byte, error) {
 				_, n = varint.Uvarint(data[offset:])
 				offset += n
 
-				name, _ := decodeString(data[offset:])
+				name, n := decodeString(data[offset:])
+				if len(name) == 0 {
+					// Fall back to system_name, matching DecodeInto.
+					name, _ = decodeString(data[offset+n:])
+				}
 				return name, nil
 			}
 		}

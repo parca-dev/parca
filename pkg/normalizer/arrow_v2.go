@@ -520,7 +520,9 @@ func encodeStacktraceListViewV2(mem memory.Allocator, stacktrace *array.ListView
 //	  if hasFunction: uvarint(startLine), string(name), string(systemName), string(filename)
 //
 // v2 has no mapping_start/limit/offset, so they are written as zero. v2 has no
-// separate function name vs. system_name, so name is written as the empty string.
+// separate function name vs. system_name, so system_name is written as both;
+// readers that only look at the name (flame graph, table) would otherwise see
+// every pre-symbolized frame (e.g. kernel frames) as unnamed.
 func encodeV2Location(locIdx int, r *v2LocationReader) []byte {
 	address := r.address.Value(locIdx)
 
@@ -572,9 +574,10 @@ func encodeV2Location(locIdx int, r *v2LocationReader) []byte {
 			if !ok {
 				continue
 			}
+			systemName := v2FunctionSystemName(r, fIdx)
 			size += uvarintSize(r.startLine.Value(fIdx))
-			size += sizeOfString("") // function name (not present in v2)
-			size += sizeOfString(v2FunctionSystemName(r, fIdx))
+			size += sizeOfString(systemName) // name
+			size += sizeOfString(systemName)
 			size += sizeOfString(v2FunctionFilename(r, fIdx))
 		}
 	}
@@ -613,9 +616,10 @@ func encodeV2Location(locIdx int, r *v2LocationReader) []byte {
 			}
 			buf[offset] = 0x1
 			offset++
+			systemName := v2FunctionSystemName(r, fIdx)
 			offset += binary.PutUvarint(buf[offset:], r.startLine.Value(fIdx))
-			offset = writeStringV2(buf, offset, "")
-			offset = writeStringV2(buf, offset, v2FunctionSystemName(r, fIdx))
+			offset = writeStringV2(buf, offset, systemName)
+			offset = writeStringV2(buf, offset, systemName)
 			offset = writeStringV2(buf, offset, v2FunctionFilename(r, fIdx))
 		}
 	}
