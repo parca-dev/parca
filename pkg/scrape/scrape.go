@@ -649,6 +649,8 @@ func processScrapeResp(ctx context.Context, buf *bytes.Buffer, sl *scrapeLoop, p
 		byt = newBuf.Bytes()
 	}
 
+	target := sl.target.String()
+	ctx = context.WithValue(ctx, "target", target)
 	_, err = sl.store.WriteRaw(ctx, &profilepb.WriteRawRequest{
 		Normalized: sl.normalizedAddresses,
 		Series: []*profilepb.RawProfileSeries{
