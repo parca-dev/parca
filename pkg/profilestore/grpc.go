@@ -63,7 +63,11 @@ func (s *GRPCForwarder) WriteRaw(ctx context.Context, req *profilestorepb.WriteR
 	// See https://github.com/parca-dev/parca-agent/blob/main/pkg/agent/write_client.go#L28
 	resp, err := s.client.WriteRaw(ctx, req)
 	if err != nil {
-		level.Warn(s.logger).Log("msg", "failed to forward profiles", "err", err)
+		target, ok := ctx.Value("target").(string)
+		if !ok {
+			target = "unknown"
+		}
+		level.Warn(s.logger).Log("msg", "failed to forward profiles", "target", target, "err", err)
 	}
 	return resp, err
 }
