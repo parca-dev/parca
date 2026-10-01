@@ -19,7 +19,6 @@ set -euo pipefail
 "${SNAP}"/snap/hooks/configure
 
 # Grab the config options
-storage_active_memory="$(snapctl get storage-active-memory)"
 log_level="$(snapctl get log-level)"
 storage_persist="$(snapctl get enable-persistence)"
 http_address="$(snapctl get http-address)"
@@ -58,7 +57,8 @@ else
     # Only configure persistence and storage if we're not sending to a remote store.
 
     # Switch out command line options depending on whether the user has
-    # specified storage-persist=true
+    # specified storage-persist=true. The persistence flag now controls only
+    # the local metastore; profile data lives in ClickHouse.
     if [[ "${storage_persist}" == "true" ]]; then
         opts+=(
             "--enable-persistence=true"
@@ -67,7 +67,6 @@ else
     else
         opts+=(
             "--enable-persistence=false"
-            "--storage-active-memory=${storage_active_memory}"
         )
     fi
 fi
