@@ -359,17 +359,31 @@ func EncodeArrowLocation(
 			offset = writeUint64(buf, offset, 0)
 		}
 
-		buf[offset] = 0x1
-		offset++
+		// This must mirror serializedArrowLocationSize, which budgets the
+		// function block only under this same IsValid check. Writing the flag
+		// as 0x1 and the block unconditionally overran a buffer sized for the
+		// flag alone: for a line whose function name is null the sizer budgets
+		// 10 bytes and the writer needed more, panicking in
+		// writeInt64AsUvarint on the start line. A line with a number but no
+		// function is a representable shape -- DecodeInto emits exactly that
+		// from a pprof Line with FunctionId 0 -- and the decoders already round
+		// trip the 0x0 case.
+		if lineFunctionName.IsValid(i) {
+			buf[offset] = 0x1
+			offset++
 
-		offset = writeInt64AsUvarint(buf, offset, lineFunctionStartLine.Value(i))
-		offset = writeString(buf, offset, string(lineFunctionNameDict.Value(int(lineFunctionName.GetValueIndex(i)))))
-		offset = writeString(buf, offset, string(lineFunctionSystemNameDict.Value(int(lineFunctionSystemName.GetValueIndex(i)))))
+			offset = writeInt64AsUvarint(buf, offset, lineFunctionStartLine.Value(i))
+			offset = writeString(buf, offset, string(lineFunctionNameDict.Value(int(lineFunctionName.GetValueIndex(i)))))
+			offset = writeString(buf, offset, string(lineFunctionSystemNameDict.Value(int(lineFunctionSystemName.GetValueIndex(i)))))
 
-		if lineFunctionFilenameDict.IsValid(lineFunctionFilename.GetPhysicalIndex(i)) {
-			offset = writeString(buf, offset, string(lineFunctionFilenameDictValues.Value(int(lineFunctionFilenameDict.GetValueIndex(lineFunctionFilename.GetPhysicalIndex(i))))))
+			if lineFunctionFilenameDict.IsValid(lineFunctionFilename.GetPhysicalIndex(i)) {
+				offset = writeString(buf, offset, string(lineFunctionFilenameDictValues.Value(int(lineFunctionFilenameDict.GetValueIndex(lineFunctionFilename.GetPhysicalIndex(i))))))
+			} else {
+				offset = writeString(buf, offset, "")
+			}
 		} else {
-			offset = writeString(buf, offset, "")
+			buf[offset] = 0x0
+			offset++
 		}
 	}
 
