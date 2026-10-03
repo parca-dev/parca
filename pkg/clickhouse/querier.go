@@ -264,11 +264,34 @@ func (q *Querier) ProfileTypes(
 
 // HasProfileData checks if there is any profile data in the store.
 func (q *Querier) HasProfileData(ctx context.Context) (bool, error) {
-	types, err := q.ProfileTypes(ctx, time.UnixMilli(0), time.UnixMilli(0))
+	ctx, span := q.tracer.Start(ctx, "ClickHouse/HasProfileData")
+	defer span.End()
+
+	// This asks whether the table holds anything at all, so it wants one row,
+	// not every distinct profile type. It used to call
+	// ProfileTypes(UnixMilli(0), UnixMilli(0)), whose time filter is skipped
+	// when both bounds are zero -- so the question "is there any data?" was
+	// answered with an unbounded SELECT DISTINCT over six columns, a full scan
+	// of a table that grows without bound. Measured on a server with 72h of
+	// retention: 108,591,120 rows and 7.9 GB read to return 9 rows, 1.3s warm
+	// and 61s cold, every time the UI asked.
+	rows, err := q.client.Query(ctx, hasProfileDataQuery(q.client.FullTableName()))
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed to query for profile data: %w", err)
 	}
-	return len(types) > 0, nil
+	defer rows.Close()
+
+	if rows.Next() {
+		return true, nil
+	}
+	return false, rows.Err()
+}
+
+// hasProfileDataQuery is the statement HasProfileData runs. It is a separate
+// function so a test can pin its shape without a server: existence needs one
+// row, and must not become a scan again.
+func hasProfileDataQuery(table string) string {
+	return fmt.Sprintf("SELECT 1 FROM %s LIMIT 1", table)
 }
 
 // QueryRange executes a range query and returns time series data.
