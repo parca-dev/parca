@@ -363,6 +363,16 @@ func (m *ShouldInitiateUploadResponse) MarshalToSizedBufferVT(dAtA []byte) (int,
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.RetryRequired {
+		i--
+		if m.RetryRequired {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x18
+	}
 	if len(m.Reason) > 0 {
 		i -= len(m.Reason)
 		copy(dAtA[i:], m.Reason)
@@ -412,6 +422,16 @@ func (m *InitiateUploadRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error)
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.SupportsMultipleUploads {
+		i--
+		if m.SupportsMultipleUploads {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x38
 	}
 	if m.BuildIdType != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.BuildIdType))
@@ -484,6 +504,28 @@ func (m *InitiateUploadResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.RetryRequired {
+		i--
+		if m.RetryRequired {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x18
+	}
+	if len(m.UploadTargets) > 0 {
+		for iNdEx := len(m.UploadTargets) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.UploadTargets[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			i--
+			dAtA[i] = 0x12
+		}
 	}
 	if m.UploadInstructions != nil {
 		size, err := m.UploadInstructions.MarshalToSizedBufferVT(dAtA[:i])
@@ -1093,6 +1135,9 @@ func (m *ShouldInitiateUploadResponse) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
+	if m.RetryRequired {
+		n += 2
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -1123,6 +1168,9 @@ func (m *InitiateUploadRequest) SizeVT() (n int) {
 	if m.BuildIdType != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.BuildIdType))
 	}
+	if m.SupportsMultipleUploads {
+		n += 2
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -1136,6 +1184,15 @@ func (m *InitiateUploadResponse) SizeVT() (n int) {
 	if m.UploadInstructions != nil {
 		l = m.UploadInstructions.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if len(m.UploadTargets) > 0 {
+		for _, e := range m.UploadTargets {
+			l = e.SizeVT()
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
+	}
+	if m.RetryRequired {
+		n += 2
 	}
 	n += len(m.unknownFields)
 	return n
@@ -1615,6 +1672,26 @@ func (m *ShouldInitiateUploadResponse) UnmarshalVT(dAtA []byte) error {
 			}
 			m.Reason = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RetryRequired", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.RetryRequired = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -1807,6 +1884,26 @@ func (m *InitiateUploadRequest) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SupportsMultipleUploads", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.SupportsMultipleUploads = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -1894,6 +1991,60 @@ func (m *InitiateUploadResponse) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UploadTargets", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.UploadTargets = append(m.UploadTargets, &UploadInstructions{})
+			if err := m.UploadTargets[len(m.UploadTargets)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RetryRequired", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.RetryRequired = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

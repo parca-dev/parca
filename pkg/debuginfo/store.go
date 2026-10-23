@@ -204,6 +204,7 @@ func (s *Store) ShouldInitiateUpload(ctx context.Context, req *debuginfopb.Shoul
 				return &debuginfopb.ShouldInitiateUploadResponse{
 					ShouldInitiateUpload: false,
 					Reason:               ReasonUploadInProgress,
+					RetryRequired:        true,
 				}, nil
 			case debuginfopb.DebuginfoUpload_STATE_UPLOADED:
 				if dbginfo.Quality == nil || !dbginfo.Quality.NotValidElf {
@@ -310,14 +311,12 @@ func (s *Store) InitiateUpload(ctx context.Context, req *debuginfopb.InitiateUpl
 			return nil, fmt.Errorf("mark debuginfo upload as uploading via gRPC: %w", err)
 		}
 
-		return &debuginfopb.InitiateUploadResponse{
-			UploadInstructions: &debuginfopb.UploadInstructions{
-				BuildId:        req.BuildId,
-				UploadId:       uploadID,
-				UploadStrategy: debuginfopb.UploadInstructions_UPLOAD_STRATEGY_GRPC,
-				Type:           req.Type,
-			},
-		}, nil
+		return uploadResponse(req.SupportsMultipleUploads, &debuginfopb.UploadInstructions{
+			BuildId:        req.BuildId,
+			UploadId:       uploadID,
+			UploadStrategy: debuginfopb.UploadInstructions_UPLOAD_STRATEGY_GRPC,
+			Type:           req.Type,
+		}), nil
 	}
 
 	signedURL, err := s.signedUpload.Client.SignedPUT(ctx, objectPath(req.BuildId, req.Type), req.Size, uploadExpiry)
@@ -329,15 +328,20 @@ func (s *Store) InitiateUpload(ctx context.Context, req *debuginfopb.InitiateUpl
 		return nil, fmt.Errorf("mark debuginfo upload as uploading via signed URL: %w", err)
 	}
 
-	return &debuginfopb.InitiateUploadResponse{
-		UploadInstructions: &debuginfopb.UploadInstructions{
-			BuildId:        req.BuildId,
-			UploadId:       uploadID,
-			UploadStrategy: debuginfopb.UploadInstructions_UPLOAD_STRATEGY_SIGNED_URL,
-			SignedUrl:      signedURL,
-			Type:           req.Type,
-		},
-	}, nil
+	return uploadResponse(req.SupportsMultipleUploads, &debuginfopb.UploadInstructions{
+		BuildId:        req.BuildId,
+		UploadId:       uploadID,
+		UploadStrategy: debuginfopb.UploadInstructions_UPLOAD_STRATEGY_SIGNED_URL,
+		SignedUrl:      signedURL,
+		Type:           req.Type,
+	}), nil
+}
+
+func uploadResponse(multiple bool, instructions *debuginfopb.UploadInstructions) *debuginfopb.InitiateUploadResponse {
+	if multiple {
+		return &debuginfopb.InitiateUploadResponse{UploadTargets: []*debuginfopb.UploadInstructions{instructions}}
+	}
+	return &debuginfopb.InitiateUploadResponse{UploadInstructions: instructions}
 }
 
 func (s *Store) MarkUploadFinished(ctx context.Context, req *debuginfopb.MarkUploadFinishedRequest) (*debuginfopb.MarkUploadFinishedResponse, error) {
