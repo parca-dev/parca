@@ -242,6 +242,10 @@
         "buildIdType": {
           "$ref": "#/definitions/v1alpha1BuildIDType",
           "description": "Type of build ID."
+        },
+        "supportsMultipleUploads": {
+          "type": "boolean",
+          "description": "Whether the client supports upload_targets and retry_required in the response.\nAggregators must reject clients without this capability before initiating uploads."
         }
       },
       "description": "InitiateUploadRequest is the request to initiate an upload."
@@ -251,7 +255,19 @@
       "properties": {
         "uploadInstructions": {
           "$ref": "#/definitions/v1alpha1UploadInstructions",
-          "description": "UploadInstructions contains the instructions for the client to upload the debuginfo."
+          "description": "Legacy instructions for a single upload. Mutually exclusive with upload_targets."
+        },
+        "uploadTargets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1alpha1UploadInstructions"
+          },
+          "description": "Independent uploads, returned only when supports_multiple_uploads is true.\nClients must also accept legacy upload_instructions from older servers."
+        },
+        "retryRequired": {
+          "type": "boolean",
+          "description": "Whether some destinations remain unresolved. Finish the returned uploads,\nthen retry negotiation; completing this list does not complete all delivery."
         }
       },
       "description": "InitiateUploadResponse is the response to an InitiateUploadRequest."
@@ -265,7 +281,7 @@
         },
         "uploadId": {
           "type": "string",
-          "description": "The upload_id of the debug info to mark as finished."
+          "description": "The opaque upload_id from one instruction. Completes only that upload;\nclients call this independently for each successfully transferred artifact."
         },
         "type": {
           "$ref": "#/definitions/v1alpha1DebuginfoType",
@@ -314,6 +330,10 @@
         "reason": {
           "type": "string",
           "description": "Reason for why an upload should be initiated or not."
+        },
+        "retryRequired": {
+          "type": "boolean",
+          "description": "Whether the client must check again, even if no upload is requested now.\nAn upload in progress is not evidence that the artifact is available."
         }
       },
       "description": "ShouldInitiateUploadResponse is the response for ShouldInitiateUpload."
@@ -345,7 +365,7 @@
         },
         "uploadId": {
           "type": "string",
-          "description": "The upload_id to use for uploading."
+          "description": "Opaque upload identifier, echoed unchanged to Upload and MarkUploadFinished\non the service that issued these instructions. Aggregators may replace a\ndownstream ID with a token that routes to exactly one downstream upload."
         },
         "uploadStrategy": {
           "$ref": "#/definitions/UploadInstructionsUploadStrategy",

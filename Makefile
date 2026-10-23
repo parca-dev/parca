@@ -133,7 +133,7 @@ proto/format:
 	buf format -w
 
 .PHONY: proto/generate
-proto/generate: proto/vendor
+proto/generate: proto/google/pprof/profile.proto
 	# Generate just the annotations and http protos.
 	buf generate buf.build/googleapis/googleapis --path google/api/annotations.proto --path google/api/http.proto
 	buf generate buf.build/grpc/grpc --path grpc/health/

@@ -72,6 +72,12 @@ func newFakeDebuginfodClientsWithItems(items map[string]io.ReadCloser) *fakeDebu
 }
 
 func TestStore(t *testing.T) {
+	t.Run("legacy", func(t *testing.T) { testStore(t, false) })
+	t.Run("multiple uploads", func(t *testing.T) { testStore(t, true) })
+}
+
+func testStore(t *testing.T, multiple bool) {
+	t.Helper()
 	ctx := context.Background()
 	tracer := noop.NewTracerProvider().Tracer("")
 
@@ -151,6 +157,7 @@ func TestStore(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, shouldInitiateResp.ShouldInitiateUpload)
 	require.Equal(t, ReasonUploadInProgress, shouldInitiateResp.Reason)
+	require.True(t, shouldInitiateResp.RetryRequired)
 
 	// But with force=true, we should be able to restart an ongoing upload.
 	shouldInitiateResp, err = debuginfoClient.ShouldInitiateUpload(ctx, &debuginfopb.ShouldInitiateUploadRequest{BuildId: "abcd", Force: true})
@@ -168,17 +175,29 @@ func TestStore(t *testing.T) {
 	require.Equal(t, ReasonUploadStale, shouldInitiateResp.Reason)
 
 	initiateResp, err := debuginfoClient.InitiateUpload(ctx, &debuginfopb.InitiateUploadRequest{
-		BuildId: "abcd",
-		Hash:    "foo",
-		Size:    2,
+		BuildId:                 "abcd",
+		Hash:                    "foo",
+		Size:                    2,
+		SupportsMultipleUploads: multiple,
 	})
 	require.NoError(t, err)
+	require.False(t, initiateResp.RetryRequired)
 
-	size, err := grpcUploadClient.Upload(ctx, initiateResp.UploadInstructions, bytes.NewReader(b.Bytes()))
+	instructions := initiateResp.UploadInstructions
+	if multiple {
+		require.Nil(t, instructions)
+		require.Len(t, initiateResp.UploadTargets, 1)
+		instructions = initiateResp.UploadTargets[0]
+	} else {
+		require.Empty(t, initiateResp.UploadTargets)
+	}
+	require.NotNil(t, instructions)
+
+	size, err := grpcUploadClient.Upload(ctx, instructions, bytes.NewReader(b.Bytes()))
 	require.NoError(t, err)
 	require.Equal(t, 3072, int(size))
 
-	_, err = debuginfoClient.MarkUploadFinished(ctx, &debuginfopb.MarkUploadFinishedRequest{BuildId: "abcd", UploadId: initiateResp.UploadInstructions.UploadId})
+	_, err = debuginfoClient.MarkUploadFinished(ctx, &debuginfopb.MarkUploadFinishedRequest{BuildId: "abcd", UploadId: instructions.UploadId})
 	require.NoError(t, err)
 
 	obj, err := s.bucket.Get(ctx, "abcd/debuginfo")
@@ -196,6 +215,7 @@ func TestStore(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, shouldInitiateResp.ShouldInitiateUpload)
 	require.Equal(t, ReasonDebuginfoAlreadyExists, shouldInitiateResp.Reason)
+	require.False(t, shouldInitiateResp.RetryRequired)
 
 	// But with force=true, we should be able to re-upload existing valid debuginfo.
 	shouldInitiateResp, err = debuginfoClient.ShouldInitiateUpload(ctx, &debuginfopb.ShouldInitiateUploadRequest{BuildId: "abcd", Force: true})
@@ -257,4 +277,59 @@ func TestStore(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, ReasonDebuginfodInvalid, shouldInitiateResp.Reason)
 	require.True(t, shouldInitiateResp.ShouldInitiateUpload)
+}
+
+type fakeSignedUploadClient struct {
+	url string
+}
+
+func (f fakeSignedUploadClient) SignedPUT(context.Context, string, int64, time.Time) (string, error) {
+	return f.url, nil
+}
+
+func TestStoreInitiateSignedUpload(t *testing.T) {
+	for _, multiple := range []bool{false, true} {
+		name := "legacy"
+		if multiple {
+			name = "multiple uploads"
+		}
+		t.Run(name, func(t *testing.T) {
+			ctx := context.Background()
+			logger := log.NewNopLogger()
+			bucket := objstore.NewInMemBucket()
+			metadata := NewObjectStoreMetadata(logger, bucket)
+			const url = "https://storage.example.com/signed-upload"
+			s, err := NewStore(
+				noop.NewTracerProvider().Tracer(""), logger, metadata, bucket,
+				newFakeDebuginfodClientsWithItems(nil),
+				SignedUpload{Enabled: true, Client: fakeSignedUploadClient{url: url}},
+				15*time.Minute, 1024,
+			)
+			require.NoError(t, err)
+
+			resp, err := s.InitiateUpload(ctx, &debuginfopb.InitiateUploadRequest{
+				BuildId:                 "abcd",
+				Hash:                    "hash",
+				Size:                    42,
+				Type:                    debuginfopb.DebuginfoType_DEBUGINFO_TYPE_EXECUTABLE,
+				SupportsMultipleUploads: multiple,
+			})
+			require.NoError(t, err)
+			require.False(t, resp.RetryRequired)
+			instructions := resp.UploadInstructions
+			if multiple {
+				require.Nil(t, instructions)
+				require.Len(t, resp.UploadTargets, 1)
+				instructions = resp.UploadTargets[0]
+			} else {
+				require.Empty(t, resp.UploadTargets)
+			}
+			require.NotNil(t, instructions)
+			require.Equal(t, "abcd", instructions.BuildId)
+			require.NotEmpty(t, instructions.UploadId)
+			require.Equal(t, debuginfopb.UploadInstructions_UPLOAD_STRATEGY_SIGNED_URL, instructions.UploadStrategy)
+			require.Equal(t, url, instructions.SignedUrl)
+			require.Equal(t, debuginfopb.DebuginfoType_DEBUGINFO_TYPE_EXECUTABLE, instructions.Type)
+		})
+	}
 }

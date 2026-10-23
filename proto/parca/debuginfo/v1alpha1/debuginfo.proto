@@ -94,6 +94,9 @@ message ShouldInitiateUploadResponse {
   bool should_initiate_upload = 1;
   // Reason for why an upload should be initiated or not.
   string reason = 2;
+  // Whether the client must check again, even if no upload is requested now.
+  // An upload in progress is not evidence that the artifact is available.
+  bool retry_required = 3;
 }
 
 // InitiateUploadRequest is the request to initiate an upload.
@@ -110,12 +113,21 @@ message InitiateUploadRequest {
   DebuginfoType type = 5;
   // Type of build ID.
   BuildIDType build_id_type = 6;
+  // Whether the client supports upload_targets and retry_required in the response.
+  // Aggregators must reject clients without this capability before initiating uploads.
+  bool supports_multiple_uploads = 7;
 }
 
 // InitiateUploadResponse is the response to an InitiateUploadRequest.
 message InitiateUploadResponse {
-  // UploadInstructions contains the instructions for the client to upload the debuginfo.
+  // Legacy instructions for a single upload. Mutually exclusive with upload_targets.
   UploadInstructions upload_instructions = 1;
+  // Independent uploads, returned only when supports_multiple_uploads is true.
+  // Clients must also accept legacy upload_instructions from older servers.
+  repeated UploadInstructions upload_targets = 2;
+  // Whether some destinations remain unresolved. Finish the returned uploads,
+  // then retry negotiation; completing this list does not complete all delivery.
+  bool retry_required = 3;
 }
 
 // UploadInstructions contains the instructions for the client to upload debuginfo.
@@ -133,7 +145,9 @@ message UploadInstructions {
     UPLOAD_STRATEGY_SIGNED_URL = 2;
   }
 
-  // The upload_id to use for uploading.
+  // Opaque upload identifier, echoed unchanged to Upload and MarkUploadFinished
+  // on the service that issued these instructions. Aggregators may replace a
+  // downstream ID with a token that routes to exactly one downstream upload.
   string upload_id = 2;
   // The strategy to use for uploading.
   UploadStrategy upload_strategy = 3;
@@ -148,7 +162,8 @@ message UploadInstructions {
 message MarkUploadFinishedRequest {
   // The build_id of the debug info to mark as finished.
   string build_id = 1;
-  // The upload_id of the debug info to mark as finished.
+  // The opaque upload_id from one instruction. Completes only that upload;
+  // clients call this independently for each successfully transferred artifact.
   string upload_id = 2;
   // The type of debuginfo upload to mark as finished.
   DebuginfoType type = 3;

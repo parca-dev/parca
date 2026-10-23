@@ -67,6 +67,13 @@ export interface ShouldInitiateUploadResponse {
      * @generated from protobuf field: string reason = 2
      */
     reason: string;
+    /**
+     * Whether the client must check again, even if no upload is requested now.
+     * An upload in progress is not evidence that the artifact is available.
+     *
+     * @generated from protobuf field: bool retry_required = 3
+     */
+    retryRequired: boolean;
 }
 /**
  * InitiateUploadRequest is the request to initiate an upload.
@@ -110,6 +117,13 @@ export interface InitiateUploadRequest {
      * @generated from protobuf field: parca.debuginfo.v1alpha1.BuildIDType build_id_type = 6
      */
     buildIdType: BuildIDType;
+    /**
+     * Whether the client supports upload_targets and retry_required in the response.
+     * Aggregators must reject clients without this capability before initiating uploads.
+     *
+     * @generated from protobuf field: bool supports_multiple_uploads = 7
+     */
+    supportsMultipleUploads: boolean;
 }
 /**
  * InitiateUploadResponse is the response to an InitiateUploadRequest.
@@ -118,11 +132,25 @@ export interface InitiateUploadRequest {
  */
 export interface InitiateUploadResponse {
     /**
-     * UploadInstructions contains the instructions for the client to upload the debuginfo.
+     * Legacy instructions for a single upload. Mutually exclusive with upload_targets.
      *
      * @generated from protobuf field: parca.debuginfo.v1alpha1.UploadInstructions upload_instructions = 1
      */
     uploadInstructions?: UploadInstructions;
+    /**
+     * Independent uploads, returned only when supports_multiple_uploads is true.
+     * Clients must also accept legacy upload_instructions from older servers.
+     *
+     * @generated from protobuf field: repeated parca.debuginfo.v1alpha1.UploadInstructions upload_targets = 2
+     */
+    uploadTargets: UploadInstructions[];
+    /**
+     * Whether some destinations remain unresolved. Finish the returned uploads,
+     * then retry negotiation; completing this list does not complete all delivery.
+     *
+     * @generated from protobuf field: bool retry_required = 3
+     */
+    retryRequired: boolean;
 }
 /**
  * UploadInstructions contains the instructions for the client to upload debuginfo.
@@ -137,7 +165,9 @@ export interface UploadInstructions {
      */
     buildId: string;
     /**
-     * The upload_id to use for uploading.
+     * Opaque upload identifier, echoed unchanged to Upload and MarkUploadFinished
+     * on the service that issued these instructions. Aggregators may replace a
+     * downstream ID with a token that routes to exactly one downstream upload.
      *
      * @generated from protobuf field: string upload_id = 2
      */
@@ -200,7 +230,8 @@ export interface MarkUploadFinishedRequest {
      */
     buildId: string;
     /**
-     * The upload_id of the debug info to mark as finished.
+     * The opaque upload_id from one instruction. Completes only that upload;
+     * clients call this independently for each successfully transferred artifact.
      *
      * @generated from protobuf field: string upload_id = 2
      */
@@ -626,13 +657,15 @@ class ShouldInitiateUploadResponse$Type extends MessageType<ShouldInitiateUpload
     constructor() {
         super("parca.debuginfo.v1alpha1.ShouldInitiateUploadResponse", [
             { no: 1, name: "should_initiate_upload", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
-            { no: 2, name: "reason", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 2, name: "reason", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "retry_required", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<ShouldInitiateUploadResponse>): ShouldInitiateUploadResponse {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.shouldInitiateUpload = false;
         message.reason = "";
+        message.retryRequired = false;
         if (value !== undefined)
             reflectionMergePartial<ShouldInitiateUploadResponse>(this, message, value);
         return message;
@@ -647,6 +680,9 @@ class ShouldInitiateUploadResponse$Type extends MessageType<ShouldInitiateUpload
                     break;
                 case /* string reason */ 2:
                     message.reason = reader.string();
+                    break;
+                case /* bool retry_required */ 3:
+                    message.retryRequired = reader.bool();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -666,6 +702,9 @@ class ShouldInitiateUploadResponse$Type extends MessageType<ShouldInitiateUpload
         /* string reason = 2; */
         if (message.reason !== "")
             writer.tag(2, WireType.LengthDelimited).string(message.reason);
+        /* bool retry_required = 3; */
+        if (message.retryRequired !== false)
+            writer.tag(3, WireType.Varint).bool(message.retryRequired);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -685,7 +724,8 @@ class InitiateUploadRequest$Type extends MessageType<InitiateUploadRequest> {
             { no: 3, name: "hash", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 4, name: "force", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 5, name: "type", kind: "enum", T: () => ["parca.debuginfo.v1alpha1.DebuginfoType", DebuginfoType, "DEBUGINFO_TYPE_"] },
-            { no: 6, name: "build_id_type", kind: "enum", T: () => ["parca.debuginfo.v1alpha1.BuildIDType", BuildIDType] }
+            { no: 6, name: "build_id_type", kind: "enum", T: () => ["parca.debuginfo.v1alpha1.BuildIDType", BuildIDType] },
+            { no: 7, name: "supports_multiple_uploads", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<InitiateUploadRequest>): InitiateUploadRequest {
@@ -696,6 +736,7 @@ class InitiateUploadRequest$Type extends MessageType<InitiateUploadRequest> {
         message.force = false;
         message.type = 0;
         message.buildIdType = 0;
+        message.supportsMultipleUploads = false;
         if (value !== undefined)
             reflectionMergePartial<InitiateUploadRequest>(this, message, value);
         return message;
@@ -722,6 +763,9 @@ class InitiateUploadRequest$Type extends MessageType<InitiateUploadRequest> {
                     break;
                 case /* parca.debuginfo.v1alpha1.BuildIDType build_id_type */ 6:
                     message.buildIdType = reader.int32();
+                    break;
+                case /* bool supports_multiple_uploads */ 7:
+                    message.supportsMultipleUploads = reader.bool();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -753,6 +797,9 @@ class InitiateUploadRequest$Type extends MessageType<InitiateUploadRequest> {
         /* parca.debuginfo.v1alpha1.BuildIDType build_id_type = 6; */
         if (message.buildIdType !== 0)
             writer.tag(6, WireType.Varint).int32(message.buildIdType);
+        /* bool supports_multiple_uploads = 7; */
+        if (message.supportsMultipleUploads !== false)
+            writer.tag(7, WireType.Varint).bool(message.supportsMultipleUploads);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -767,11 +814,15 @@ export const InitiateUploadRequest = new InitiateUploadRequest$Type();
 class InitiateUploadResponse$Type extends MessageType<InitiateUploadResponse> {
     constructor() {
         super("parca.debuginfo.v1alpha1.InitiateUploadResponse", [
-            { no: 1, name: "upload_instructions", kind: "message", T: () => UploadInstructions }
+            { no: 1, name: "upload_instructions", kind: "message", T: () => UploadInstructions },
+            { no: 2, name: "upload_targets", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => UploadInstructions },
+            { no: 3, name: "retry_required", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<InitiateUploadResponse>): InitiateUploadResponse {
         const message = globalThis.Object.create((this.messagePrototype!));
+        message.uploadTargets = [];
+        message.retryRequired = false;
         if (value !== undefined)
             reflectionMergePartial<InitiateUploadResponse>(this, message, value);
         return message;
@@ -783,6 +834,12 @@ class InitiateUploadResponse$Type extends MessageType<InitiateUploadResponse> {
             switch (fieldNo) {
                 case /* parca.debuginfo.v1alpha1.UploadInstructions upload_instructions */ 1:
                     message.uploadInstructions = UploadInstructions.internalBinaryRead(reader, reader.uint32(), options, message.uploadInstructions);
+                    break;
+                case /* repeated parca.debuginfo.v1alpha1.UploadInstructions upload_targets */ 2:
+                    message.uploadTargets.push(UploadInstructions.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* bool retry_required */ 3:
+                    message.retryRequired = reader.bool();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -799,6 +856,12 @@ class InitiateUploadResponse$Type extends MessageType<InitiateUploadResponse> {
         /* parca.debuginfo.v1alpha1.UploadInstructions upload_instructions = 1; */
         if (message.uploadInstructions)
             UploadInstructions.internalBinaryWrite(message.uploadInstructions, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* repeated parca.debuginfo.v1alpha1.UploadInstructions upload_targets = 2; */
+        for (let i = 0; i < message.uploadTargets.length; i++)
+            UploadInstructions.internalBinaryWrite(message.uploadTargets[i], writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* bool retry_required = 3; */
+        if (message.retryRequired !== false)
+            writer.tag(3, WireType.Varint).bool(message.retryRequired);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

@@ -398,7 +398,10 @@ type ShouldInitiateUploadResponse struct {
 	// Whether an upload should be initiated or not.
 	ShouldInitiateUpload bool `protobuf:"varint,1,opt,name=should_initiate_upload,json=shouldInitiateUpload,proto3" json:"should_initiate_upload,omitempty"`
 	// Reason for why an upload should be initiated or not.
-	Reason        string `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
+	Reason string `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
+	// Whether the client must check again, even if no upload is requested now.
+	// An upload in progress is not evidence that the artifact is available.
+	RetryRequired bool `protobuf:"varint,3,opt,name=retry_required,json=retryRequired,proto3" json:"retry_required,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -447,6 +450,13 @@ func (x *ShouldInitiateUploadResponse) GetReason() string {
 	return ""
 }
 
+func (x *ShouldInitiateUploadResponse) GetRetryRequired() bool {
+	if x != nil {
+		return x.RetryRequired
+	}
+	return false
+}
+
 // InitiateUploadRequest is the request to initiate an upload.
 type InitiateUploadRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -461,9 +471,12 @@ type InitiateUploadRequest struct {
 	// Type of debuginfo to propose uploading.
 	Type DebuginfoType `protobuf:"varint,5,opt,name=type,proto3,enum=parca.debuginfo.v1alpha1.DebuginfoType" json:"type,omitempty"`
 	// Type of build ID.
-	BuildIdType   BuildIDType `protobuf:"varint,6,opt,name=build_id_type,json=buildIdType,proto3,enum=parca.debuginfo.v1alpha1.BuildIDType" json:"build_id_type,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	BuildIdType BuildIDType `protobuf:"varint,6,opt,name=build_id_type,json=buildIdType,proto3,enum=parca.debuginfo.v1alpha1.BuildIDType" json:"build_id_type,omitempty"`
+	// Whether the client supports upload_targets and retry_required in the response.
+	// Aggregators must reject clients without this capability before initiating uploads.
+	SupportsMultipleUploads bool `protobuf:"varint,7,opt,name=supports_multiple_uploads,json=supportsMultipleUploads,proto3" json:"supports_multiple_uploads,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *InitiateUploadRequest) Reset() {
@@ -538,13 +551,26 @@ func (x *InitiateUploadRequest) GetBuildIdType() BuildIDType {
 	return BuildIDType_BUILD_ID_TYPE_UNKNOWN_UNSPECIFIED
 }
 
+func (x *InitiateUploadRequest) GetSupportsMultipleUploads() bool {
+	if x != nil {
+		return x.SupportsMultipleUploads
+	}
+	return false
+}
+
 // InitiateUploadResponse is the response to an InitiateUploadRequest.
 type InitiateUploadResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// UploadInstructions contains the instructions for the client to upload the debuginfo.
+	// Legacy instructions for a single upload. Mutually exclusive with upload_targets.
 	UploadInstructions *UploadInstructions `protobuf:"bytes,1,opt,name=upload_instructions,json=uploadInstructions,proto3" json:"upload_instructions,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	// Independent uploads, returned only when supports_multiple_uploads is true.
+	// Clients must also accept legacy upload_instructions from older servers.
+	UploadTargets []*UploadInstructions `protobuf:"bytes,2,rep,name=upload_targets,json=uploadTargets,proto3" json:"upload_targets,omitempty"`
+	// Whether some destinations remain unresolved. Finish the returned uploads,
+	// then retry negotiation; completing this list does not complete all delivery.
+	RetryRequired bool `protobuf:"varint,3,opt,name=retry_required,json=retryRequired,proto3" json:"retry_required,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *InitiateUploadResponse) Reset() {
@@ -584,12 +610,28 @@ func (x *InitiateUploadResponse) GetUploadInstructions() *UploadInstructions {
 	return nil
 }
 
+func (x *InitiateUploadResponse) GetUploadTargets() []*UploadInstructions {
+	if x != nil {
+		return x.UploadTargets
+	}
+	return nil
+}
+
+func (x *InitiateUploadResponse) GetRetryRequired() bool {
+	if x != nil {
+		return x.RetryRequired
+	}
+	return false
+}
+
 // UploadInstructions contains the instructions for the client to upload debuginfo.
 type UploadInstructions struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The build ID of the debuginfo to upload.
 	BuildId string `protobuf:"bytes,1,opt,name=build_id,json=buildId,proto3" json:"build_id,omitempty"`
-	// The upload_id to use for uploading.
+	// Opaque upload identifier, echoed unchanged to Upload and MarkUploadFinished
+	// on the service that issued these instructions. Aggregators may replace a
+	// downstream ID with a token that routes to exactly one downstream upload.
 	UploadId string `protobuf:"bytes,2,opt,name=upload_id,json=uploadId,proto3" json:"upload_id,omitempty"`
 	// The strategy to use for uploading.
 	UploadStrategy UploadInstructions_UploadStrategy `protobuf:"varint,3,opt,name=upload_strategy,json=uploadStrategy,proto3,enum=parca.debuginfo.v1alpha1.UploadInstructions_UploadStrategy" json:"upload_strategy,omitempty"`
@@ -672,7 +714,8 @@ type MarkUploadFinishedRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The build_id of the debug info to mark as finished.
 	BuildId string `protobuf:"bytes,1,opt,name=build_id,json=buildId,proto3" json:"build_id,omitempty"`
-	// The upload_id of the debug info to mark as finished.
+	// The opaque upload_id from one instruction. Completes only that upload;
+	// clients call this independently for each successfully transferred artifact.
 	UploadId string `protobuf:"bytes,2,opt,name=upload_id,json=uploadId,proto3" json:"upload_id,omitempty"`
 	// The type of debuginfo upload to mark as finished.
 	Type          DebuginfoType `protobuf:"varint,3,opt,name=type,proto3,enum=parca.debuginfo.v1alpha1.DebuginfoType" json:"type,omitempty"`
@@ -1240,19 +1283,23 @@ const file_parca_debuginfo_v1alpha1_debuginfo_proto_rawDesc = "" +
 	"\x04hash\x18\x02 \x01(\tR\x04hash\x12\x14\n" +
 	"\x05force\x18\x03 \x01(\bR\x05force\x12;\n" +
 	"\x04type\x18\x04 \x01(\x0e2'.parca.debuginfo.v1alpha1.DebuginfoTypeR\x04type\x12I\n" +
-	"\rbuild_id_type\x18\x05 \x01(\x0e2%.parca.debuginfo.v1alpha1.BuildIDTypeR\vbuildIdType\"l\n" +
+	"\rbuild_id_type\x18\x05 \x01(\x0e2%.parca.debuginfo.v1alpha1.BuildIDTypeR\vbuildIdType\"\x93\x01\n" +
 	"\x1cShouldInitiateUploadResponse\x124\n" +
 	"\x16should_initiate_upload\x18\x01 \x01(\bR\x14shouldInitiateUpload\x12\x16\n" +
-	"\x06reason\x18\x02 \x01(\tR\x06reason\"\xf8\x01\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\x12%\n" +
+	"\x0eretry_required\x18\x03 \x01(\bR\rretryRequired\"\xb4\x02\n" +
 	"\x15InitiateUploadRequest\x12\x19\n" +
 	"\bbuild_id\x18\x01 \x01(\tR\abuildId\x12\x12\n" +
 	"\x04size\x18\x02 \x01(\x03R\x04size\x12\x12\n" +
 	"\x04hash\x18\x03 \x01(\tR\x04hash\x12\x14\n" +
 	"\x05force\x18\x04 \x01(\bR\x05force\x12;\n" +
 	"\x04type\x18\x05 \x01(\x0e2'.parca.debuginfo.v1alpha1.DebuginfoTypeR\x04type\x12I\n" +
-	"\rbuild_id_type\x18\x06 \x01(\x0e2%.parca.debuginfo.v1alpha1.BuildIDTypeR\vbuildIdType\"w\n" +
+	"\rbuild_id_type\x18\x06 \x01(\x0e2%.parca.debuginfo.v1alpha1.BuildIDTypeR\vbuildIdType\x12:\n" +
+	"\x19supports_multiple_uploads\x18\a \x01(\bR\x17supportsMultipleUploads\"\xf3\x01\n" +
 	"\x16InitiateUploadResponse\x12]\n" +
-	"\x13upload_instructions\x18\x01 \x01(\v2,.parca.debuginfo.v1alpha1.UploadInstructionsR\x12uploadInstructions\"\xfb\x02\n" +
+	"\x13upload_instructions\x18\x01 \x01(\v2,.parca.debuginfo.v1alpha1.UploadInstructionsR\x12uploadInstructions\x12S\n" +
+	"\x0eupload_targets\x18\x02 \x03(\v2,.parca.debuginfo.v1alpha1.UploadInstructionsR\ruploadTargets\x12%\n" +
+	"\x0eretry_required\x18\x03 \x01(\bR\rretryRequired\"\xfb\x02\n" +
 	"\x12UploadInstructions\x12\x19\n" +
 	"\bbuild_id\x18\x01 \x01(\tR\abuildId\x12\x1b\n" +
 	"\tupload_id\x18\x02 \x01(\tR\buploadId\x12d\n" +
@@ -1373,31 +1420,32 @@ var file_parca_debuginfo_v1alpha1_debuginfo_proto_depIdxs = []int32{
 	0,  // 2: parca.debuginfo.v1alpha1.InitiateUploadRequest.type:type_name -> parca.debuginfo.v1alpha1.DebuginfoType
 	1,  // 3: parca.debuginfo.v1alpha1.InitiateUploadRequest.build_id_type:type_name -> parca.debuginfo.v1alpha1.BuildIDType
 	9,  // 4: parca.debuginfo.v1alpha1.InitiateUploadResponse.upload_instructions:type_name -> parca.debuginfo.v1alpha1.UploadInstructions
-	2,  // 5: parca.debuginfo.v1alpha1.UploadInstructions.upload_strategy:type_name -> parca.debuginfo.v1alpha1.UploadInstructions.UploadStrategy
-	0,  // 6: parca.debuginfo.v1alpha1.UploadInstructions.type:type_name -> parca.debuginfo.v1alpha1.DebuginfoType
-	0,  // 7: parca.debuginfo.v1alpha1.MarkUploadFinishedRequest.type:type_name -> parca.debuginfo.v1alpha1.DebuginfoType
-	13, // 8: parca.debuginfo.v1alpha1.UploadRequest.info:type_name -> parca.debuginfo.v1alpha1.UploadInfo
-	0,  // 9: parca.debuginfo.v1alpha1.UploadInfo.type:type_name -> parca.debuginfo.v1alpha1.DebuginfoType
-	3,  // 10: parca.debuginfo.v1alpha1.Debuginfo.source:type_name -> parca.debuginfo.v1alpha1.Debuginfo.Source
-	16, // 11: parca.debuginfo.v1alpha1.Debuginfo.upload:type_name -> parca.debuginfo.v1alpha1.DebuginfoUpload
-	17, // 12: parca.debuginfo.v1alpha1.Debuginfo.quality:type_name -> parca.debuginfo.v1alpha1.DebuginfoQuality
-	0,  // 13: parca.debuginfo.v1alpha1.Debuginfo.type:type_name -> parca.debuginfo.v1alpha1.DebuginfoType
-	4,  // 14: parca.debuginfo.v1alpha1.DebuginfoUpload.state:type_name -> parca.debuginfo.v1alpha1.DebuginfoUpload.State
-	18, // 15: parca.debuginfo.v1alpha1.DebuginfoUpload.started_at:type_name -> google.protobuf.Timestamp
-	18, // 16: parca.debuginfo.v1alpha1.DebuginfoUpload.finished_at:type_name -> google.protobuf.Timestamp
-	12, // 17: parca.debuginfo.v1alpha1.DebuginfoService.Upload:input_type -> parca.debuginfo.v1alpha1.UploadRequest
-	5,  // 18: parca.debuginfo.v1alpha1.DebuginfoService.ShouldInitiateUpload:input_type -> parca.debuginfo.v1alpha1.ShouldInitiateUploadRequest
-	7,  // 19: parca.debuginfo.v1alpha1.DebuginfoService.InitiateUpload:input_type -> parca.debuginfo.v1alpha1.InitiateUploadRequest
-	10, // 20: parca.debuginfo.v1alpha1.DebuginfoService.MarkUploadFinished:input_type -> parca.debuginfo.v1alpha1.MarkUploadFinishedRequest
-	14, // 21: parca.debuginfo.v1alpha1.DebuginfoService.Upload:output_type -> parca.debuginfo.v1alpha1.UploadResponse
-	6,  // 22: parca.debuginfo.v1alpha1.DebuginfoService.ShouldInitiateUpload:output_type -> parca.debuginfo.v1alpha1.ShouldInitiateUploadResponse
-	8,  // 23: parca.debuginfo.v1alpha1.DebuginfoService.InitiateUpload:output_type -> parca.debuginfo.v1alpha1.InitiateUploadResponse
-	11, // 24: parca.debuginfo.v1alpha1.DebuginfoService.MarkUploadFinished:output_type -> parca.debuginfo.v1alpha1.MarkUploadFinishedResponse
-	21, // [21:25] is the sub-list for method output_type
-	17, // [17:21] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	9,  // 5: parca.debuginfo.v1alpha1.InitiateUploadResponse.upload_targets:type_name -> parca.debuginfo.v1alpha1.UploadInstructions
+	2,  // 6: parca.debuginfo.v1alpha1.UploadInstructions.upload_strategy:type_name -> parca.debuginfo.v1alpha1.UploadInstructions.UploadStrategy
+	0,  // 7: parca.debuginfo.v1alpha1.UploadInstructions.type:type_name -> parca.debuginfo.v1alpha1.DebuginfoType
+	0,  // 8: parca.debuginfo.v1alpha1.MarkUploadFinishedRequest.type:type_name -> parca.debuginfo.v1alpha1.DebuginfoType
+	13, // 9: parca.debuginfo.v1alpha1.UploadRequest.info:type_name -> parca.debuginfo.v1alpha1.UploadInfo
+	0,  // 10: parca.debuginfo.v1alpha1.UploadInfo.type:type_name -> parca.debuginfo.v1alpha1.DebuginfoType
+	3,  // 11: parca.debuginfo.v1alpha1.Debuginfo.source:type_name -> parca.debuginfo.v1alpha1.Debuginfo.Source
+	16, // 12: parca.debuginfo.v1alpha1.Debuginfo.upload:type_name -> parca.debuginfo.v1alpha1.DebuginfoUpload
+	17, // 13: parca.debuginfo.v1alpha1.Debuginfo.quality:type_name -> parca.debuginfo.v1alpha1.DebuginfoQuality
+	0,  // 14: parca.debuginfo.v1alpha1.Debuginfo.type:type_name -> parca.debuginfo.v1alpha1.DebuginfoType
+	4,  // 15: parca.debuginfo.v1alpha1.DebuginfoUpload.state:type_name -> parca.debuginfo.v1alpha1.DebuginfoUpload.State
+	18, // 16: parca.debuginfo.v1alpha1.DebuginfoUpload.started_at:type_name -> google.protobuf.Timestamp
+	18, // 17: parca.debuginfo.v1alpha1.DebuginfoUpload.finished_at:type_name -> google.protobuf.Timestamp
+	12, // 18: parca.debuginfo.v1alpha1.DebuginfoService.Upload:input_type -> parca.debuginfo.v1alpha1.UploadRequest
+	5,  // 19: parca.debuginfo.v1alpha1.DebuginfoService.ShouldInitiateUpload:input_type -> parca.debuginfo.v1alpha1.ShouldInitiateUploadRequest
+	7,  // 20: parca.debuginfo.v1alpha1.DebuginfoService.InitiateUpload:input_type -> parca.debuginfo.v1alpha1.InitiateUploadRequest
+	10, // 21: parca.debuginfo.v1alpha1.DebuginfoService.MarkUploadFinished:input_type -> parca.debuginfo.v1alpha1.MarkUploadFinishedRequest
+	14, // 22: parca.debuginfo.v1alpha1.DebuginfoService.Upload:output_type -> parca.debuginfo.v1alpha1.UploadResponse
+	6,  // 23: parca.debuginfo.v1alpha1.DebuginfoService.ShouldInitiateUpload:output_type -> parca.debuginfo.v1alpha1.ShouldInitiateUploadResponse
+	8,  // 24: parca.debuginfo.v1alpha1.DebuginfoService.InitiateUpload:output_type -> parca.debuginfo.v1alpha1.InitiateUploadResponse
+	11, // 25: parca.debuginfo.v1alpha1.DebuginfoService.MarkUploadFinished:output_type -> parca.debuginfo.v1alpha1.MarkUploadFinishedResponse
+	22, // [22:26] is the sub-list for method output_type
+	18, // [18:22] is the sub-list for method input_type
+	18, // [18:18] is the sub-list for extension type_name
+	18, // [18:18] is the sub-list for extension extendee
+	0,  // [0:18] is the sub-list for field type_name
 }
 
 func init() { file_parca_debuginfo_v1alpha1_debuginfo_proto_init() }
