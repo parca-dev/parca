@@ -63,7 +63,7 @@ overrides:
   launch-editor@<=2.14.0: 2.14.1
   morgan@<1.12.0: 1.12.0
   nx@>=20.8.0 <22.7.7: 22.7.7
-  piscina@<=4.9.2: 4.9.3
+  piscina@<=4.9.2: 4.9.4
   react-router@>=6.7.0 <6.30.4: 6.30.4
   shell-quote@>=1.1.0 <=1.8.4: 1.9.0
   sigstore@<=4.1.0: 4.1.1
@@ -10685,8 +10685,8 @@ packages:
     resolution: {integrity: sha512-TfySrs/5nm8fQJDcBDuUng3VOUKsd7S+zqvbOTiGXHfxX4wK31ard+hoNuvkicM/2YFzlpDgABOevKSsB4G/FA==}
     engines: {node: '>= 6'}
 
-  piscina@4.9.3:
-    resolution: {integrity: sha512-3e3ka9QCE8RJ5I9uszdAADZnkcYi21cqmF3gxox3u884N72qpFHCsIVhHt8cEQ9t3Auq/NqoiCEuhxlxxQuDWA==}
+  piscina@4.9.4:
+    resolution: {integrity: sha512-RyBDr2VheQ8ZfH3N8SzQZHztqVyOtadTwLnUYof6gdj5161/eu2wNhCbGl5GHnNKDpnkicJYpKtL2J+y/gk6XA==}
 
   pkg-dir@3.0.0:
     resolution: {integrity: sha512-/E57AYkoeQ25qkxMj5PBOVgF8Kiu/h7cYS30Z5+R7WaiCCBfLq58ZI/dSeaEKb9WVJV5n/03QwrN3IeWIFllvw==}
@@ -17710,7 +17710,7 @@ snapshots:
       '@xhmikosr/bin-wrapper': 13.2.0(supports-color@8.1.1)
       commander: 8.3.0
       minimatch: 9.0.9
-      piscina: 4.9.3
+      piscina: 4.9.4
       semver: 7.7.4
       slash: 3.0.0
       source-map: 0.7.6
@@ -26030,7 +26030,7 @@ snapshots:
 
   pirates@4.0.7: {}
 
-  piscina@4.9.3:
+  piscina@4.9.4:
     optionalDependencies:
       '@napi-rs/nice': 1.1.1
 
