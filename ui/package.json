@@ -177,7 +177,7 @@
       "@xhmikosr/decompress@<10.2.1": "10.2.2",
       "axios@>=1.15.0 <1.18.0": "1.18.0",
       "baseline-browser-mapping@>=2.0.0 <2.11.0": "2.11.0",
-      "body-parser@<1.20.6": "1.20.6",
+      "body-parser@<1.20.6": "1.20.9",
       "browserslist@<=4.28.6": "4.28.7",
       "colord@<2.9.4": "2.9.4",
       "esbuild@<=0.24.2": "0.25.0",
