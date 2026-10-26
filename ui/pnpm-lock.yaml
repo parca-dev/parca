@@ -61,7 +61,7 @@ overrides:
   js-yaml@>=3.0.0 <3.15.2: 3.15.2
   js-yaml@>=4.0.0 <4.3.2: 4.3.2
   launch-editor@<=2.14.0: 2.14.1
-  morgan@<1.12.0: 1.12.0
+  morgan@<1.12.0: 1.12.1
   nx@>=20.8.0 <22.7.7: 22.7.7
   piscina@<=4.9.2: 4.9.4
   react-router@>=6.7.0 <6.30.4: 6.30.4
@@ -9938,8 +9938,8 @@ packages:
   moo@0.5.3:
     resolution: {integrity: sha512-m2fmM2dDm7GZQsY7KK2cme8agi+AAljILjQnof7p1ZMDe6dQ4bdnSMx0cPppudoeNv5hEFQirN6u+O4fDE0IWA==}
 
-  morgan@1.12.0:
-    resolution: {integrity: sha512-OHpTRQwn2ezasILW8iKe+Yww1XsfWsZIpUOLF7RDb2g5GwO3trPaRwi7+8BDiJ7HFx2Kg2mfUdCBcVhwYlOz2g==}
+  morgan@1.12.1:
+    resolution: {integrity: sha512-tljKC0ex20AjO58Ob/eZ53JloycbVswbVNCHx6V6VLGzqt/w8dIynVGL0G8qVjNKwiA7sYSogCrN6QtJ82IV+g==}
     engines: {node: '>= 0.8.0'}
 
   mri@1.2.0:
@@ -23892,7 +23892,7 @@ snapshots:
 
   koa-morgan@1.0.1(supports-color@8.1.1):
     dependencies:
-      morgan: 1.12.0(supports-color@8.1.1)
+      morgan: 1.12.1(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -25206,7 +25206,7 @@ snapshots:
 
   moo@0.5.3: {}
 
-  morgan@1.12.0(supports-color@8.1.1):
+  morgan@1.12.1(supports-color@8.1.1):
     dependencies:
       basic-auth: 2.0.1
       debug: 2.6.9(supports-color@8.1.1)
