@@ -175,7 +175,7 @@
       "@sigstore/verify@3.1.0": "3.1.1",
       "@tootallnate/once@<2.0.1": "2.0.1",
       "@xhmikosr/decompress@<10.2.1": "10.2.2",
-      "axios@>=1.15.0 <1.18.0": "1.18.0",
+      "axios@>=1.15.0 <1.18.0": "1.20.0",
       "baseline-browser-mapping@>=2.0.0 <2.11.0": "2.11.0",
       "body-parser@<1.20.6": "1.20.9",
       "browserslist@<=4.28.6": "4.28.7",
