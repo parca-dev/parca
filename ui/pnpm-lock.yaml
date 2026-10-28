@@ -56,7 +56,7 @@ overrides:
   form-data@>=3.0.0 <3.0.5: 3.0.5
   form-data@>=4.0.0 <4.0.6: 4.0.6
   http-proxy-middleware@<2.0.10: 2.0.10
-  ip-address@<=10.3.0: 10.3.1
+  ip-address@<=10.3.0: 10.7.4
   js-cookie@<=3.0.5: 3.0.7
   js-yaml@>=3.0.0 <3.15.2: 3.15.2
   js-yaml@>=4.0.0 <4.3.2: 4.3.2
@@ -8321,8 +8321,8 @@ packages:
     resolution: {integrity: sha512-Ju0Bz/cEia55xDwUWEa8+olFpCiQoypjnQySseKtmjNrnps3P+xfpUmGr90T7yjlVJmOtybRvPXhKMbHr+fWnw==}
     engines: {node: '>= 0.10'}
 
-  ip-address@10.3.1:
-    resolution: {integrity: sha512-1e9d3kb97NHJTIJDZW9rKqW2h6+dFa50Dy0fpPSMQp2ADje5gvKsXmdiK6dwY5t76TaTt5+P5N1Y/LoToIxP6g==}
+  ip-address@10.7.4:
+    resolution: {integrity: sha512-DWBMKyeM25D70nrIiTkgQth59/G+naKOTep6huF9j+GmeK3DMD60Zvxg5d5qQnz+38AHgou6ean2LECX+lrKDg==}
     engines: {node: '>= 12'}
 
   ip-regex@4.3.0:
@@ -23725,7 +23725,7 @@ snapshots:
 
   interpret@2.2.0: {}
 
-  ip-address@10.3.1: {}
+  ip-address@10.7.4: {}
 
   ip-regex@4.3.0: {}
 
@@ -29456,7 +29456,7 @@ snapshots:
 
   socks@2.8.8:
     dependencies:
-      ip-address: 10.3.1
+      ip-address: 10.7.4
       smart-buffer: 4.2.0
 
   sort-keys-length@1.0.1:
