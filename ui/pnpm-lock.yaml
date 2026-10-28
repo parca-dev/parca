@@ -65,7 +65,7 @@ overrides:
   nx@>=20.8.0 <22.7.7: 22.7.10
   piscina@<=4.9.2: 4.9.4
   react-router@>=6.7.0 <6.30.4: 6.30.4
-  shell-quote@>=1.1.0 <=1.8.4: 1.9.0
+  shell-quote@>=1.1.0 <=1.8.4: 1.11.0
   sigstore@<=4.1.0: 4.1.1
   smol-toml@<=1.7.0: 1.7.1
   tar@<=7.5.17: 7.5.18
@@ -12340,8 +12340,8 @@ packages:
     resolution: {integrity: sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==}
     engines: {node: '>=8'}
 
-  shell-quote@1.9.0:
-    resolution: {integrity: sha512-Iov+JwFv/2HcTpcwNMKd8+IWNb8tboQJNQTkAY/LLVK7gGH9jy+LGkVqPxfekHl+yMmiqXszdGWXgkfml7hjqA==}
+  shell-quote@1.11.0:
+    resolution: {integrity: sha512-JdxDPD0DBTyu08pq0kPC0xSNet/qsU07qT6IsX1AS8oO2ICNRY4ldNa8OAI6PuwAH8tG3lxEhbqmyp4Dw4036g==}
     engines: {node: '>= 0.4'}
 
   side-channel-list@1.0.1:
@@ -25333,7 +25333,7 @@ snapshots:
   launch-editor@2.14.1:
     dependencies:
       picocolors: 1.1.1
-      shell-quote: 1.9.0
+      shell-quote: 1.11.0
 
   lerna@9.0.7(@swc/core@1.15.10)(@types/node@18.19.130)(babel-plugin-macros@3.1.0)(supports-color@7.2.0):
     dependencies:
@@ -28425,7 +28425,7 @@ snapshots:
       prompts: 2.4.2
       react-error-overlay: 6.1.0
       recursive-readdir: 2.2.3
-      shell-quote: 1.9.0
+      shell-quote: 1.11.0
       strip-ansi: 6.0.1
       text-table: 0.2.0
       webpack: 5.106.2(@swc/core@1.15.10)(esbuild@0.25.0)(uglify-js@3.19.3)
@@ -29370,7 +29370,7 @@ snapshots:
 
   shebang-regex@3.0.0: {}
 
-  shell-quote@1.9.0: {}
+  shell-quote@1.11.0: {}
 
   side-channel-list@1.0.1:
     dependencies:
