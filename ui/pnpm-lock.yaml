@@ -70,7 +70,7 @@ overrides:
   smol-toml@<=1.7.0: 1.9.0
   tar@<=7.5.17: 7.5.18
   tmp@<0.2.6: 0.2.6
-  undici@<6.28.0: 6.28.0
+  undici@<6.28.0: 6.29.1
   uuid@<11.1.1: 11.1.1
   webpack-dev-server@<=5.2.5: 5.2.6
   websocket-driver@<0.7.5: 0.7.5
@@ -13248,8 +13248,8 @@ packages:
   undici-types@5.26.5:
     resolution: {integrity: sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==}
 
-  undici@6.28.0:
-    resolution: {integrity: sha512-LIY910g9TI13YS95lrMFrs8Rm/u/irgHeTWoKCoteeJ04CUJ92eEfj0rVn+7VKMPBpUPiUoBKfhNyLI23EE/KA==}
+  undici@6.29.1:
+    resolution: {integrity: sha512-EvRlUt/QqAEvXdQeRMYUfwOQsfzpDztykrG2owGEE/rBOBoYv9uF39ZzsNDh4lTFHhTr2XOZjKkYgueD12ZmGA==}
     engines: {node: '>=18.17'}
 
   unfetch@4.2.0:
@@ -26729,7 +26729,7 @@ snapshots:
       semver: 7.7.2
       tar: 7.5.18
       tinyglobby: 0.2.12
-      undici: 6.28.0
+      undici: 6.29.1
       which: 6.0.1
 
   node-int64@0.4.0: {}
@@ -30386,7 +30386,7 @@ snapshots:
 
   undici-types@5.26.5: {}
 
-  undici@6.28.0: {}
+  undici@6.29.1: {}
 
   unfetch@4.2.0: {}
 
