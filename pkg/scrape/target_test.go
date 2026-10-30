@@ -162,3 +162,55 @@ func trueValue() *bool {
 	a := true
 	return &a
 }
+
+func TestOTLPExampleConfigs(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		target   model.LabelSet
+		expected map[string]string
+	}{
+		{
+			name: "static",
+			target: model.LabelSet{
+				"__address__": "checkout:6060", "namespace": "shop", "environment": "development",
+			},
+			expected: map[string]string{
+				"service.name": "checkout", "service.namespace": "shop",
+				"service.instance.id": "checkout:6060", "deployment.environment.name": "development",
+			},
+		},
+		{
+			name: "kubernetes",
+			target: model.LabelSet{
+				"__address__": "10.0.0.1:6060", "__meta_kubernetes_pod_phase": "Running",
+				"__meta_kubernetes_pod_container_port_name":          "pprof",
+				"__meta_kubernetes_pod_label_app_kubernetes_io_name": "checkout",
+				"__meta_kubernetes_namespace":                        "shop", "__meta_kubernetes_pod_name": "checkout-abc",
+				"__meta_kubernetes_pod_uid": "pod-uid", "__meta_kubernetes_pod_node_name": "worker-3",
+				"__meta_kubernetes_pod_container_name": "app",
+			},
+			expected: map[string]string{
+				"service.name": "checkout", "service.namespace": "shop", "service.instance.id": "pod-uid/app",
+				"k8s.namespace.name": "shop", "k8s.pod.name": "checkout-abc", "k8s.pod.uid": "pod-uid",
+				"k8s.node.name": "worker-3", "k8s.container.name": "app",
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg, err := config.LoadFile("../../deploy/otlp/" + tc.name + ".yaml")
+			require.NoError(t, err)
+			require.NoError(t, cfg.Validate())
+			targets, err := targetsFromGroup(&targetgroup.Group{Targets: []model.LabelSet{tc.target}},
+				cfg.ScrapeConfigs[0], nil, labels.NewBuilder(labels.EmptyLabels()))
+			require.NoError(t, err)
+			require.NotEmpty(t, targets)
+			for _, target := range targets {
+				for key, value := range tc.expected {
+					require.Equal(t, value, target.Labels().Get(key), key)
+				}
+				require.False(t, target.Labels().Has("namespace"))
+				require.False(t, target.Labels().Has("environment"))
+			}
+		})
+	}
+}

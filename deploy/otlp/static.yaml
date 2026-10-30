@@ -1,0 +1,30 @@
+# Run with --mode=otlp-forwarder --store-address=collector.example.com:4317.
+# Add --insecure only if the upstream uses plaintext gRPC.
+# Required by config validation, but unused in forwarding modes.
+object_storage:
+  bucket:
+    type: FILESYSTEM
+    config:
+      directory: ./data
+
+scrape_configs:
+  - job_name: checkout
+    scrape_interval: 30s
+    static_configs:
+      - targets: [checkout:6060]
+        labels:
+          namespace: shop
+          environment: development
+    relabel_configs:
+      - source_labels: [job]
+        target_label: service.name
+      # The default instance label is assigned AFTER relabeling, so use
+      # __address__ to identify the service instance here.
+      - source_labels: [__address__]
+        target_label: service.instance.id
+      - source_labels: [namespace]
+        target_label: service.namespace
+      - source_labels: [environment]
+        target_label: deployment.environment.name
+      - action: labeldrop
+        regex: namespace|environment
