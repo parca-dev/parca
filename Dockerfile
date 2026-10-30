@@ -3,7 +3,7 @@ ARG TARGETPLATFORM
 # https://github.com/hadolint/hadolint/issues/861
 # hadolint ignore=DL3029
 FROM --platform="${BUILDPLATFORM:-linux/amd64}" docker.io/busybox:1.37.0@sha256:a7dbc319b1438115a207e11930dc4bb3e643dcb3ec0bdd694bb36cd8fad289ec as builder
-RUN mkdir /.cache && touch -t 202101010000.00 /.cache
+RUN mkdir /.cache /data && touch -t 202101010000.00 /.cache
 
 ARG TARGETOS=linux
 ARG TARGETARCH=amd64
@@ -32,7 +32,7 @@ LABEL \
     org.opencontainers.image.description="Continuous profiling for analysis of CPU and memory usage, down to the line number and throughout time. Saving infrastructure cost, improving performance, and increasing reliability." \
     org.opencontainers.image.licenses="Apache-2.0"
 
-RUN mkdir /data && chown nobody /data
+COPY --chown=65534:0 --from=builder /data /data
 # hadolint ignore=DL3066
 USER nobody
 
