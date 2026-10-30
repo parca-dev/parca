@@ -115,9 +115,10 @@ Flags:
       --config-path="parca.yaml"
                                  Path to config file.
       --mode="all"               All runs all components. Scraper-only and
-                                 forwarder send profiles to a remote Parca gRPC
-                                 endpoint. OTLP-forwarder converts pprof profiles
-                                 and sends them to an OTLP profiles gRPC endpoint.
+                                 forwarder send profiles to a remote Parca
+                                 gRPC endpoint. OTLP-forwarder converts pprof
+                                 profiles and sends them to an OTLP profiles
+                                 gRPC endpoint.
       --http-address=":7070"     Address to bind HTTP server to.
       --http-read-timeout=5s     Timeout duration for HTTP server to read
                                  request body.
