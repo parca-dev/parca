@@ -30,13 +30,6 @@
       "groupName": "grpc-gateway"
     },
     {
-      "description": "Group grpc-health-probe packages",
-      "matchSourceUrls": [
-        "https://github.com/grpc-ecosystem/grpc-health-probe"
-      ],
-      "groupName": "grpc-health-probe"
-    },
-    {
       "description": "Group protobuf-ts packages",
       "matchSourceUrls": ["https://github.com/timostamm/protobuf-ts"],
       "groupName": "protobuf-ts"
