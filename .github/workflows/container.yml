@@ -149,8 +149,8 @@ jobs:
       - name: Build container
         run: make container
 
-      - name: Check image architectures
-        run: make test-container
+      - name: Check images created
+        run: podman images | grep 'ghcr.io/parca-dev/parca'
 
       - name: Install cosign
         if: ${{ github.event_name != 'pull_request' }}

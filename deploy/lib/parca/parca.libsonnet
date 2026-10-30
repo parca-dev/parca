@@ -161,14 +161,14 @@ function(params) {
       terminationMessagePolicy: 'FallbackToLogsOnError',
       livenessProbe: if prc.config.livenessProbe == true then {
         initialDelaySeconds: 5,
-        exec: {
-          command: ['/grpc_health_probe', '-v', '-addr=:' + prc.config.port],
+        grpc: {
+          port: prc.config.port,
         },
       },
       readinessProbe: if prc.config.readinessProbe == true then {
         initialDelaySeconds: 10,
-        exec: {
-          command: ['/grpc_health_probe', '-v', '-addr=:' + prc.config.port],
+        grpc: {
+          port: prc.config.port,
         },
       },
     };
