@@ -165,6 +165,27 @@ container:
 		--timestamp 0 \
 		--manifest $(OUT_DOCKER):$(VERSION) .
 
+.PHONY: test-container
+test-container:
+	set -euo pipefail; \
+	for arch in amd64 arm64; do \
+		digest=$$(podman manifest inspect $(OUT_DOCKER):$(VERSION) | jq -er --arg arch "$$arch" '.manifests[] | select(.platform.os == "linux" and .platform.architecture == $$arch) | .digest'); \
+		image=$$(podman images --all --no-trunc --format '{{.Digest}} {{.ID}}' | awk -v digest="$$digest" '$$1 == digest {print $$2}'); \
+		rootfs=$$(podman image mount "$$image"); \
+		trap 'podman image unmount "$$image" >/dev/null' EXIT; \
+		case "$$arch" in amd64) expected=3e00 ;; arm64) expected=b700 ;; esac; \
+		for binary in bin/busybox parca grpc_health_probe; do \
+			actual=$$(od -An -tx1 -j18 -N2 "$$rootfs/$$binary" | tr -d ' \n'); \
+			if [ "$$actual" != "$$expected" ]; then \
+				echo "linux/$$arch: $$binary has ELF machine $$actual, expected $$expected" >&2; \
+				exit 1; \
+			fi; \
+			echo "Verified linux/$$arch: $$binary"; \
+		done; \
+		podman image unmount "$$image" >/dev/null; \
+		trap - EXIT; \
+	done
+
 .PHONY: push-container
 push-container:
 	podman manifest push --all $(OUT_DOCKER):$(VERSION) docker://$(OUT_DOCKER):$(VERSION)
