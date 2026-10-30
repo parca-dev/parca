@@ -74,6 +74,35 @@ The scrape configuration can be changed in the `parca.yaml` in the root of the r
 
 ### Configuration
 
+#### Forwarding profiles with OTLP
+
+Use `--mode=otlp-forwarder --store-address=<host:port>` to scrape pprof endpoints,
+convert the profiles with OpenTelemetry's pprof translator, and export them to an
+upstream that supports OTLP profiles over gRPC. No local profile store is started.
+The existing `--bearer-token`, `--bearer-token-file`, `--grpc-headers`, and TLS flags
+apply to this connection. Use `--insecure` for a plaintext upstream.
+
+All target labels retained after relabeling and any `--external-label` values
+become OTLP resource attributes, without renaming. Labels inside the pprof data
+remain attributes on the OTLP samples. Relabeling changes only target metadata,
+not labels within profiles. As with other scraping modes, discovery's internal
+`__meta_*` labels must be copied by relabeling to retain them.
+
+Example configs map target metadata to OpenTelemetry semantic-convention names:
+
+- [Static targets](deploy/otlp/static.yaml) sets `service.name`,
+  `service.namespace`, `service.instance.id`, and `deployment.environment.name`.
+- [Kubernetes pods](deploy/otlp/kubernetes.yaml) sets service attributes and
+  `k8s.*` attributes from pod discovery metadata.
+
+Run either example with `--config-path=deploy/otlp/<example>.yaml` and the mode
+and store address above. Parca's `job`, `instance`, and `__name__` labels are also
+forwarded as resource attributes for compatibility. The examples do not rename
+pprof sample types or units. The upstream must support the OTLP profiles
+`v1development` protocol used by this build. OTLP forwarding supports pprof
+`WriteRaw` requests and OTLP `Export`, but not Parca's Arrow or debuginfo APIs.
+The existing `scraper-only` and `forwarder` modes continue to use Parca's protocol.
+
 Flags:
 
 <!-- prettier-ignore-start -->
@@ -85,8 +114,10 @@ Flags:
   -h, --help                     Show context-sensitive help.
       --config-path="parca.yaml"
                                  Path to config file.
-      --mode="all"               Scraper only runs a scraper that sends to a
-                                 remote gRPC endpoint. All runs all components.
+      --mode="all"               All runs all components. Scraper-only and
+                                 forwarder send profiles to a remote Parca gRPC
+                                 endpoint. OTLP-forwarder converts pprof profiles
+                                 and sends them to an OTLP profiles gRPC endpoint.
       --http-address=":7070"     Address to bind HTTP server to.
       --http-read-timeout=5s     Timeout duration for HTTP server to read
                                  request body.
@@ -164,8 +195,8 @@ Flags:
                                  TLS.
       --insecure-skip-verify     Skip TLS certificate verification.
       --external-label=KEY=VALUE;...
-                                 Label(s) to attach to all profiles in
-                                 scraper-only mode.
+                                 Label(s) to attach to all scraped profiles in
+                                 forwarding modes.
       --grpc-headers=KEY=VALUE;...
                                  Additional gRPC headers to send with each
                                  request to the remote store (key=value pairs).

@@ -20,17 +20,24 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/gogo/status"
+	"github.com/google/pprof/profile"
+	"github.com/google/uuid"
+	pprof "github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/pprof"
+	"go.opentelemetry.io/collector/pdata/pprofile"
+	"go.opentelemetry.io/collector/pdata/pprofile/pprofileotlp"
 	otelgrpcprofilingpb "go.opentelemetry.io/proto/otlp/collector/profiles/v1development"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
 
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
 )
 
-// GRPCForwarder forward profiles via gRPC to another Parca instance
-// instead of storing the profiles locally in a database.
+// GRPCForwarder forwards profiles via gRPC to a remote store,
+// optionally converting raw pprof profiles to OTLP.
 type GRPCForwarder struct {
-	logger log.Logger
-	client *Client
+	logger        log.Logger
+	client        *Client
+	convertToOTLP bool
 
 	profilestorepb.UnimplementedProfileStoreServiceServer
 	otelgrpcprofilingpb.UnimplementedProfilesServiceServer
@@ -51,14 +58,18 @@ func NewClient(
 	}
 }
 
-func NewGRPCForwarder(client *Client, logger log.Logger) *GRPCForwarder {
+func NewGRPCForwarder(client *Client, logger log.Logger, convertToOTLP bool) *GRPCForwarder {
 	return &GRPCForwarder{
-		client: client,
-		logger: logger,
+		client:        client,
+		logger:        logger,
+		convertToOTLP: convertToOTLP,
 	}
 }
 
 func (s *GRPCForwarder) WriteRaw(ctx context.Context, req *profilestorepb.WriteRawRequest) (*profilestorepb.WriteRawResponse, error) {
+	if s.convertToOTLP {
+		return s.writeRawOTLP(ctx, req)
+	}
 	// TODO: Batch writes to only send a request every now and then.
 	// See https://github.com/parca-dev/parca-agent/blob/main/pkg/agent/write_client.go#L28
 	resp, err := s.client.WriteRaw(ctx, req)
@@ -68,7 +79,67 @@ func (s *GRPCForwarder) WriteRaw(ctx context.Context, req *profilestorepb.WriteR
 	return resp, err
 }
 
+func (s *GRPCForwarder) writeRawOTLP(ctx context.Context, req *profilestorepb.WriteRawRequest) (*profilestorepb.WriteRawResponse, error) {
+	profiles := pprofile.NewProfiles()
+	for _, series := range req.GetSeries() {
+		for _, sample := range series.GetSamples() {
+			p, err := profile.ParseData(sample.GetRawProfile())
+			if err != nil {
+				return nil, status.Errorf(codes.InvalidArgument, "parse pprof profile: %v", err)
+			}
+			// A period type is optional in pprof, but the translator requires one.
+			if p.PeriodType == nil {
+				p.PeriodType = &profile.ValueType{}
+			}
+			converted, err := pprof.ConvertPprofToProfiles(p)
+			if err != nil {
+				return nil, status.Errorf(codes.InvalidArgument, "convert pprof profile to OTLP: %v", err)
+			}
+			for _, resource := range converted.ResourceProfiles().All() {
+				// Target and external labels describe the resource. Labels inside
+				// the pprof data remain sample attributes, as set by the translator.
+				for _, label := range series.GetLabels().GetLabels() {
+					resource.Resource().Attributes().PutStr(label.GetName(), label.GetValue())
+				}
+				for _, scope := range resource.ScopeProfiles().All() {
+					for _, p := range scope.Profiles().All() {
+						p.SetProfileID(pprofile.ProfileID(uuid.New()))
+					}
+				}
+			}
+			if err := converted.MergeTo(profiles); err != nil {
+				return nil, status.Errorf(codes.Internal, "merge OTLP profiles: %v", err)
+			}
+		}
+	}
+	if profiles.ProfileCount() == 0 {
+		return &profilestorepb.WriteRawResponse{}, nil
+	}
+
+	// Collector pdata uses its own protobuf types. Bridge through the wire
+	// format to reuse the existing OTLP client and its connection settings.
+	data, err := pprofileotlp.NewExportRequestFromProfiles(profiles).MarshalProto()
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "marshal OTLP profiles: %v", err)
+	}
+	export := &otelgrpcprofilingpb.ExportProfilesServiceRequest{}
+	if err := proto.Unmarshal(data, export); err != nil {
+		return nil, status.Errorf(codes.Internal, "unmarshal OTLP profiles: %v", err)
+	}
+	resp, err := s.Export(ctx, export)
+	if err != nil {
+		return nil, err
+	}
+	if partial := resp.GetPartialSuccess(); partial.GetRejectedProfiles() > 0 {
+		return nil, status.Errorf(codes.DataLoss, "upstream rejected %d profiles: %s", partial.GetRejectedProfiles(), partial.GetErrorMessage())
+	}
+	return &profilestorepb.WriteRawResponse{}, nil
+}
+
 func (s *GRPCForwarder) Write(srv profilestorepb.ProfileStoreService_WriteServer) error {
+	if s.convertToOTLP {
+		return status.Error(codes.Unimplemented, "OTLP forwarding supports pprof WriteRaw and OTLP Export, not Arrow Write")
+	}
 	c, err := s.client.Write(srv.Context())
 	if err != nil {
 		return status.Errorf(codes.Internal, "failed to create stream: %v", err)

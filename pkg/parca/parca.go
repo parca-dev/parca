@@ -90,12 +90,13 @@ const (
 	symbolizationInterval = 10 * time.Second
 	flagModeScraperOnly   = "scraper-only"
 	flagModeForwarder     = "forwarder"
+	flagModeOTLPForwarder = "otlp-forwarder"
 	metaStoreBadger       = "badger"
 )
 
 type Flags struct {
 	ConfigPath       string        `default:"parca.yaml" help:"Path to config file."`
-	Mode             string        `default:"all" enum:"all,scraper-only,forwarder" help:"Scraper only runs a scraper that sends to a remote gRPC endpoint. All runs all components."`
+	Mode             string        `default:"all" enum:"all,scraper-only,forwarder,otlp-forwarder" help:"All runs all components. Scraper-only and forwarder send profiles to a remote Parca gRPC endpoint. OTLP-forwarder converts pprof profiles and sends them to an OTLP profiles gRPC endpoint."`
 	HTTPAddress      string        `default:":7070" help:"Address to bind HTTP server to."`
 	HTTPReadTimeout  time.Duration `default:"5s" help:"Timeout duration for HTTP server to read request body."`
 	HTTPWriteTimeout time.Duration `default:"1m" help:"Timeout duration for HTTP server to write response body."`
@@ -127,7 +128,7 @@ type Flags struct {
 	BearerTokenFile    string            `kong:"help='File to read bearer token from to authenticate with store.'"`
 	Insecure           bool              `kong:"help='Send gRPC requests via plaintext instead of TLS.'"`
 	InsecureSkipVerify bool              `kong:"help='Skip TLS certificate verification.'"`
-	ExternalLabel      map[string]string `kong:"help='Label(s) to attach to all profiles in scraper-only mode.'"`
+	ExternalLabel      map[string]string `kong:"help='Label(s) to attach to all scraped profiles in forwarding modes.'"`
 	GRPCHeaders        map[string]string `kong:"help='Additional gRPC headers to send with each request to the remote store (key=value pairs).'"`
 
 	Hidden FlagsHidden `embed:"" prefix:""`
@@ -243,12 +244,11 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 		return fmt.Errorf("failed to initialize UI filesystem: %w", err)
 	}
 
-	if flags.StoreAddress != "" && flags.Mode != flagModeScraperOnly {
-		return fmt.Errorf("the mode should be set as `--mode=scraper-only`, if `StoreAddress` is set")
-	}
-
-	if flags.Mode == flagModeScraperOnly || flags.Mode == flagModeForwarder {
+	if flags.Mode == flagModeScraperOnly || flags.Mode == flagModeForwarder || flags.Mode == flagModeOTLPForwarder {
 		return runForwarder(ctx, logger, reg, tracerProvider, uiFS, flags, version, cfg)
+	}
+	if flags.StoreAddress != "" {
+		return fmt.Errorf("--store-address requires --mode=scraper-only, --mode=forwarder, or --mode=otlp-forwarder")
 	}
 
 	bucketCfg, err := yaml.Marshal(cfg.ObjectStorage.Bucket)
@@ -856,13 +856,14 @@ func runForwarder(
 	if err != nil {
 		return fmt.Errorf("failed to create gRPC connection: %w", err)
 	}
+	defer conn.Close()
 
 	dbginfo := debuginfo.NewGRPCForwarder(debuginfopb.NewDebuginfoServiceClient(conn))
 	client := profilestore.NewClient(
 		profilestorepb.NewProfileStoreServiceClient(conn),
 		otelgrpcprofilingpb.NewProfilesServiceClient(conn),
 	)
-	store := profilestore.NewGRPCForwarder(client, logger)
+	store := profilestore.NewGRPCForwarder(client, logger, flags.Mode == flagModeOTLPForwarder)
 
 	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(reg)
 	if err != nil {
@@ -954,10 +955,13 @@ func runForwarder(
 					server.RegisterableFunc(func(ctx context.Context, srv *grpc.Server, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
 						scrapepb.RegisterScrapeServiceServer(srv, m)
 						profilestorepb.RegisterProfileStoreServiceServer(srv, store)
-						debuginfopb.RegisterDebuginfoServiceServer(srv, dbginfo)
-
-						if err := debuginfopb.RegisterDebuginfoServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
-							return err
+						if flags.Mode == flagModeOTLPForwarder {
+							otelgrpcprofilingpb.RegisterProfilesServiceServer(srv, store)
+						} else {
+							debuginfopb.RegisterDebuginfoServiceServer(srv, dbginfo)
+							if err := debuginfopb.RegisterDebuginfoServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
+								return err
+							}
 						}
 
 						if err := scrapepb.RegisterScrapeServiceHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {

@@ -34,6 +34,7 @@ require (
 	github.com/nanmu42/limitio v1.0.0
 	github.com/oklog/run v1.2.0
 	github.com/olekukonko/tablewriter v0.0.5
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/pprof v0.157.0
 	github.com/parquet-go/parquet-go v0.24.0
 	github.com/pierrec/lz4/v4 v4.1.25
 	github.com/planetscale/vtprotobuf v0.6.1-0.20250313105119-ba97887b0a25
@@ -45,6 +46,7 @@ require (
 	github.com/stretchr/testify v1.12.1
 	github.com/thanos-io/objstore v0.0.0-20241028145108-31c0873d5266
 	github.com/zeebo/xxh3 v1.1.0
+	go.opentelemetry.io/collector/pdata/pprofile v0.157.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.70.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace v0.67.0
 	go.opentelemetry.io/otel v1.46.0
@@ -196,6 +198,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.8 // indirect
 	github.com/hashicorp/go-rootcerts v1.0.2 // indirect
+	github.com/hashicorp/go-version v1.9.0 // indirect
 	github.com/hashicorp/golang-lru v1.0.2 // indirect
 	github.com/hashicorp/nomad/api v0.0.0-20260324203407-b27b0c2e019a // indirect
 	github.com/hashicorp/serf v0.10.1 // indirect
@@ -255,10 +258,13 @@ require (
 	github.com/x448/float16 v0.8.4 // indirect
 	go.etcd.io/bbolt v1.3.7 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
+	go.opentelemetry.io/collector/featuregate v1.63.0 // indirect
+	go.opentelemetry.io/collector/pdata v1.63.0 // indirect
 	go.opentelemetry.io/contrib/detectors/gcp v1.44.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.70.0 // indirect
 	go.opentelemetry.io/otel/metric v1.46.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.46.0 // indirect
+	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/crypto v0.57.0 // indirect
