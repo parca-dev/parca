@@ -52,7 +52,7 @@ overrides:
   colord@<2.9.4: 2.9.4
   esbuild@<=0.24.2: 0.25.0
   fast-uri@>=3.0.0 <3.1.6: 3.1.9
-  follow-redirects@<=1.15.11: 1.16.1
+  follow-redirects@<=1.15.11: 1.16.2
   form-data@>=3.0.0 <3.0.5: 3.0.5
   form-data@>=4.0.0 <4.0.6: 4.0.6
   http-proxy-middleware@<2.0.10: 2.0.10
@@ -7648,8 +7648,8 @@ packages:
       debug:
         optional: true
 
-  follow-redirects@1.16.1:
-    resolution: {integrity: sha512-FNvFGzoMLWmE6Yj9spb/zjd7yiNCHiAW9/Tg9CXrQ8wuu32HtlJOwWO11OJafl5FfY3DxTdQ0vj42zU1kvv5jg==}
+  follow-redirects@1.16.2:
+    resolution: {integrity: sha512-/kVP2U8z596Ia0gwFrwyIeo74ta5aVmSeU1FfAUMAmcEP5EP7zydmag3SLiN64NaRKef3lxsq7i/g7ltJQDGow==}
     engines: {node: '>=4.0'}
     peerDependencies:
       debug: '*'
@@ -22920,7 +22920,7 @@ snapshots:
     optionalDependencies:
       debug: 4.4.3(supports-color@7.2.0)
 
-  follow-redirects@1.16.1(debug@4.4.3(supports-color@7.2.0)):
+  follow-redirects@1.16.2(debug@4.4.3(supports-color@7.2.0)):
     optionalDependencies:
       debug: 4.4.3(supports-color@7.2.0)
 
@@ -23539,7 +23539,7 @@ snapshots:
   http-proxy@1.18.1(debug@4.4.3(supports-color@7.2.0)):
     dependencies:
       eventemitter3: 4.0.7
-      follow-redirects: 1.16.1(debug@4.4.3(supports-color@7.2.0))
+      follow-redirects: 1.16.2(debug@4.4.3(supports-color@7.2.0))
       requires-port: 1.0.0
     transitivePeerDependencies:
       - debug
