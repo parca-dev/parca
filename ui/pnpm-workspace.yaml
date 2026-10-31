@@ -72,7 +72,7 @@ overrides:
   "colord@<2.9.4": "2.9.4"
   "esbuild@<=0.24.2": "0.25.0"
   "fast-uri@>=3.0.0 <3.1.6": "3.1.9"
-  "follow-redirects@<=1.15.11": "1.16.1"
+  "follow-redirects@<=1.15.11": "1.16.2"
   "form-data@>=3.0.0 <3.0.5": "3.0.5"
   "form-data@>=4.0.0 <4.0.6": "4.0.6"
   "http-proxy-middleware@<2.0.10": "2.0.10"
