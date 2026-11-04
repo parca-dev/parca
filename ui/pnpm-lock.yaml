@@ -110,7 +110,7 @@ importers:
         version: 3.2.4(postcss@8.5.32)(ts-node@10.9.2(@swc/core@1.15.10)(@types/node@18.19.130)(typescript@5.9.3))
     devDependencies:
       '@babel/cli':
-        specifier: ^7.28.6
+        specifier: 7.29.7
         version: 7.29.7(@babel/core@7.29.6(supports-color@7.2.0))
       '@babel/core':
         specifier: 7.29.6
@@ -128,10 +128,10 @@ importers:
         specifier: 7.29.2
         version: 7.29.2(@babel/core@7.29.6(supports-color@7.2.0))(supports-color@7.2.0)
       '@babel/preset-react':
-        specifier: ^7.28.5
+        specifier: 7.29.7
         version: 7.29.7(@babel/core@7.29.6(supports-color@7.2.0))(supports-color@7.2.0)
       '@babel/preset-typescript':
-        specifier: ^7.28.5
+        specifier: 7.29.7
         version: 7.29.7(@babel/core@7.29.6(supports-color@7.2.0))(supports-color@7.2.0)
       '@chromatic-com/storybook':
         specifier: 1.9.0
