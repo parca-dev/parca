@@ -7,7 +7,7 @@ settings:
 overrides:
   fork-ts-checker-webpack-plugin: ^8.0.0
   axios@>=1.14.0 <1.14.2: 1.20.0
-  axios@>=0.30.0 <0.30.5: 0.30.3
+  axios@>=0.30.0 <0.30.5: 1.20.0
   axios@>=1.0.0 <1.13.5: 1.20.0
   rollup@>=4.0.0 <4.59.0: 4.60.1
   rollup@<2.80.0: 2.80.0
@@ -64,7 +64,7 @@ overrides:
   morgan@<1.12.0: 1.12.1
   nx@>=20.8.0 <22.7.7: 22.7.10
   piscina@<=4.9.2: 4.9.4
-  react-router@>=6.7.0 <6.30.4: 6.30.4
+  react-router@>=6.7.0 <6.30.4: 7.18.0
   shell-quote@>=1.1.0 <=1.8.4: 1.11.0
   sigstore@<=4.1.0: 4.1.1
   smol-toml@<=1.7.0: 1.9.0
@@ -110,7 +110,7 @@ importers:
         version: 3.2.4(postcss@8.5.32)(ts-node@10.9.2(@swc/core@1.15.10)(@types/node@18.19.130)(typescript@5.9.3))
     devDependencies:
       '@babel/cli':
-        specifier: ^7.28.6
+        specifier: 7.29.7
         version: 7.29.7(@babel/core@7.29.6(supports-color@7.2.0))
       '@babel/core':
         specifier: 7.29.6
@@ -128,10 +128,10 @@ importers:
         specifier: 7.29.2
         version: 7.29.2(@babel/core@7.29.6(supports-color@7.2.0))(supports-color@7.2.0)
       '@babel/preset-react':
-        specifier: ^7.28.5
+        specifier: 7.29.7
         version: 7.29.7(@babel/core@7.29.6(supports-color@7.2.0))(supports-color@7.2.0)
       '@babel/preset-typescript':
-        specifier: ^7.28.5
+        specifier: 7.29.7
         version: 7.29.7(@babel/core@7.29.6(supports-color@7.2.0))(supports-color@7.2.0)
       '@chromatic-com/storybook':
         specifier: 1.9.0
@@ -10356,7 +10356,7 @@ packages:
       '@tanstack/react-router': ^1
       next: '>=14.2.0'
       react: '>=18.2.0 || ^19.0.0-0'
-      react-router: 6.30.4
+      react-router: 7.18.0
       react-router-dom: ^5 || ^6 || ^7
     peerDependenciesMeta:
       '@remix-run/react':
