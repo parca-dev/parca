@@ -117,7 +117,7 @@
     "tsc-watch": "6.3.1",
     "typescript": "5.9.3",
     "vite": "6.4.5",
-    "vitest": "3.2.6"
+    "vitest": "4.1.11"
   },
   "eslintConfig": {
     "overrides": [

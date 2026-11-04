@@ -37,7 +37,7 @@ export const useBatchedRendering = <T>(
   const [renderedCount, setRenderedCount] = useState(0);
   const itemsRef = useRef(items);
   const rafRef = useRef<number | null>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (itemsRef.current !== items) {
