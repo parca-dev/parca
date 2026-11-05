@@ -6,10 +6,12 @@
   },
   "tags": [
     {
-      "name": "ProfileStoreService"
+      "name": "ProfileStoreService",
+      "description": "ProfileStoreService is the service the accepts pprof writes"
     },
     {
-      "name": "AgentsService"
+      "name": "AgentsService",
+      "description": "AgentsService maintains the agents"
     }
   ],
   "consumes": [
@@ -175,7 +177,7 @@
           "type": "string"
         }
       },
-      "additionalProperties": {}
+      "additionalProperties": true
     },
     "rpcStatus": {
       "type": "object",
