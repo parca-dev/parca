@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "QueryService"
+      "name": "QueryService",
+      "description": "QueryService is the service that provides APIs to retrieve and inspect profiles"
     }
   ],
   "consumes": [
@@ -726,7 +727,7 @@
           "type": "string"
         }
       },
-      "additionalProperties": {}
+      "additionalProperties": true
     },
     "rpcStatus": {
       "type": "object",

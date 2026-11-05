@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "MetastoreService"
+      "name": "MetastoreService",
+      "description": "MetastoreService"
     }
   ],
   "consumes": [
@@ -24,7 +25,7 @@
           "type": "string"
         }
       },
-      "additionalProperties": {}
+      "additionalProperties": true
     },
     "rpcStatus": {
       "type": "object",
