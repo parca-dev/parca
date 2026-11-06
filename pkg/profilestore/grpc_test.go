@@ -64,20 +64,33 @@ func TestOTLPForwarder(t *testing.T) {
 	forwarder := NewGRPCForwarder(NewClient(nil, otlppb.NewProfilesServiceClient(conn)), log.NewNopLogger(), true)
 
 	request := &profilestorepb.WriteRawRequest{}
-	for i, name := range []string{"checkout", "inventory"} {
+	for i, name := range []string{"checkout", "inventory", "productcatalog"} {
 		fn := &profile.Function{ID: 1, Name: name + ".work", Filename: name + ".go"}
 		loc := &profile.Location{ID: 1, Address: uint64(0x1000 + i), Line: []profile.Line{{Function: fn, Line: 42}}}
 		p := &profile.Profile{
 			SampleType: []*profile.ValueType{{Type: "alloc_objects", Unit: "count"}, {Type: "alloc_space", Unit: "bytes"}},
 			Sample: []*profile.Sample{{
 				Location: []*profile.Location{loc}, Value: []int64{int64(3 + i), int64(512 + i)},
-				Label:    map[string][]string{"service.name": {"sample-" + name}},
+				Label: map[string][]string{
+					"service.name":  {"sample-" + name},
+					"otel.trace_id": {"0123456789abcdef0123456789abcdef"},
+				},
 				NumLabel: map[string][]int64{"request.size": {int64(17 + i)}},
 				NumUnit:  map[string][]string{"request.size": {"bytes"}},
 			}},
 			Function: []*profile.Function{fn}, Location: []*profile.Location{loc},
 			TimeNanos: 1700000000000000000, DurationNanos: 123456789,
 			// No PeriodType: valid pprof profiles can omit it.
+		}
+		// Cover string labels and numeric labels with and without explicit units.
+		switch i {
+		case 0:
+			p.Sample[0].Label["bytes"] = []string{"123"}
+		case 1:
+			p.Sample[0].NumLabel["bytes"] = []int64{123}
+			p.Sample[0].NumUnit["bytes"] = []string{"bytes"}
+		case 2:
+			p.Sample[0].NumLabel["bytes"] = []int64{456}
 		}
 		var data bytes.Buffer
 		if i == 0 {
@@ -102,11 +115,14 @@ func TestOTLPForwarder(t *testing.T) {
 	require.NoError(t, err)
 	received := <-requests
 	require.NotNil(t, received)
-	require.Len(t, received.ResourceProfiles, 2)
+	require.Len(t, received.ResourceProfiles, 3)
 	dictionary := received.Dictionary
+	for _, attr := range dictionary.AttributeTable {
+		require.NotEqual(t, "bytes", dictionary.StringTable[attr.KeyStrindex])
+	}
 	ids := map[string]bool{}
 	for i, resource := range received.ResourceProfiles {
-		name := []string{"checkout", "inventory"}[i]
+		name := []string{"checkout", "inventory", "productcatalog"}[i]
 		attrs := map[string]string{}
 		for _, attr := range resource.Resource.Attributes {
 			attrs[attr.Key] = attr.Value.GetStringValue()
@@ -126,6 +142,9 @@ func TestOTLPForwarder(t *testing.T) {
 			sample := p.Samples[0]
 			require.Len(t, sample.Values, 1)
 			values[dictionary.StringTable[p.SampleType.TypeStrindex]] = sample.Values[0]
+			if dictionary.StringTable[p.SampleType.TypeStrindex] == "alloc_space" {
+				require.Equal(t, "bytes", dictionary.StringTable[p.SampleType.UnitStrindex])
+			}
 			sampleAttrs := map[string]*commonpb.AnyValue{}
 			for _, index := range sample.AttributeIndices {
 				attr := dictionary.AttributeTable[index]
@@ -134,8 +153,10 @@ func TestOTLPForwarder(t *testing.T) {
 					require.Equal(t, "bytes", dictionary.StringTable[attr.UnitStrindex])
 				}
 			}
-			require.Len(t, sampleAttrs, 2)
+			require.NotContains(t, sampleAttrs, "bytes")
+			require.Len(t, sampleAttrs, 3)
 			require.Equal(t, "sample-"+name, sampleAttrs["service.name"].GetStringValue())
+			require.Equal(t, "0123456789abcdef0123456789abcdef", sampleAttrs["otel.trace_id"].GetStringValue())
 			require.Equal(t, int64(17+i), sampleAttrs["request.size"].GetIntValue())
 			stack := dictionary.StackTable[sample.StackIndex]
 			require.Len(t, stack.LocationIndices, 1)
