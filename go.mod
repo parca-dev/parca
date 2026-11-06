@@ -56,7 +56,7 @@ require (
 	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.47.0
 	go.opentelemetry.io/otel/sdk v1.47.0
 	go.opentelemetry.io/otel/trace v1.47.0
-	go.opentelemetry.io/proto/otlp v1.11.0
+	go.opentelemetry.io/proto/otlp v1.11.1
 	go.opentelemetry.io/proto/otlp/collector/profiles/v1development v0.3.0
 	go.opentelemetry.io/proto/otlp/profiles/v1development v0.3.0
 	go.uber.org/atomic v1.11.0
