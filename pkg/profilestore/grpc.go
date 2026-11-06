@@ -91,6 +91,12 @@ func (s *GRPCForwarder) writeRawOTLP(ctx context.Context, req *profilestorepb.Wr
 			if p.PeriodType == nil {
 				p.PeriodType = &profile.ValueType{}
 			}
+			// Ignore bytes sample labels for now, without changing sample values or units.
+			for _, sample := range p.Sample {
+				delete(sample.Label, "bytes")
+				delete(sample.NumLabel, "bytes")
+				delete(sample.NumUnit, "bytes")
+			}
 			converted, err := pprof.ConvertPprofToProfiles(p)
 			if err != nil {
 				return nil, status.Errorf(codes.InvalidArgument, "convert pprof profile to OTLP: %v", err)
