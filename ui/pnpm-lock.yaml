@@ -55,7 +55,7 @@ overrides:
   follow-redirects@<=1.15.11: 1.16.2
   form-data@>=3.0.0 <3.0.5: 3.0.5
   form-data@>=4.0.0 <4.0.6: 4.0.6
-  http-proxy-middleware@<2.0.10: 2.0.10
+  http-proxy-middleware@<2.0.10: 2.0.11
   ip-address@<=10.3.0: 10.7.4
   js-cookie@<=3.0.5: 3.0.7
   js-yaml@>=3.0.0 <3.15.2: 3.15.2
@@ -8150,8 +8150,8 @@ packages:
     resolution: {integrity: sha512-T1gkAiYYDWYx3V5Bmyu7HcfcvL7mUrTWiM6yOfa3PIphViJ/gFPbvidQ+veqSOHci/PxBcDabeUNCzpOODJZig==}
     engines: {node: '>= 14'}
 
-  http-proxy-middleware@2.0.10:
-    resolution: {integrity: sha512-RKzRWNPxUZqbuk3BC5mGVJbBnWgr+diEnjJexIOytFbBzDy88Fbh/YvBr3DsNrl1jYAfjWfpATEv0NO35FDuPQ==}
+  http-proxy-middleware@2.0.11:
+    resolution: {integrity: sha512-vTR6+QTUDDOQ3a5RI5YwSwSx3roJjLLAi+PBNFmBWDfrfk7zVteTFSMq6E8+FhnJ8yjMOTZfk71fRAFv1gl2OQ==}
     engines: {node: '>=12.0.0'}
     peerDependencies:
       '@types/express': ^4.17.13
@@ -23707,7 +23707,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  http-proxy-middleware@2.0.10(@types/express@4.17.25)(debug@4.4.3(supports-color@7.2.0)):
+  http-proxy-middleware@2.0.11(@types/express@4.17.25)(debug@4.4.3(supports-color@7.2.0)):
     dependencies:
       '@types/http-proxy': 1.17.17
       http-proxy: 1.18.1(debug@4.4.3(supports-color@7.2.0))
@@ -31097,7 +31097,7 @@ snapshots:
       connect-history-api-fallback: 2.0.0
       express: 4.22.3(supports-color@7.2.0)
       graceful-fs: 4.2.11
-      http-proxy-middleware: 2.0.10(@types/express@4.17.25)(debug@4.4.3(supports-color@7.2.0))
+      http-proxy-middleware: 2.0.11(@types/express@4.17.25)(debug@4.4.3(supports-color@7.2.0))
       ipaddr.js: 2.5.0
       launch-editor: 2.14.2
       open: 10.2.0
