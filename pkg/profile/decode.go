@@ -79,49 +79,117 @@ type DecodeResult struct {
 	Mapping    Mapping
 }
 
+// DecodeInto decodes an encoded location into lw.
+//
+// Every read is bounds-checked and a record that runs out returns an error
+// rather than panicking. This parses bytes read back from storage on the query
+// path, and there is no recover() anywhere in the server, so an unchecked index
+// here would take the process down on a corrupt or truncated location instead
+// of failing the query that touched it.
+//
+// Reading past the end is not even reliably a crash: these bytes usually arrive
+// as an Arrow value, and array.Binary.Value slices with cap running to the end
+// of the whole buffer, so an over-read can silently return the next location's
+// bytes and decode them as this location's own.
 func DecodeInto(lw LocationsWriter, data []byte, demangler Demangler) (DecodeResult, error) {
 	var (
-		n             int
 		buildID       []byte
 		memoryStart   uint64
 		memoryLength  uint64
 		mappingOffset uint64
 	)
 
-	addr, offset := varint.Uvarint(data)
+	offset := 0
 
-	lineNumber, n := varint.Uvarint(data[offset:])
-	offset += n
-
-	hasMapping := data[offset] == 0x1
-	offset++
-	if hasMapping {
-		buildID, n = decodeString(data[offset:])
+	// uvarint reports false when the record has run out or the varint is
+	// malformed; Uvarint returns n <= 0 for both.
+	uvarint := func() (uint64, bool) {
+		if offset >= len(data) {
+			return 0, false
+		}
+		v, n := varint.Uvarint(data[offset:])
+		if n <= 0 {
+			return 0, false
+		}
 		offset += n
+		return v, true
+	}
+	// str reads a length-prefixed string. The length is unsigned, so one above
+	// MaxInt converts to a negative int and offset+int(length) lands BELOW
+	// offset -- which slips past a naive upper-bound check straight into a
+	// panicking slice. Compare in the space the length was read in.
+	str := func() ([]byte, bool) {
+		length, ok := uvarint()
+		if !ok || length > uint64(len(data)-offset) {
+			return nil, false
+		}
+		v := data[offset : offset+int(length)]
+		offset += int(length)
+		return v, true
+	}
+	flag := func() (bool, bool) {
+		if offset >= len(data) {
+			return false, false
+		}
+		v := data[offset] == 0x1
+		offset++
+		return v, true
+	}
+	truncated := func(field string) error {
+		return fmt.Errorf("malformed location: ran out of bytes reading %s at offset %d of %d", field, offset, len(data))
+	}
+
+	addr, ok := uvarint()
+	if !ok {
+		return DecodeResult{}, truncated("address")
+	}
+
+	lineNumber, ok := uvarint()
+	if !ok {
+		return DecodeResult{}, truncated("number of lines")
+	}
+
+	hasMapping, ok := flag()
+	if !ok {
+		return DecodeResult{}, truncated("has-mapping flag")
+	}
+	if hasMapping {
+		buildID, ok = str()
+		if !ok {
+			return DecodeResult{}, truncated("mapping build ID")
+		}
 
 		if err := lw.MappingBuildID.Append(buildID); err != nil {
 			return DecodeResult{}, fmt.Errorf("append mapping build id: %w", err)
 		}
 
-		filename, n := decodeString(data[offset:])
-		offset += n
+		filename, ok := str()
+		if !ok {
+			return DecodeResult{}, truncated("mapping filename")
+		}
 
 		if err := lw.MappingFile.Append(filename); err != nil {
 			return DecodeResult{}, fmt.Errorf("append mapping filename: %w", err)
 		}
 
-		memoryStart, n = varint.Uvarint(data[offset:])
-		offset += n
+		memoryStart, ok = uvarint()
+		if !ok {
+			return DecodeResult{}, truncated("mapping memory start")
+		}
 
 		lw.MappingStart.Append(memoryStart)
 
-		memoryLength, n = varint.Uvarint(data[offset:])
-		offset += n
+		memoryLength, ok = uvarint()
+		if !ok {
+			return DecodeResult{}, truncated("mapping memory length")
+		}
 
 		lw.MappingLimit.Append(memoryStart + memoryLength)
 
-		mappingOffset, n = varint.Uvarint(data[offset:])
-		offset += n
+		mappingOffset, ok = uvarint()
+		if !ok {
+			return DecodeResult{}, truncated("mapping offset")
+		}
 
 		lw.MappingOffset.Append(mappingOffset)
 	} else {
@@ -138,29 +206,41 @@ func DecodeInto(lw LocationsWriter, data []byte, demangler Demangler) (DecodeRes
 		for i := uint64(0); i < lineNumber; i++ {
 			lw.Line.Append(true)
 
-			line, n := varint.Uvarint(data[offset:])
-			offset += n
+			line, ok := uvarint()
+			if !ok {
+				return DecodeResult{}, truncated("line number")
+			}
 
 			lw.LineNumber.Append(int64(line))
 
-			column, n := varint.Uvarint(data[offset:])
-			offset += n
+			column, ok := uvarint()
+			if !ok {
+				return DecodeResult{}, truncated("column")
+			}
 			lw.ColumnNumber.Append(column)
 
-			hasFunction := data[offset] == 0x1
-			offset++
+			hasFunction, ok := flag()
+			if !ok {
+				return DecodeResult{}, truncated("has-function flag")
+			}
 
 			if hasFunction {
-				startLine, n := varint.Uvarint(data[offset:])
-				offset += n
+				startLine, ok := uvarint()
+				if !ok {
+					return DecodeResult{}, truncated("function start line")
+				}
 
 				lw.FunctionStartLine.Append(int64(startLine))
 
-				name, n := decodeString(data[offset:])
-				offset += n
+				name, ok := str()
+				if !ok {
+					return DecodeResult{}, truncated("function name")
+				}
 
-				systemName, n := decodeString(data[offset:])
-				offset += n
+				systemName, ok := str()
+				if !ok {
+					return DecodeResult{}, truncated("function system name")
+				}
 
 				// Data written by the v2 ingest path before it populated the
 				// name only carries system_name.
@@ -180,8 +260,10 @@ func DecodeInto(lw LocationsWriter, data []byte, demangler Demangler) (DecodeRes
 					return DecodeResult{}, fmt.Errorf("append function system name: %w", err)
 				}
 
-				filename, n := decodeString(data[offset:])
-				offset += n
+				filename, ok := str()
+				if !ok {
+					return DecodeResult{}, truncated("function filename")
+				}
 
 				if err := lw.FunctionFilename.Append(filename); err != nil {
 					return DecodeResult{}, fmt.Errorf("append function filename: %w", err)
@@ -197,18 +279,18 @@ func DecodeInto(lw LocationsWriter, data []byte, demangler Demangler) (DecodeRes
 		return DecodeResult{
 			WroteLines: true,
 		}, nil
-	} else {
-		return DecodeResult{
-			WroteLines: false,
-			BuildID:    buildID,
-			Addr:       addr,
-			Mapping: Mapping{
-				StartAddr: memoryStart,
-				EndAddr:   memoryStart + memoryLength,
-				Offset:    mappingOffset,
-			},
-		}, nil
 	}
+
+	return DecodeResult{
+		WroteLines: false,
+		BuildID:    buildID,
+		Addr:       addr,
+		Mapping: Mapping{
+			StartAddr: memoryStart,
+			EndAddr:   memoryStart + memoryLength,
+			Offset:    mappingOffset,
+		},
+	}, nil
 }
 
 // DecodeFunctionName is a fork of DecodeInto that only tries to find a function name and returns it.
