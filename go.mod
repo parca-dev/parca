@@ -36,7 +36,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/pprof v0.157.0
 	github.com/parquet-go/parquet-go v0.24.0
-	github.com/pierrec/lz4/v4 v4.1.25
+	github.com/pierrec/lz4/v4 v4.1.33
 	github.com/planetscale/vtprotobuf v0.6.1-0.20250313105119-ba97887b0a25
 	github.com/polarsignals/frostdb v0.0.0-20260121113628-9e5cfe0171ad
 	github.com/polarsignals/iceberg-go v0.0.0-20240502213135-2ee70b71e76b
