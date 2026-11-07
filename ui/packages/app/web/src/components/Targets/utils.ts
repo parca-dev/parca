@@ -21,8 +21,9 @@ const HealthStatus = {
 
 type HealthStatusType = (typeof HealthStatus)[keyof typeof HealthStatus];
 
-export const getHealthStatus = (numericValue: number) => {
-  const label = Object.values(HealthStatus)[numericValue];
+export const getHealthStatus = (numericValue: number): {label: HealthStatusType; colorVariant: PillVariant} => {
+  const values = Object.values(HealthStatus);
+  const label: HealthStatusType = values[numericValue] ?? HealthStatus.Unspecified;
 
   const colorVariants: Record<HealthStatusType, PillVariant> = {
     Unspecified: 'neutral',
