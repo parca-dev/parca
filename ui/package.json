@@ -95,7 +95,7 @@
     "jest": "29.7.0",
     "jest-environment-jsdom": "29.7.0",
     "lerna": "9.0.7",
-    "local-web-server": "5.4.0",
+    "local-web-server": "5.4.2",
     "next-transpile-modules": "9.1.0",
     "ora": "6.3.1",
     "plop": "3.1.2",
