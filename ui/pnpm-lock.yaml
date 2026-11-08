@@ -305,8 +305,8 @@ importers:
         specifier: 9.0.7
         version: 9.0.7(@swc/core@1.15.10)(@types/node@18.19.130)(babel-plugin-macros@3.1.0)(supports-color@7.2.0)
       local-web-server:
-        specifier: 5.4.0
-        version: 5.4.0(supports-color@7.2.0)
+        specifier: 5.4.2
+        version: 5.4.2(supports-color@7.2.0)
       next-transpile-modules:
         specifier: 9.1.0
         version: 9.1.0
@@ -9272,8 +9272,8 @@ packages:
     resolution: {integrity: sha512-FMJTLMXfCLMLfJxcX9PFqX5qD88Z5MRGaZCVzfuqeZSPsyiBzs+pahDQjbIWz2QIzPZz0NX9Zy4FX3lmK6YHIg==}
     engines: {node: '>= 12.13.0'}
 
-  local-web-server@5.4.0:
-    resolution: {integrity: sha512-FkQT6ZuX+8ywks3Mol5nHtuKzf+Rhtp88PPJUkcU0fP6JzNi7s9a+dWRQ8WrCxlGe3vHij85A4R1uL4wRg06WA==}
+  local-web-server@5.4.2:
+    resolution: {integrity: sha512-sCeYEo7E+NgKyDvyjq1q7kx/Z7IkGKjJbBQzOyC+uBeBeTKayVi+xMee3vRRVtXZ43tiJO6u8QLyWzCcAvpwUQ==}
     engines: {node: '>=12.20'}
     hasBin: true
 
@@ -25660,7 +25660,7 @@ snapshots:
 
   loader-utils@3.3.1: {}
 
-  local-web-server@5.4.0(supports-color@7.2.0):
+  local-web-server@5.4.2(supports-color@7.2.0):
     dependencies:
       current-module-paths: 1.1.3
       lws: 4.2.1(supports-color@7.2.0)
