@@ -25,6 +25,7 @@ import (
 	goruntime "runtime"
 	"runtime/pprof"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -428,7 +429,12 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 					return err
 				}
 			} else {
-				store = frostdb.NewDefaultObjstoreBucket(prefixedBucket)
+				var storeOpts []frostdb.DefaultObjstoreBucketOption
+				// Only a local disk is left with a partial block by a crash; elsewhere a failed read is an outage.
+				if strings.EqualFold(string(cfg.ObjectStorage.Bucket.Type), string(client.FILESYSTEM)) {
+					storeOpts = append(storeOpts, frostdb.StorageWithSkipUnreadableBlocks(skipUnreadableBlock(logger)))
+				}
+				store = frostdb.NewDefaultObjstoreBucket(prefixedBucket, storeOpts...)
 			}
 			frostdbOptions = append(
 				frostdbOptions,
@@ -1073,5 +1079,20 @@ func BucketURIFromConfig(bucketCfg []byte) (string, error) {
 		return path, nil
 	default:
 		return "", fmt.Errorf("unknown bucket type: %s", bucketConf.Type)
+	}
+}
+
+// skipUnreadableBlock skips a malformed or incomplete block but fails the query on a disk I/O error.
+func skipUnreadableBlock(logger log.Logger) func(blockDir string, err error) error {
+	var warned sync.Map
+	return func(blockDir string, err error) error {
+		var pathErr *fs.PathError
+		if errors.As(err, &pathErr) && !errors.Is(err, fs.ErrNotExist) {
+			return err
+		}
+		if _, seen := warned.LoadOrStore(blockDir, struct{}{}); !seen {
+			level.Warn(logger).Log("msg", "skipping unreadable block", "block", blockDir, "err", err)
+		}
+		return nil
 	}
 }
