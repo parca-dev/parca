@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "ShareService"
+      "name": "ShareService",
+      "description": "Service that exposes APIs for sharing profiles."
     }
   ],
   "consumes": [
@@ -24,7 +25,7 @@
           "type": "string"
         }
       },
-      "additionalProperties": {}
+      "additionalProperties": true
     },
     "rpcStatus": {
       "type": "object",

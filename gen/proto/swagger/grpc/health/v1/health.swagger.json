@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "Health"
+      "name": "Health",
+      "description": "Health is gRPC's mechanism for checking whether a server is able to handle\nRPCs. Its semantics are documented in\nhttps://github.com/grpc/grpc/blob/master/doc/health-checking.md."
     }
   ],
   "consumes": [
@@ -24,7 +25,7 @@
           "type": "string"
         }
       },
-      "additionalProperties": {}
+      "additionalProperties": true
     },
     "rpcStatus": {
       "type": "object",

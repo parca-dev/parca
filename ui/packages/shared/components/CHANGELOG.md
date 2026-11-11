@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.16.427](https://github.com/parca-dev/parca/compare/@parca/components@0.16.426...@parca/components@0.16.427) (2026-11-10)
+
+**Note:** Version bump only for package @parca/components
+
+## 0.16.426 (2026-11-10)
+
+# 0.30.0 (2026-11-06)
+
+### Bug Fixes
+
+- ignore bytes sample labels in OTLP conversion ([#6481](https://github.com/parca-dev/parca/issues/6481)) ([0094f1d](https://github.com/parca-dev/parca/commit/0094f1d3481756cbeeba9c926b73f1833044c725))
+
 ## 0.16.425 (2026-10-23)
 
 # 0.29.0 (2026-09-23)

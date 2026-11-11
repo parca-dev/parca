@@ -67,7 +67,7 @@ const PreSelectedMatchers: React.FC<Props> = ({labelNames}) => {
   const selectionsRef = useRef<Record<string, string | null>>(initialSelections);
 
   const commitDraftRef = useRef(commitDraft);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     commitDraftRef.current = commitDraft;

@@ -21,8 +21,13 @@ import (
 	"errors"
 	"io"
 	"math"
+	"net"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -37,9 +42,11 @@ import (
 	"github.com/prometheus/prometheus/model/timestamp"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
+	otlppb "go.opentelemetry.io/proto/otlp/collector/profiles/v1development"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	profilestorepb "github.com/parca-dev/parca/gen/proto/go/parca/profilestore/v1alpha1"
@@ -498,4 +505,97 @@ func TestLabels(t *testing.T) {
 	}
 	want := map[string]struct{}{}
 	require.Equal(t, want, got, "profile should contain labels from the original profile only")
+}
+
+func TestOTLPForwarderScrape(t *testing.T) {
+	var data bytes.Buffer
+	loc := &profile.Location{ID: 1, Address: 0x1234}
+	p := &profile.Profile{
+		SampleType: []*profile.ValueType{{Type: "inuse_space", Unit: "bytes"}},
+		Sample: []*profile.Sample{{
+			Location: []*profile.Location{loc}, Value: []int64{4096},
+			Label: map[string][]string{"service.name": {"sample-service"}},
+		}},
+		Location: []*profile.Location{loc}, TimeNanos: 1700000000000000000,
+	}
+	require.NoError(t, p.Write(&data))
+	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write(data.Bytes())
+	}))
+	t.Cleanup(target.Close)
+
+	received := make(chan struct {
+		profiles *otlppb.ExportProfilesServiceRequest
+		headers  metadata.MD
+	}, 1)
+	upstream := grpc.NewServer(grpc.UnaryInterceptor(func(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, _ grpc.UnaryHandler) (interface{}, error) {
+		headers, _ := metadata.FromIncomingContext(ctx)
+		select {
+		case received <- struct {
+			profiles *otlppb.ExportProfilesServiceRequest
+			headers  metadata.MD
+		}{req.(*otlppb.ExportProfilesServiceRequest), headers}:
+		default:
+		}
+		return &otlppb.ExportProfilesServiceResponse{}, nil
+	}))
+	otlppb.RegisterProfilesServiceServer(upstream, &otlppb.UnimplementedProfilesServiceServer{})
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	go func() { _ = upstream.Serve(listener) }()
+	t.Cleanup(upstream.Stop)
+
+	// Exercise the shipped static example through discovery, relabeling,
+	// scraping, conversion, and an upstream that implements only OTLP.
+	contents, err := os.ReadFile("../../deploy/otlp/static.yaml")
+	require.NoError(t, err)
+	contents = bytes.ReplaceAll(contents, []byte("checkout:6060"), []byte(strings.TrimPrefix(target.URL, "http://")))
+	contents = bytes.ReplaceAll(contents, []byte("scrape_interval: 30s"), []byte("scrape_interval: 1s"))
+	configPath := filepath.Join(t.TempDir(), "parca.yaml")
+	require.NoError(t, os.WriteFile(configPath, contents, 0o600))
+	ctx, cancel := context.WithCancel(t.Context())
+	done := make(chan error, 1)
+	go func() {
+		done <- Run(ctx, log.NewNopLogger(), prometheus.NewRegistry(), &Flags{
+			ConfigPath: configPath, Mode: flagModeOTLPForwarder, HTTPAddress: "127.0.0.1:0",
+			StoreAddress: listener.Addr().String(), Insecure: true, BearerToken: "test-token",
+			GRPCHeaders:   map[string]string{"x-tenant": "test-tenant"},
+			ExternalLabel: map[string]string{"k8s.cluster.name": "test-cluster"},
+		}, "test-version")
+	}()
+	t.Cleanup(func() {
+		cancel()
+		select {
+		case err := <-done:
+			if !errors.Is(err, context.Canceled) {
+				require.NoError(t, err)
+			}
+		case <-time.After(10 * time.Second):
+			t.Error("forwarder did not stop")
+		}
+	})
+	select {
+	case result := <-received:
+		require.Equal(t, []string{"Bearer test-token"}, result.headers.Get("authorization"))
+		require.Equal(t, []string{"test-tenant"}, result.headers.Get("x-tenant"))
+		require.Len(t, result.profiles.ResourceProfiles, 1)
+		resource := result.profiles.ResourceProfiles[0]
+		attrs := map[string]string{}
+		for _, attr := range resource.Resource.Attributes {
+			attrs[attr.Key] = attr.Value.GetStringValue()
+		}
+		require.Equal(t, "checkout", attrs["service.name"])
+		require.Equal(t, "shop", attrs["service.namespace"])
+		require.Equal(t, strings.TrimPrefix(target.URL, "http://"), attrs["service.instance.id"])
+		require.Equal(t, "development", attrs["deployment.environment.name"])
+		require.Equal(t, "test-cluster", attrs["k8s.cluster.name"])
+		sample := resource.ScopeProfiles[0].Profiles[0].Samples[0]
+		require.Equal(t, []int64{4096}, sample.Values)
+		require.Len(t, sample.AttributeIndices, 1)
+		attr := result.profiles.Dictionary.AttributeTable[sample.AttributeIndices[0]]
+		require.Equal(t, "service.name", result.profiles.Dictionary.StringTable[attr.KeyStrindex])
+		require.Equal(t, "sample-service", attr.Value.GetStringValue())
+	case <-time.After(10 * time.Second):
+		t.Fatal("no OTLP profile received from scraper")
+	}
 }

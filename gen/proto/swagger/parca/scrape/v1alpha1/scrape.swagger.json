@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "ScrapeService"
+      "name": "ScrapeService",
+      "description": "ScrapeService maintains the set of scrape targets"
     }
   ],
   "consumes": [
@@ -99,7 +100,7 @@
           "type": "string"
         }
       },
-      "additionalProperties": {}
+      "additionalProperties": true
     },
     "rpcStatus": {
       "type": "object",

@@ -1,0 +1,44 @@
+# Run in-cluster with --mode=otlp-forwarder and --store-address=<OTLP gRPC address>.
+# The service account needs permission to get, list, and watch pods.
+# Scrape containers that expose a port named "pprof" and whose pods have an
+# app.kubernetes.io/name label. Endpoints must serve Go's /debug/pprof paths.
+# Required by config validation, but unused in forwarding modes.
+object_storage:
+  bucket:
+    type: FILESYSTEM
+    config:
+      directory: ./data
+
+scrape_configs:
+  - job_name: kubernetes-pods
+    scrape_interval: 30s
+    kubernetes_sd_configs:
+      - role: pod
+    relabel_configs:
+      - action: keep
+        source_labels: [__meta_kubernetes_pod_container_port_name]
+        regex: pprof
+      - action: keep
+        source_labels: [__meta_kubernetes_pod_phase]
+        regex: Running
+      - action: keep
+        source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+        regex: .+
+      - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+        target_label: service.name
+      - source_labels: [__meta_kubernetes_namespace]
+        target_label: service.namespace
+      # A pod UID plus container name distinguishes replicas and containers.
+      - source_labels: [__meta_kubernetes_pod_uid, __meta_kubernetes_pod_container_name]
+        separator: /
+        target_label: service.instance.id
+      - source_labels: [__meta_kubernetes_namespace]
+        target_label: k8s.namespace.name
+      - source_labels: [__meta_kubernetes_pod_name]
+        target_label: k8s.pod.name
+      - source_labels: [__meta_kubernetes_pod_uid]
+        target_label: k8s.pod.uid
+      - source_labels: [__meta_kubernetes_pod_node_name]
+        target_label: k8s.node.name
+      - source_labels: [__meta_kubernetes_pod_container_name]
+        target_label: k8s.container.name

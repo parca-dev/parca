@@ -3,6 +3,34 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.16.1066](https://github.com/parca-dev/parca/compare/@parca/web@0.16.1065...@parca/web@0.16.1066) (2026-11-10)
+
+**Note:** Version bump only for package @parca/web
+
+## 0.16.1065 (2026-11-10)
+
+# 0.30.0 (2026-11-06)
+
+### Bug Fixes
+
+- ignore bytes sample labels in OTLP conversion ([#6481](https://github.com/parca-dev/parca/issues/6481)) ([0094f1d](https://github.com/parca-dev/parca/commit/0094f1d3481756cbeeba9c926b73f1833044c725))
+
+## [0.16.1064](https://github.com/parca-dev/parca/compare/@parca/web@0.16.1063...@parca/web@0.16.1064) (2026-11-04)
+
+**Note:** Version bump only for package @parca/web
+
+## [0.16.1063](https://github.com/parca-dev/parca/compare/@parca/web@0.16.1062...@parca/web@0.16.1063) (2026-11-04)
+
+**Note:** Version bump only for package @parca/web
+
+## [0.16.1062](https://github.com/parca-dev/parca/compare/@parca/web@0.16.1061...@parca/web@0.16.1062) (2026-11-01)
+
+**Note:** Version bump only for package @parca/web
+
+## [0.16.1061](https://github.com/parca-dev/parca/compare/@parca/web@0.16.1060...@parca/web@0.16.1061) (2026-10-31)
+
+**Note:** Version bump only for package @parca/web
+
 ## [0.16.1060](https://github.com/parca-dev/parca/compare/@parca/web@0.16.1059...@parca/web@0.16.1060) (2026-10-28)
 
 **Note:** Version bump only for package @parca/web

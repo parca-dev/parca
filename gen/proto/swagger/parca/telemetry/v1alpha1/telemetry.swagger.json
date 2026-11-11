@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "TelemetryService"
+      "name": "TelemetryService",
+      "description": "TelemetryService is the service that provides APIs to send information about the\nAgents, such as unhandled panics and other relevant runtime data."
     }
   ],
   "consumes": [
@@ -59,7 +60,7 @@
           "type": "string"
         }
       },
-      "additionalProperties": {}
+      "additionalProperties": true
     },
     "rpcStatus": {
       "type": "object",
