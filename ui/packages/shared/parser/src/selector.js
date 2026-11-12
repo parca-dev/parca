@@ -20,7 +20,7 @@ export let grammar;
     main: {
       strstart: {match: '"', push: 'lit'},
       space: {match: /\s+/, lineBreaks: true},
-      ident: /(?:[a-zA-Z_:][a-zA-Z0-9_:.]*)/,
+      ident: /(?:[a-zA-Z_:][a-zA-Z0-9_:\-.]*)/,
       matcherType: ['=', '!=', '=~', '!~'],
       '{': '{',
       '}': '}',
