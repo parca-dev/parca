@@ -21,7 +21,7 @@ overrides:
   immutable@>=5.0.0 <5.1.5: 5.1.9
   flatted@<3.4.2: 3.4.4
   koa@<2.16.4: 2.16.4
-  node-forge@<1.4.0: 1.4.0
+  node-forge@<1.4.0: 1.4.3
   picomatch@<2.3.2: 2.3.2
   picomatch@>=4.0.0 <4.0.4: 4.0.7
   jsonpath@<=1.2.1: 1.3.0
