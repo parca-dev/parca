@@ -68,7 +68,7 @@ overrides:
   shell-quote@>=1.1.0 <=1.8.4: 1.11.0
   sigstore@<=4.1.0: 4.1.1
   smol-toml@<=1.7.0: 1.9.0
-  tar@<=7.5.17: 7.5.18
+  tar@<=7.5.17: 7.5.22
   tmp@<0.2.6: 0.2.6
   undici@<6.28.0: 6.29.1
   uuid@<11.1.1: 11.1.1
@@ -12894,8 +12894,8 @@ packages:
   tar-stream@3.2.2:
     resolution: {integrity: sha512-+8NeqHRjQWH9nYlwo2gamAMImZCVzI4UoEgDpWorBt9OEfppiZn+uSkskzQKPWIZyji/C8fpWO7u69G0DX0tbg==}
 
-  tar@7.5.18:
-    resolution: {integrity: sha512-PwA+nJl+AzsS9hRqtNRRq8/kTdNPoOLEPXpz9WBaErNm4+TFedJyQFJLITWdsmIBnwNS/TwXf1NV5Ak1KITc8g==}
+  tar@7.5.22:
+    resolution: {integrity: sha512-MFO/QzvtAOmJbkhOaCTvbGcFN9L9b+JunIsDwaKljSOdcLMea3NJ1k9Usz/rjdfSXTq4dfzfeS7W4p4YOAAHeA==}
     engines: {node: '>=18'}
 
   teex@1.0.1:
@@ -25570,7 +25570,7 @@ snapshots:
       slash: 3.0.0
       ssri: 12.0.0
       string-width: 4.2.3
-      tar: 7.5.18
+      tar: 7.5.22
       through: 2.3.8
       tinyglobby: 0.2.12
       typescript: 5.9.3
@@ -26944,7 +26944,7 @@ snapshots:
       nopt: 9.0.0
       proc-log: 6.1.0
       semver: 7.7.2
-      tar: 7.5.18
+      tar: 7.5.22
       tinyglobby: 0.2.12
       undici: 6.29.1
       which: 6.0.1
@@ -27498,7 +27498,7 @@ snapshots:
       promise-retry: 2.0.1
       sigstore: 4.1.1(supports-color@7.2.0)
       ssri: 12.0.0
-      tar: 7.5.18
+      tar: 7.5.22
     transitivePeerDependencies:
       - supports-color
 
@@ -27520,7 +27520,7 @@ snapshots:
       proc-log: 6.1.0
       sigstore: 4.1.1(supports-color@7.2.0)
       ssri: 13.0.1
-      tar: 7.5.18
+      tar: 7.5.22
     transitivePeerDependencies:
       - supports-color
 
@@ -30272,7 +30272,7 @@ snapshots:
       - bare-buffer
       - react-native-b4a
 
-  tar@7.5.18:
+  tar@7.5.22:
     dependencies:
       '@isaacs/fs-minipass': 4.0.1
       chownr: 3.0.0
