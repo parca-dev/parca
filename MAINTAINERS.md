@@ -1,7 +1,7 @@
 Document that refers to a specific project within the Parca ecosystem
 is maintained by the maintainers of the respective project. For example, refer
 to the maintainers specified in Parca Agent's
-[MAINTAINERS.md](https://github.com/parca/parca-agent/blob/main/MAINTAINERS.md)
+[MAINTAINERS.md](https://github.com/parca-dev/parca-agent/blob/main/MAINTAINERS.md)
 file for the Parca Agent.
 
 Note that the documentation for the Parca server is located in the [parca.dev website](https://www.parca.dev/docs/overview).
