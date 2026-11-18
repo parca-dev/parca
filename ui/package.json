@@ -31,11 +31,11 @@
   },
   "devDependencies": {
     "@babel/cli": "7.29.7",
-    "@babel/core": "7.29.7",
+    "@babel/core": "7.29.13",
     "@babel/node": "7.29.7",
     "@babel/plugin-proposal-export-default-from": "7.29.7",
     "@babel/plugin-proposal-private-property-in-object": "7.21.11",
-    "@babel/preset-env": "7.29.7",
+    "@babel/preset-env": "7.29.14",
     "@babel/preset-react": "7.29.7",
     "@babel/preset-typescript": "7.29.7",
     "@chromatic-com/storybook": "1.9.0",
