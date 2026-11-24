@@ -28,14 +28,14 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.33.0
 	github.com/ianlancetaylor/demangle v0.0.0-20250628045327-2d64ad6b7ec5
 	github.com/improbable-eng/grpc-web v0.15.0
-	github.com/klauspost/compress v1.18.7
+	github.com/klauspost/compress v1.20.4
 	github.com/m1gwings/treedrawer v0.3.3-beta
 	github.com/minio/minio-go/v7 v7.0.72
 	github.com/nanmu42/limitio v1.0.0
 	github.com/oklog/run v1.2.0
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/pprof v0.157.0
-	github.com/parquet-go/parquet-go v0.24.0
+	github.com/parquet-go/parquet-go v0.32.1
 	github.com/pierrec/lz4/v4 v4.1.33
 	github.com/planetscale/vtprotobuf v0.6.1-0.20250313105119-ba97887b0a25
 	github.com/polarsignals/frostdb v0.0.0-20261108180411-9087d8f56226
@@ -95,7 +95,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/RoaringBitmap/roaring v1.9.4 // indirect
 	github.com/aliyun/aliyun-oss-go-sdk v2.2.2+incompatible // indirect
-	github.com/andybalholm/brotli v1.2.0 // indirect
+	github.com/andybalholm/brotli v1.3.0 // indirect
 	github.com/apache/thrift v0.24.0 // indirect
 	github.com/armon/go-metrics v0.4.1 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.41.4 // indirect
@@ -235,6 +235,8 @@ require (
 	github.com/opencontainers/image-spec v1.1.1 // indirect
 	github.com/oracle/oci-go-sdk/v65 v65.41.1 // indirect
 	github.com/ovh/go-ovh v1.9.0 // indirect
+	github.com/parquet-go/bitpack v1.0.3 // indirect
+	github.com/parquet-go/jsonlite v1.5.5 // indirect
 	github.com/paulmach/orb v0.12.0 // indirect
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
 	github.com/pkg/errors v0.9.1 // indirect
@@ -254,6 +256,7 @@ require (
 	github.com/stackitcloud/stackit-sdk-go/core v0.23.0 // indirect
 	github.com/stoewer/go-strcase v1.3.1 // indirect
 	github.com/tencentyun/cos-go-sdk-v5 v0.7.40 // indirect
+	github.com/twpayne/go-geom v1.6.1 // indirect
 	github.com/vultr/govultr/v3 v3.28.1 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.etcd.io/bbolt v1.3.7 // indirect
