@@ -1510,7 +1510,8 @@ func (q *Querier) selectMerge(
 	}
 
 	queryParts.Meta.SampleType = resultType
-	queryParts.Meta.Timestamp = start
+	// Meta.Timestamp is in milliseconds, like the single-profile path; start is in nanoseconds.
+	queryParts.Meta.Timestamp = startTime.UnixMilli()
 
 	return records, "sum(value)", queryParts, nil
 }
