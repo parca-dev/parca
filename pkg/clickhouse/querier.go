@@ -663,7 +663,8 @@ func (q *Querier) QueryMerge(
 		return profile.Profile{}, err
 	}
 
-	qp.Meta.Timestamp = startNanos
+	// Meta.Timestamp is in milliseconds, like the single-profile path.
+	qp.Meta.Timestamp = start.UnixMilli()
 
 	return profile.Profile{
 		Meta:    qp.Meta,
