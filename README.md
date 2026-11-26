@@ -136,6 +136,10 @@ Flags:
                                  Allowed CORS origins.
       --version                  Show application version.
       --path-prefix=""           Path prefix for the UI
+      --ui-disable-auto-query    Open the UI without a query instead of
+                                 automatically querying a default profile type,
+                                 so users choose a profile type and filter
+                                 first.
       --mutex-profile-fraction=0
                                  Fraction of mutex profile samples to collect.
       --block-profile-rate=0     Sample rate for block profile.

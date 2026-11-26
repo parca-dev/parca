@@ -32,6 +32,7 @@ interface Props {
   querySelection: QuerySelection;
   loading: boolean;
   defaultProfileType?: string;
+  disableAutoQuery?: boolean;
 }
 
 export const useAutoQuerySelector = ({
@@ -42,6 +43,7 @@ export const useAutoQuerySelector = ({
   querySelection,
   loading,
   defaultProfileType,
+  disableAutoQuery = false,
 }: Props): void => {
   const autoQuery = useAppSelector(selectAutoQuery);
   const dispatch = useAppDispatch();
@@ -149,6 +151,9 @@ export const useAutoQuerySelector = ({
   // Effect to load some initial data on load when is no selection
   useEffect(() => {
     void (async () => {
+      if (disableAutoQuery) {
+        return;
+      }
       if (selectedProfileName.length > 0) {
         return;
       }
@@ -202,6 +207,7 @@ export const useAutoQuerySelector = ({
     setQueryExpression,
     setProfileName,
     defaultProfileType,
+    disableAutoQuery,
   ]);
 
   useEffect(() => {

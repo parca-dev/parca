@@ -110,7 +110,7 @@ const ProfileSelector = ({
   suffix,
   onSearchHook,
 }: ProfileSelectorProps): JSX.Element => {
-  const {externalProfilerComponent, additionalMetricsGraph} = useParcaContext();
+  const {externalProfilerComponent, additionalMetricsGraph, disableAutoQuery} = useParcaContext();
   const [queryBrowserMode, setRawQueryBrowserMode] = useNuqsQueryState(
     'query_browser_mode',
     stringParam.withOptions({history: 'replace'})
@@ -294,6 +294,7 @@ const ProfileSelector = ({
     querySelection,
     loading: sumByLoading,
     defaultProfileType: externalProfilerComponent?.defaultProfileType,
+    disableAutoQuery,
   });
 
   const searchDisabled =

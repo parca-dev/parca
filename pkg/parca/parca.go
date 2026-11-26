@@ -109,6 +109,7 @@ type Flags struct {
 	CORSAllowedOrigins []string `help:"Allowed CORS origins."`
 	Version            bool     `help:"Show application version."`
 	PathPrefix         string   `default:"" help:"Path prefix for the UI"`
+	UIDisableAutoQuery bool     `default:"false" help:"Open the UI without a query instead of automatically querying a default profile type, so users choose a profile type and filter first."`
 
 	MutexProfileFraction int `default:"0" help:"Fraction of mutex profile samples to collect."`
 	BlockProfileRate     int `default:"0" help:"Sample rate for block profile."`
@@ -687,6 +688,7 @@ func Run(ctx context.Context, logger log.Logger, reg *prometheus.Registry, flags
 					flags.HTTPWriteTimeout,
 					flags.CORSAllowedOrigins,
 					flags.PathPrefix,
+					flags.UIDisableAutoQuery,
 					server.RegisterableFunc(func(ctx context.Context, srv *grpc.Server, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
 						debuginfopb.RegisterDebuginfoServiceServer(srv, dbginfo)
 						profilestorepb.RegisterProfileStoreServiceServer(srv, s)
@@ -958,6 +960,7 @@ func runForwarder(
 					flags.HTTPWriteTimeout,
 					flags.CORSAllowedOrigins,
 					flags.PathPrefix,
+					flags.UIDisableAutoQuery,
 					server.RegisterableFunc(func(ctx context.Context, srv *grpc.Server, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
 						scrapepb.RegisterScrapeServiceServer(srv, m)
 						profilestorepb.RegisterProfileStoreServiceServer(srv, store)
