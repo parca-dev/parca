@@ -30,4 +30,19 @@ describe('getHealthStatus', () => {
       colorVariant: 'danger',
     });
   });
+
+  it('falls back to Unspecified for out-of-range or invalid numeric values', () => {
+    expect(getHealthStatus(3)).toEqual({
+      label: 'Unspecified',
+      colorVariant: 'neutral',
+    });
+    expect(getHealthStatus(-1)).toEqual({
+      label: 'Unspecified',
+      colorVariant: 'neutral',
+    });
+    expect(getHealthStatus(NaN)).toEqual({
+      label: 'Unspecified',
+      colorVariant: 'neutral',
+    });
+  });
 });
