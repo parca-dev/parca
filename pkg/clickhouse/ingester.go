@@ -211,6 +211,10 @@ func decodeLineInfo(data []byte) LineInfo {
 		offset += n
 		info.LineNumber = int64(lineNum)
 
+		// Skip column, which every location encoder writes after the line number.
+		_, n = varint.Uvarint(data[offset:])
+		offset += n
+
 		hasFunction := data[offset] == 0x1
 		offset++
 
