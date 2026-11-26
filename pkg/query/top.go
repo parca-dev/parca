@@ -52,7 +52,7 @@ func GenerateTopTable(ctx context.Context, p parcaprofile.OldProfile) (*pb.Top, 
 						},
 					},
 				}
-				if len(location.Lines) > 0 {
+				if len(location.Lines) > 0 && location.Lines[0].Function != nil {
 					// TODO: Return or merge multiple lines for samples
 					node.Meta.Function = location.Lines[0].Function
 					node.Meta.Line = &metastorev1alpha1.Line{
