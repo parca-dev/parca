@@ -41,6 +41,7 @@ declare global {
   interface Window {
     PATH_PREFIX: string;
     APP_VERSION: string;
+    DISABLE_AUTO_QUERY: string;
   }
 }
 

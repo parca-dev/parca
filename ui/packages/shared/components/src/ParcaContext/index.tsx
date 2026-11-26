@@ -65,6 +65,7 @@ interface Props {
   Spinner: FC<SpinnerProps>;
   loader?: ReactNode;
   noDataPrompt?: ReactNode;
+  disableAutoQuery?: boolean;
   profileExplorer?: {
     PaddingX: number;
     metricsGraph: {

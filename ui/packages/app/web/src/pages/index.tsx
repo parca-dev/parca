@@ -58,6 +58,7 @@ const Profiles = () => {
         queryServiceClient: queryClient,
         navigateTo,
         isDarkMode,
+        disableAutoQuery: window.DISABLE_AUTO_QUERY === 'true',
         enableSandwichView: true,
       }}
     >

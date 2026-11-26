@@ -83,6 +83,7 @@ func (s *Server) ListenAndServe(
 	writeTimeout time.Duration,
 	allowedCORSOrigins []string,
 	pathPrefix string,
+	disableUIAutoQuery bool,
 	registerables ...Registerable,
 ) error {
 	level.Info(logger).Log("msg", "starting server", "addr", addr)
@@ -143,7 +144,7 @@ func (s *Server) ListenAndServe(
 		r.HandleFunc("/debug/pprof/trace", pprof.Trace)
 	})
 
-	uiHandler, err := s.uiHandler(uiFS, pathPrefix)
+	uiHandler, err := s.uiHandler(uiFS, pathPrefix, disableUIAutoQuery)
 	if err != nil {
 		return fmt.Errorf("failed to walk ui filesystem: %w", err)
 	}
@@ -188,7 +189,7 @@ func (s *Server) Shutdown(ctx context.Context) error {
 // There is currently no way to go between `http.FileServer(http.FS(uiFS))` and execute
 // templates. Taking an FS registering paths and executing templates seems to be the best option
 // for now.
-func (s *Server) uiHandler(uiFS fs.FS, pathPrefix string) (*http.ServeMux, error) {
+func (s *Server) uiHandler(uiFS fs.FS, pathPrefix string, disableAutoQuery bool) (*http.ServeMux, error) {
 	uiHandler := http.ServeMux{}
 
 	err := fs.WalkDir(uiFS, ".", func(path string, d fs.DirEntry, err error) error {
@@ -214,11 +215,13 @@ func (s *Server) uiHandler(uiFS fs.FS, pathPrefix string) (*http.ServeMux, error
 			var outputBuffer bytes.Buffer
 
 			err = tmpl.Execute(&outputBuffer, struct {
-				Version    string
-				PathPrefix string
+				Version          string
+				PathPrefix       string
+				DisableAutoQuery bool
 			}{
 				s.version,
 				pathPrefix,
+				disableAutoQuery,
 			})
 			if err != nil {
 				return fmt.Errorf("failed to execute ui file %s: %w", path, err)
